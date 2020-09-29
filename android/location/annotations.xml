@@ -1,0 +1,7 @@
+<root>
+  <item
+      name='android.location.LocationManager android.location.Location getLastKnownLocation(java.lang.String)'>
+    <annotation name='android.support.annotation.Nullable' />
+    <annotation name='java.lang.annotation.Deprecated' />
+  </item>
+</root>

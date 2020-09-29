@@ -1,0 +1,4 @@
+signing.keyAlias=dummyalias
+signing.keyPassword=dummykeypassword
+signing.storeFile=/dummy/place
+signing.storePassword=dummystorepassword

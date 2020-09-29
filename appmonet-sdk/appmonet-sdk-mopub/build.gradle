@@ -1,0 +1,15 @@
+apply from: '../common-build.gradle'
+
+dependencies {
+    api("com.mopub:mopub-sdk:5.13.1@aar") {
+        transitive = true
+        exclude module: 'moat-mobile-app-kit' // To exclude Moat
+    }
+    api project(':appmonet-sdk:appmonet-sdk-core')
+}
+
+project.description = 'AppMonet Android SDK - MoPub'
+project.ext.projectTitle = 'AppMonet Android SDK - MoPub'
+project.ext.projectName = 'appmonet-mopub'
+
+apply from: '../publish.gradle'

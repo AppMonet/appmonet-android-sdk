@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:ads="http://schemas.android.com/apk/res-auto"
+    >
+  <com.google.android.gms.ads.AdView
+      android:id="@+id/adView"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignParentBottom="true"
+      android:layout_centerHorizontal="true"
+      ads:adSize="MEDIUM_RECTANGLE"
+      ads:adUnitId="ca-app-pub-2737306441907340/5983669555"
+      />
+</merge>
