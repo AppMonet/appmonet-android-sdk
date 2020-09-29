@@ -1,0 +1,3 @@
+[submodule "appmonet-sdk/appmonet-sdk-bidder"]
+	path = appmonet-sdk/appmonet-sdk-bidder
+	url = https://github.com/AppMonet/standalone-android-sdk.git

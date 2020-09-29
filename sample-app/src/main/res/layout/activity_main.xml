@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:context=".MainActivity">
+
+  <androidx.constraintlayout.widget.ConstraintLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent">
+
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+      <ImageView
+          android:layout_width="wrap_content"
+          android:layout_height="30dp"
+          android:layout_gravity="center"
+          android:layout_marginTop="16dp"
+          android:layout_marginBottom="16dp"
+          android:adjustViewBounds="true"
+          android:src="@mipmap/appmonet_logo_new" />
+
+      <TextView
+          android:id="@+id/title"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:layout_marginBottom="16dp"
+          android:text="@string/app_title"
+          android:textColor="@color/colorPrimaryDark"
+          android:textSize="28sp" />
+
+      <TextView
+          android:id="@+id/mrectHeader"
+          style="@style/Header"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="32dp"
+          android:layout_marginBottom="16dp"
+          android:text="@string/mrect_header" />
+
+      <FrameLayout
+          android:id="@+id/mrect_container"
+          android:layout_width="300dp"
+          android:layout_height="250dp"
+          android:layout_gravity="center"
+          android:layout_marginBottom="16dp"
+          android:background="@android:color/darker_gray">
+
+       <include layout="@layout/adview_layout" />
+
+      </FrameLayout>
+
+      <com.google.android.material.button.MaterialButton
+          android:id="@+id/loadMrect"
+          style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:text="@string/load_mrect" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/interstitialContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/view"
+        app:layout_constraintVertical_bias="0.0"
+        tools:layout_editor_absoluteX="0dp">
+
+      <TextView
+          android:id="@+id/interstitialHeader"
+          style="@style/Header"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="32dp"
+          android:layout_marginBottom="16dp"
+          android:text="@string/interstitial_header" />
+
+      <TextView
+          android:id="@+id/description"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="32dp"
+          android:layout_marginBottom="16dp"
+          android:text="@string/interstitial_descriptionr"
+          android:textSize="18sp" />
+
+      <LinearLayout
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:orientation="horizontal">
+
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/loadInterstitial"
+            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="64dp"
+            android:text="@string/load_interstitial" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/showInterstitial"
+            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:text="@string/show_interstitial" />
+      </LinearLayout>
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/view"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/darker_gray"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
+
+    <View
+        tools:visibility="visible"
+        android:visibility="gone"
+        android:id="@+id/nativeSeparator"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/darker_gray"
+        app:layout_constraintTop_toBottomOf="@+id/interstitialContainer" />
+
+    <LinearLayout
+        tools:visibility="visible"
+        android:visibility="gone"
+        android:id="@+id/nativeContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/nativeSeparator"
+        app:layout_constraintVertical_bias="0.0"
+        tools:layout_editor_absoluteX="0dp">
+
+      <TextView
+          android:id="@+id/nativeHeader"
+          style="@style/Header"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="32dp"
+          android:layout_marginBottom="16dp"
+          android:text="@string/native_header" />
+
+
+      <com.google.android.material.button.MaterialButton
+          android:id="@+id/navigateToNativeScreen"
+          style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:text="@string/navigate_to_native_screen" />
+
+
+    </LinearLayout>
+  </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
+

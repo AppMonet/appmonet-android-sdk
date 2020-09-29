@@ -1,0 +1,19 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.monet.bidder">
+    <application>
+        <activity
+            android:name="com.monet.bidder.MonetDfpActivity"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="close.interstitial"
+                    android:scheme="appmonet" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

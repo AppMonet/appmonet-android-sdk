@@ -1,0 +1,13 @@
+name: Linter
+on: [push]
+jobs:
+  run-linters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Infer Android
+        uses: AppMonet/android-gradle-action@master
+
+        with:
+          task: "appmonet-sdk:assembleDebug"
+          github_token: ${{ secrets.GITHUB_TOKEN }}

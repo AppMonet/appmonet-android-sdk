@@ -1,0 +1,7 @@
+apply from: '../common-build.gradle'
+
+project.description = 'AppMonet Android SDK - Core'
+project.ext.projectTitle = 'AppMonet Android SDK - Core'
+project.ext.projectName = 'appmonet-core'
+
+apply from: '../publish.gradle'
