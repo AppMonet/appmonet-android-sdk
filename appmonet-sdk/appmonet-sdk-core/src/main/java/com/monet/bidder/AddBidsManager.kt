@@ -1,120 +1,108 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.os.CountDownTimer;
+import android.os.CountDownTimer
+import com.monet.bidder.callbacks.ReadyCallbackManager
+import java.util.ArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 
-import androidx.annotation.NonNull;
-
-import android.webkit.ValueCallback;
-
-import com.monet.bidder.callbacks.ReadyCallbackManager;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
-
-public class AddBidsManager {
-  private final Logger sLogger = new Logger("AddBidsManager");
-  private final List<AddBids> callbacks;
-  private final AtomicBoolean isReady = new AtomicBoolean(false);
-  private final ReadyCallbackManager<AppMonetWebView> auctionManagerReadyCallbacks;
-
-  public AddBidsManager(@NonNull ReadyCallbackManager<AppMonetWebView> auctionManagerReadyCallbacks) {
-    callbacks = new ArrayList<>();
-    this.auctionManagerReadyCallbacks = auctionManagerReadyCallbacks;
-  }
-
-  public synchronized void executeReady() {
-    isReady.set(true);
+internal class AddBidsManager(private val auctionManagerReadyCallbacks: ReadyCallbackManager<AppMonetWebView>) {
+  private val sLogger = Logger("AddBidsManager")
+  private val callbacks = ArrayList<AddBids>()
+  private val isReady = AtomicBoolean(false)
+  @Synchronized fun executeReady() {
+    isReady.set(true)
     if (callbacks.isEmpty()) {
-      return;
+      return
     }
-    sLogger.debug("executing addBids queue.  Size: ", String.valueOf(callbacks.size()));
-    for (AddBids addBids : callbacks) {
+    sLogger.debug("executing addBids queue.  Size: ${callbacks.size}")
+    for (addBids in callbacks) {
       try {
-        addBids.cancelTimeout();
-        addBids.callback.execute((int) addBids.getRemainingTime());
-      } catch (Exception e) {
-        auctionManagerReadyCallbacks.onReady(auctionWebView -> {
-          auctionWebView.trackEvent("addBidsManager", "execute_ready_error",
-              "null", 0F, 0L);
-          return null;
-        });
-        sLogger.warn("error in callback queue: ", e.getMessage());
+        addBids.cancelTimeout()
+        addBids.callback.execute(addBids.remainingTime.toInt())
+      } catch (e: Exception) {
+        auctionManagerReadyCallbacks.onReady { auctionWebView: AppMonetWebView ->
+          auctionWebView.trackEvent(
+              "addBidsManager", "execute_ready_error",
+              "null", 0f, 0L
+          )
+        }
+        sLogger.warn("error in callback queue: ", e.message)
       }
-      callbacks.clear();
+      callbacks.clear()
     }
   }
 
-  synchronized public void onReady(int timeout, TimedCallback callback) {
+  @Synchronized fun onReady(
+    timeout: Int,
+    callback: TimedCallback
+  ) {
     if (isReady.get()) {
       try {
-        callback.execute(timeout);
-      } catch (Exception e) {
-        auctionManagerReadyCallbacks.onReady(auctionWebView -> {
-          auctionWebView.trackEvent("addBidsManager", "on_ready_error",
-              "null", 0F, 0L);
-          return null;
-        });
-        sLogger.warn("error in onready:", e.getMessage());
+        callback.execute(timeout)
+      } catch (e: Exception) {
+        auctionManagerReadyCallbacks.onReady { auctionWebView: AppMonetWebView ->
+          auctionWebView.trackEvent(
+              "addBidsManager", "on_ready_error",
+              "null", 0f, 0L
+          )
+        }
+        sLogger.warn("error in onready:", e.message)
       }
-      return;
+      return
     }
-    AddBids addBids = new AddBids(this, timeout, callback);
-    sLogger.debug("queueing up addBids call");
-    callbacks.add(addBids);
+    val addBids = AddBids(this, timeout, callback)
+    sLogger.debug("queueing up addBids call")
+    callbacks.add(addBids)
   }
 
-  private synchronized void removeAddBids(AddBids addBids) {
-    callbacks.remove(addBids);
+  @Synchronized private fun removeAddBids(addBids: AddBids) {
+    callbacks.remove(addBids)
   }
 
-  private static class AddBids {
-    private final Logger sLogger = new Logger("AddBids");
-    private final TimedCallback callback;
-    private final CountDownTimer countDownTimer;
-    private final AtomicBoolean isCanceled = new AtomicBoolean(false);
-    private final long endingTime;
+  private class AddBids constructor(
+    addBidsManager: AddBidsManager,
+    timeout: Int,
+    val callback: TimedCallback
+  ) {
+    private val sLogger = Logger("AddBids")
+    private val countDownTimer: CountDownTimer
+    private val isCanceled = AtomicBoolean(false)
+    private val endingTime: Long
+    @Synchronized fun cancelTimeout() {
+      sLogger.debug("canceling addBids timeout")
+      isCanceled.set(true)
+      countDownTimer.cancel()
+    }
 
-    AddBids(final AddBidsManager addBidsManager, int timeout, final TimedCallback callback) {
-      this.callback = callback;
-      this.endingTime = getCurrentTime() + timeout;
-      this.countDownTimer = new CountDownTimer(timeout, timeout) {
-        @Override
-        public void onTick(long millisUntilFinished) {
+    @get:Synchronized val remainingTime: Long
+      get() {
+        val remainingTime = endingTime - currentTime
+        sLogger.debug("remaining time: $remainingTime")
+        return if (remainingTime < 0) 0 else remainingTime
+      }
+    private val currentTime: Long
+      get() = System.currentTimeMillis()
+
+    init {
+      endingTime = currentTime + timeout
+      countDownTimer = object : CountDownTimer(
+          timeout.toLong(), timeout.toLong()
+      ) {
+        override fun onTick(millisUntilFinished: Long) {
           //not needed
         }
 
-        @Override
-        public void onFinish() {
-          sLogger.debug("addBids timeout triggered");
-          addBidsManager.removeAddBids(AddBids.this);
+        override fun onFinish() {
+          sLogger.debug("addBids timeout triggered")
+          addBidsManager.removeAddBids(this@AddBids)
           if (isCanceled.get()) {
-            return;
+            return
           }
-          isCanceled.set(true);
-          callback.timeout();
+          isCanceled.set(true)
+          callback.timeout()
         }
-      };
-      this.countDownTimer.start();
-    }
-
-    synchronized void cancelTimeout() {
-      sLogger.debug("canceling addBids timeout");
-      isCanceled.set(true);
-      countDownTimer.cancel();
-    }
-
-    synchronized long getRemainingTime() {
-      long remainingTime = endingTime - getCurrentTime();
-      sLogger.debug("remaining time: ", String.valueOf(remainingTime));
-      return (remainingTime < 0) ? 0 : remainingTime;
-    }
-
-    private long getCurrentTime() {
-      return System.currentTimeMillis();
+      }
+      countDownTimer.start()
     }
   }
 }
