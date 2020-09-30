@@ -1,45 +1,15 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
+import com.monet.bidder.AdServerWrapper.Type
+import com.monet.bidder.AdServerWrapper.Type.NATIVE
+import com.mopub.nativeads.MoPubNative
 
-import com.mopub.nativeads.MoPubNative;
+internal class MopubNativeAdView(
+  val mopubNative: MoPubNative,
+  override var adUnitId: String = ""
+) : AdServerAdView {
+  override val type: Type
+    get() = NATIVE
 
-
-class MopubNativeAdView implements AdServerAdView {
-    private final MoPubNative mNativeAd;
-    private String mAdUnitId;
-
-
-    MopubNativeAdView(MoPubNative nativeAd, String adUnitId) {
-        mNativeAd = nativeAd;
-        mAdUnitId = adUnitId;
-    }
-
-    MoPubNative getMopubNative() {
-        return mNativeAd;
-    }
-
-    @Override
-    public Context getContext() {
-        return null;
-    }
-
-    @Override
-    public AdServerWrapper.Type getType() {
-        return AdServerWrapper.Type.NATIVE;
-    }
-
-    @Override
-    public String getAdUnitId() {
-        return mAdUnitId;
-    }
-
-    @Override
-    public void setAdUnitId(String adUnitId) {
-        mAdUnitId = adUnitId;
-    }
-
-    @Override
-    public void loadAd(AdServerAdRequest request) {
-    }
+  override fun loadAd(request: AdServerAdRequest?) {}
 }

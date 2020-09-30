@@ -2,7 +2,7 @@ package com.monet.bidder;
 
 import com.monet.bidder.auction.AuctionRequest;
 
-class MopubAdServerWrapper implements AdServerWrapper {
+class MoPubAdServerWrapper implements AdServerWrapper {
 
   @Override
   public AdServerAdRequest newAdRequest(AuctionRequest auctionRequest) {
@@ -12,17 +12,17 @@ class MopubAdServerWrapper implements AdServerWrapper {
   @Override
   public AdServerAdRequest newAdRequest(AuctionRequest auctionRequest, Type type) {
     if (type == Type.INTERSTITIAL) {
-      return MopubInterstitialAdRequest.fromAuctionRequest(auctionRequest);
+      return MoPubInterstitialAdRequest.fromAuctionRequest(auctionRequest);
     } else if (type == Type.NATIVE) {
       return MopubNativeAdRequest.fromAuctionRequest(auctionRequest);
     } else {
-      return MopubAdRequest.fromAuctionRequest(auctionRequest);
+      return MoPubAdRequest.fromAuctionRequest(auctionRequest);
     }
   }
 
   @Override
   public AdServerAdRequest newAdRequest() {
-    return new MopubAdRequest();
+    return new MoPubAdRequest();
   }
 
   @Override

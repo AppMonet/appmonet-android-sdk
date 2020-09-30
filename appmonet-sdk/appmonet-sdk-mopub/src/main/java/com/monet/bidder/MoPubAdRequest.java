@@ -2,12 +2,10 @@ package com.monet.bidder;
 
 import android.location.Location;
 import android.os.Bundle;
-import androidx.annotation.Nullable;
 
 import com.monet.bidder.auction.AuctionRequest;
 import com.monet.bidder.bid.BidResponse;
-import com.mopub.mobileads.MoPubInterstitial;
-
+import com.mopub.mobileads.MoPubView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -26,19 +24,22 @@ import static com.monet.bidder.MoPubRequestUtil.mergeKeywords;
  * Created by nbjacob on 6/26/17.
  */
 
-class MopubInterstitialAdRequest extends AdServerAdRequest {
+class MoPubAdRequest extends AdServerAdRequest {
   static final String CE_AD_WIDTH = "com_mopub_ad_width";
   static final String CE_AD_HEIGHT = "com_mopub_ad_height";
   static final String CE_AD_FORMAT = "__ad_format";
   private final Map<String, Object> mLocalExtras;
-  private final MoPubInterstitial moPubInterstitial;
-  @Nullable
+  private final MoPubView mAdView;
   private BidResponse mBid = null;
 
-  MopubInterstitialAdRequest(MoPubInterstitial moPubInterstitial) {
-    mLocalExtras = moPubInterstitial.getLocalExtras();
-    this.moPubInterstitial = moPubInterstitial;
+  MoPubAdRequest(MoPubView adView) {
+    mLocalExtras = adView.getLocalExtras();
+    mAdView = adView;
 
+    // set this data so we can read it later
+    // on the local extras we get
+    mLocalExtras.put(CE_AD_FORMAT, adView.getAdFormat());
+    // extract the targeting from the adview
     if (mLocalExtras.containsKey(BIDS_KEY)) {
       try {
         mBid = BidResponse.Mapper.from(new JSONObject((String) mLocalExtras.get(BIDS_KEY)));
@@ -48,20 +49,20 @@ class MopubInterstitialAdRequest extends AdServerAdRequest {
     }
   }
 
-  MopubInterstitialAdRequest() {
+  MoPubAdRequest() {
     mLocalExtras = new HashMap<>();
-    moPubInterstitial = null;
+    mAdView = null;
   }
 
-  static MopubInterstitialAdRequest fromAuctionRequest(AuctionRequest request) {
-    MopubInterstitialAdRequest adRequest = new MopubInterstitialAdRequest();
+  static AdServerAdRequest fromAuctionRequest(AuctionRequest request) {
+    MoPubAdRequest adRequest = new MoPubAdRequest();
 
     for (String key : request.getTargeting().keySet()) {
       adRequest.mLocalExtras.put(key, request.getTargeting().get(key));
     }
 
-    if (request.getBid()!= null) {
-      adRequest.mBid = request.getBid();
+    if (request.getBid() != null) {
+      adRequest.mBid = request.getBid(); // just pass the bids along
     }
 
     return adRequest;
@@ -79,11 +80,11 @@ class MopubInterstitialAdRequest extends AdServerAdRequest {
 
   @Override
   public Location getLocation() {
-    if (moPubInterstitial == null) {
+    if (mAdView == null) {
       return null;
     }
 
-    return moPubInterstitial.getLocation();
+    return mAdView.getLocation();
   }
 
   @Override
@@ -109,6 +110,7 @@ class MopubInterstitialAdRequest extends AdServerAdRequest {
 
   @Override
   public AuctionRequest apply(AuctionRequest instance, AdServerAdView adView) {
+    // TODO: we should probably mess w/ requestData here
     instance.getTargeting().putAll(
         filterTargeting(getCustomTargeting()));
 
@@ -147,17 +149,22 @@ class MopubInterstitialAdRequest extends AdServerAdRequest {
     return bundle;
   }
 
-  void applyToView(MopubInterstitialAdView adView) {
+  void applyToView(MoPubAdView adView) {
     // apply the targeting to the view, as keywords
-    MoPubInterstitial view = adView.getMopubView();
-
-    mLocalExtras.put(BIDS_KEY, BidResponse.Mapper.toJson(mBid).toString());
-    mLocalExtras.put(ADUNIT_KEYWORD_KEY, adView.getAdUnitId());
+    if (adView == null) {
+      return;
+    }
+    MoPubView view = adView.getMoPubView();
+    if (mBid != null) {
+      mLocalExtras.put(BIDS_KEY, BidResponse.Mapper.toJson(mBid).toString());
+    }
+    mLocalExtras.put(ADUNIT_KEYWORD_KEY, view.getAdUnitId());
     view.setLocalExtras(mLocalExtras);
     String keywords = getKeywords(mLocalExtras);
     if (view.getKeywords() != null) {
       keywords = mergeKeywords(view.getKeywords(), keywords);
     }
     view.setKeywords(keywords);
+    view.setLocation(getLocation());
   }
 }

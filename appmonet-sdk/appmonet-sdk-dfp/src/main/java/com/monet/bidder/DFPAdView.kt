@@ -1,47 +1,20 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
-import android.util.Log;
+import android.annotation.SuppressLint
+import com.google.android.gms.ads.AdView
+import com.monet.bidder.AdServerWrapper.Type
+import com.monet.bidder.AdServerWrapper.Type.BANNER
 
-import java.util.ArrayList;
-import java.util.List;
+internal class DFPAdView(private val adView: AdView?) : AdServerAdView {
+  override var adUnitId: String = adView?.adUnitId ?: ""
+  override val type: Type
+    get() = BANNER
 
-class DFPAdView implements AdServerAdView {
-  private final com.google.android.gms.ads.AdView mAdView;
-  private String mAdUnitId;
-  private Context mContext;
-
-  DFPAdView(com.google.android.gms.ads.AdView adView) {
-    mAdView = adView;
-    mContext = adView.getContext();
-    mAdUnitId = adView.getAdUnitId();
-  }
-
-  @Override
-  public AdServerWrapper.Type getType() {
-    return AdServerWrapper.Type.BANNER;
-  }
-
-  @Override
-  public String getAdUnitId() {
-    return mAdUnitId;
-  }
-
-  @Override
-  public void setAdUnitId(String adUnitId) {
-    mAdUnitId = adUnitId;
-  }
-
-  @Override
-  public Context getContext() {
-    return mContext;
-  }
-
-  @Override
-  public void loadAd(AdServerAdRequest request) {
-    DFPAdViewRequest adRequest = (DFPAdViewRequest) request;
-    if (mAdView != null) {
-      mAdView.loadAd(adRequest.getDFPRequest());
+  @SuppressLint("MissingPermission")
+  override fun loadAd(request: AdServerAdRequest?) {
+    request?.let {
+      val adRequest = it as DFPAdViewRequest
+      adView?.loadAd(adRequest.dfpRequest)
     }
   }
 }

@@ -41,7 +41,7 @@ class SdkManager extends BaseManager {
   WeakReference<Activity> currentActivity;
 
   protected SdkManager(Context context, String applicationId) {
-    super(context, applicationId, new MopubAdServerWrapper());
+    super(context, applicationId, new MoPubAdServerWrapper());
   }
 
   MoPubView getMopubAdView(String adUnitId) {
@@ -150,7 +150,7 @@ class SdkManager extends BaseManager {
       return adView;
     }
 
-    MopubAdView mpView = new MopubAdView(adView);
+    MoPubAdView mpView = new MoPubAdView(adView);
     if (!adUnitId.equals(adView.getAdUnitId())) {
       mpView.setAdUnitId(adUnitId);
     }
@@ -159,7 +159,7 @@ class SdkManager extends BaseManager {
     registerView(adView, adUnitId);
     AdServerAdRequest request;
     try {
-      baseRequest = new MopubAdRequest(adView);
+      baseRequest = new MoPubAdRequest(adView);
       request = getAuctionManager().addBids(mpView, baseRequest);
     } catch (NullPointerException exp) {
       return null;
@@ -172,11 +172,11 @@ class SdkManager extends BaseManager {
         sLogger.debug("no bids available for request.");
       }
 
-      ((MopubAdRequest) request).applyToView(mpView);
+      ((MoPubAdRequest) request).applyToView(mpView);
     }
     mopubAdViews.put(mpView.getAdUnitId(), new WeakReference<>(adView));
 
-    return mpView.getMopubView();
+    return mpView.getMoPubView();
   }
 
   void addBids(final MoPubInterstitial moPubInterstitial, final String alternateAdUnitId,
@@ -203,13 +203,13 @@ class SdkManager extends BaseManager {
         //          return;
         //        }
 
-        final MopubInterstitialAdView mpView =
-            new MopubInterstitialAdView(moPubInterstitial, alternateAdUnitId);
-        getAuctionManager().addBids(mpView, new MopubInterstitialAdRequest(moPubInterstitial),
+        final MoPubInterstitialAdView mpView =
+            new MoPubInterstitialAdView(moPubInterstitial, alternateAdUnitId);
+        getAuctionManager().addBids(mpView, new MoPubInterstitialAdRequest(moPubInterstitial),
             remainingTime,
             value -> {
               // apply the request to the ad view, and pass that back
-              MopubInterstitialAdRequest request = (MopubInterstitialAdRequest) value;
+              MoPubInterstitialAdRequest request = (MoPubInterstitialAdRequest) value;
               request.applyToView(mpView);
               onDone.onReceiveValue(moPubInterstitial);
             }
@@ -231,7 +231,7 @@ class SdkManager extends BaseManager {
       @Override
       public void execute(int remainingTime) {
         logState();
-        final MopubAdView mpView = new MopubAdView(adView);
+        final MoPubAdView mpView = new MoPubAdView(adView);
         if (adView.getAdUnitId() == null) {
           sLogger.warn("Mopub adunit id is null. Unable to fetch bids for unit");
           onDone.onReceiveValue(adView); // can't continue
@@ -244,10 +244,10 @@ class SdkManager extends BaseManager {
         }
 
         registerView(adView, adUnit);
-        getAuctionManager().addBids(mpView, new MopubAdRequest(adView), remainingTime,
+        getAuctionManager().addBids(mpView, new MoPubAdRequest(adView), remainingTime,
             value -> {
               // apply the request to the ad view, and pass that back
-              MopubAdRequest request = (MopubAdRequest) value;
+              MoPubAdRequest request = (MoPubAdRequest) value;
               request.applyToView(mpView);
               mopubAdViews.put(mpView.getAdUnitId(), new WeakReference<>(adView));
               onDone.onReceiveValue(adView);

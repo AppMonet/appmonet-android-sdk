@@ -133,9 +133,9 @@ class SdkManager extends BaseManager {
           throw new ActivityNotFoundException(error);
         }
 
-        DFPPublisherAdView dfpPublisherAdView = new DFPPublisherAdView(interstitialAd, ctx);
-        dfpPublisherAdView.setAdUnitId(appMonetAdUnitId);
-        final AddBidsParams addBidsParams = generateAddBidsParams(dfpPublisherAdView,
+        DFPPublisherInterstitialAdView dfpPublisherInterstitialAdView = new DFPPublisherInterstitialAdView(interstitialAd);
+        dfpPublisherInterstitialAdView.setAdUnitId(appMonetAdUnitId);
+        final AddBidsParams addBidsParams = generateAddBidsParams(dfpPublisherInterstitialAdView,
             adRequest, remainingTime, onDone);
         onBidManagerReadyCallback(addBidsParams);
       }

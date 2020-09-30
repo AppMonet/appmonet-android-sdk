@@ -4,9 +4,8 @@ import com.monet.bidder.auction.AuctionRequest;
 
 /**
  * The AdServerWrapper implements a kind of delegate interface, that allows adserver-specific
- * implementations of the SDK to construct objects specific to that adserver (e.g. MopubAdRequest).
+ * implementations of the SDK to construct objects specific to that adserver (e.g. MoPubAdRequest).
  *
- * @see SdkManager#adServerWrapper
  */
 public interface AdServerWrapper {
   enum Type {

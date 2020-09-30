@@ -1,17 +1,9 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
+import com.monet.bidder.AdServerWrapper.Type
 
-import java.util.List;
-
-public interface AdServerAdView {
-  AdServerWrapper.Type getType();
-
-  String getAdUnitId();
-
-  void setAdUnitId(String adUnitId);
-
-  Context getContext();
-
-  void loadAd(AdServerAdRequest request);
+interface AdServerAdView {
+  val type: Type
+  var adUnitId: String
+  fun loadAd(request: AdServerAdRequest?)
 }

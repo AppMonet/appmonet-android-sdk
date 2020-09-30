@@ -1,51 +1,20 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
-import android.view.View;
-
-import com.mopub.mobileads.MoPubInterstitial;
+import com.monet.bidder.AdServerWrapper.Type
+import com.monet.bidder.AdServerWrapper.Type.INTERSTITIAL
+import com.mopub.mobileads.MoPubInterstitial
 
 /**
  * Created by nbjacob on 6/26/17.
  */
+internal class MoPubInterstitialAdView(
+  val moPubView: MoPubInterstitial,
+  override var adUnitId: String = ""
+) : AdServerAdView {
 
-class MopubInterstitialAdView implements AdServerAdView {
-  private final MoPubInterstitial moPubInterstitial;
-  private final View mContentView;
-  private String mAdUnitId;
+  override val type: Type
+    get() = INTERSTITIAL
 
-  MopubInterstitialAdView(MoPubInterstitial moPubInterstitial, String adUnitId) {
-    this.moPubInterstitial = moPubInterstitial;
-    mContentView = null;
-    mAdUnitId = adUnitId;
-  }
-
-  MoPubInterstitial getMopubView() {
-    return moPubInterstitial;
-  }
-
-  @Override
-  public Context getContext() {
-    return moPubInterstitial.getActivity();
-  }
-
-
-  @Override
-  public AdServerWrapper.Type getType() {
-    return AdServerWrapper.Type.INTERSTITIAL;
-  }
-
-  @Override
-  public String getAdUnitId() {
-    return mAdUnitId;
-  }
-
-  @Override
-  public void setAdUnitId(String adUnitId) {
-    mAdUnitId = adUnitId;
-  }
-
-  @Override
-  public void loadAd(AdServerAdRequest request) {
+  override fun loadAd(request: AdServerAdRequest?) {
   }
 }
