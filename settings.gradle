@@ -7,4 +7,4 @@ include ':appmonet-sdk'
 if(file('appmonet-sdk/appmonet-sdk-bidder/src').exists()){
   include ':appmonet-sdk:appmonet-sdk-bidder'
 }
-rootProject.name = 'monet-android'
+rootProject.name = 'appmonet-android-sdk'
