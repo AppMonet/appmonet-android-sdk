@@ -1,41 +1,38 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import androidx.annotation.NonNull;
-import com.monet.bidder.auction.AuctionRequest;
+import com.monet.bidder.AdRequestFactory.createEmptyRequest
+import com.monet.bidder.AdRequestFactory.fromAuctionRequest
+import com.monet.bidder.AdServerWrapper.Type
+import com.monet.bidder.auction.AuctionRequest
 
 /**
  * Created by nbjacob on 6/26/17.
  */
-
-class DFPAdServerWrapper implements AdServerWrapper {
-  private SdkManager sdkManager;
-
-  public void setSdkManager(SdkManager sdkManager) {
-    this.sdkManager = sdkManager;
+internal class DFPAdServerWrapper : AdServerWrapper {
+  private var sdkManager: SdkManager? = null
+  fun setSdkManager(sdkManager: SdkManager?) {
+    this.sdkManager = sdkManager
   }
 
-  @NonNull
-  @Override
-  public AdServerAdRequest newAdRequest(@NonNull AuctionRequest auctionRequest) {
-    return AdRequestFactory.fromAuctionRequest(sdkManager.isPublisherAdView, auctionRequest);
+  override fun newAdRequest(auctionRequest: AuctionRequest): AdServerAdRequest {
+    return fromAuctionRequest(sdkManager!!.isPublisherAdView, auctionRequest)
   }
 
-  @NonNull
-  @Override
-  public AdServerAdRequest newAdRequest(@NonNull AuctionRequest auctionRequest,
-      @NonNull Type type) {
-    return newAdRequest(auctionRequest);
+  override fun newAdRequest(
+    auctionRequest: AuctionRequest,
+    type: Type
+  ): AdServerAdRequest {
+    return newAdRequest(auctionRequest)
   }
 
-  @NonNull
-  @Override
-  public AdServerAdRequest newAdRequest() {
-    return AdRequestFactory.createEmptyRequest(sdkManager.isPublisherAdView);
+  override fun newAdRequest(): AdServerAdRequest {
+    return createEmptyRequest(sdkManager!!.isPublisherAdView)
   }
 
-  @NonNull
-  @Override
-  public AdSize newAdSize(Integer width, Integer height) {
-    return new AdSize(width, height);
+  override fun newAdSize(
+    width: Int,
+    height: Int
+  ): AdSize {
+    return AdSize(width, height)
   }
 }

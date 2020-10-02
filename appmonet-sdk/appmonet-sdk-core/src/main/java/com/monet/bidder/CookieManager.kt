@@ -1,165 +1,221 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
-import android.text.TextUtils;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import android.content.Context
+import android.text.TextUtils
+import java.util.ArrayList
+import java.util.HashSet
+import java.util.LinkedHashMap
+import java.util.Locale
+import java.util.regex.Pattern
+import kotlin.collections.MutableMap.MutableEntry
 
 /**
  * Store cookies (in a dumb way), separately from WebView CookieManager
  * to create better privacy isolation from other WebViews in
  * the current Application, since all WV sync with this cookie manager
  */
-public class CookieManager {
-    private static final int MAX_COOKIE_HEADER = 4096;
-    private static final String COOKIE_HEADER = "Cookie";
-    static final String SET_COOKIE_HEADER = "Set-Cookie";
-    private static final Object LOCK = new Object();
-    private static final int DOMAIN_LIMIT = 400; // near the RFC spec
-    private final static String DELIMITER = ":^#";
-    private final static Pattern DELIMITER_PATTERN = Pattern.compile(":\\^#");
-    private final static String COOKIE_PREF_KEY = "amBidderDataStore_v23x";
-    private static CookieManager sInstance;
-    private final Map<String, HashSet<Cookie>> mBulkStore = new LinkedHashMap<String, HashSet<Cookie>>(DOMAIN_LIMIT) {
-        @Override
-        protected boolean removeEldestEntry(Entry eldest) {
-            return size() > DOMAIN_LIMIT;
-        }
-    };
-
-    private static class Cookie {
-        private static Pattern sKeyValueMath = Pattern.compile("([^;\\s]+)\\s*=\\s*([^;\\s]+)");
-        private static Pattern sDotSeparator = Pattern.compile("\\.");
-
-        private String mDomain;
-        private String mKey; // actual cookie
-        private String mValue;
-        private String mCookie;
-        private String mHashable;
-
-        /**
-         * Need to normalize all hosts/domains
-         * so they can map despite subdomains and stuff
-         * @param domain
-         * @return
-         */
-        static String extractDomain(String domain) {
-            // split by '.' and extract just the root domain + tld
-            String[] parts = TextUtils.split(domain, sDotSeparator);
-
-            // return the 2nd-to-last part
-            if (parts.length >= 2) {
-                int len = parts.length - 2;
-                if (parts[len] != null && parts[len].length() > 0) {
-                    return parts[len];
-                }
-
-                // return the last part instead.. hmm
-                // should never happen
-                return parts[len + 1];
-            }
-
-            return "unknown.com";
-        }
-
-        static String join(Set<Cookie> cookies) {
-            if (cookies == null || cookies.size() == 0) {
-                return "";
-            }
-
-            String[] cookieValues = new String[cookies.size()];
-
-            int index = 0;
-            for (Cookie cookie : cookies) {
-                cookieValues[index] = cookie.mKey + "=" + cookie.mValue;
-                index++;
-            }
-
-            return TextUtils.join(";", cookieValues);
-        }
-
-        private Cookie(String header) {
-            Matcher keyValueMatch = sKeyValueMath.matcher(header);
-            while (keyValueMatch.find()) {
-                String key = keyValueMatch.group(1).trim();
-                String value = keyValueMatch.group(2);
-
-                switch (key.toLowerCase()) {
-                    case "domain":
-                        mDomain = extractDomain(value);
-                        break;
-                    case "expires":
-                    case "path":
-                    case "max-age":
-                    case "secure":
-                        break;
-                    default:
-                        if (mKey == null) {
-                            mKey = key;
-                            mValue = value;
-                        }
-                        break;
-                }
-            }
-
-            mCookie = header;
-            mHashable = mKey + mDomain; // only hash on key + domain, since value could be a timestamp
-        }
-
-        /**
-         * Since we don't really care about Expiration,
-         * we will compare cookies based on their key, value, and domain
-         * @param obj any object to compare
-         * @return if it's an equal cookie
-         */
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-
-            if (!(obj instanceof Cookie)) {
-                return false;
-            }
-
-            Cookie other = (Cookie) obj;
-            return other.mHashable.equals(mHashable);
-        }
-
-        /**
-         * Override the hashcode of the Cookie so it
-         * can be stored in a set
-         * @return
-         */
-        @Override
-        public int hashCode() {
-            return mHashable.hashCode();
-        }
+class CookieManager private constructor() {
+  private val mBulkStore: LinkedHashMap<String?, HashSet<Cookie?>?> =
+    object : LinkedHashMap<String?, HashSet<Cookie?>?>(
+        DOMAIN_LIMIT
+    ) {
+      override fun removeEldestEntry(eldest: MutableEntry<String?, HashSet<Cookie?>?>?): Boolean {
+        return size > DOMAIN_LIMIT
+      }
     }
 
-    private CookieManager() {
+  private class Cookie(header: String) {
+    var mDomain: String? = null
+    private var mKey // actual cookie
+        : String? = null
+    private var mValue: String? = null
+    val mCookie: String
+    private val mHashable: String
+
+    /**
+     * Since we don't really care about Expiration,
+     * we will compare cookies based on their key, value, and domain
+     * @param obj any object to compare
+     * @return if it's an equal cookie
+     */
+    override fun equals(obj: Any?): Boolean {
+      if (obj === this) {
+        return true
+      }
+      if (obj !is Cookie) {
+        return false
+      }
+      return obj.mHashable == mHashable
     }
+
+    /**
+     * Override the hashcode of the Cookie so it
+     * can be stored in a set
+     * @return
+     */
+    override fun hashCode(): Int {
+      return mHashable.hashCode()
+    }
+
+    companion object {
+      private val sKeyValueMath = Pattern.compile("([^;\\s]+)\\s*=\\s*([^;\\s]+)")
+      private val sDotSeparator = Pattern.compile("\\.")
+
+      /**
+       * Need to normalize all hosts/domains
+       * so they can map despite subdomains and stuff
+       * @param domain
+       * @return
+       */
+      fun extractDomain(domain: String?): String? {
+        // split by '.' and extract just the root domain + tld
+        val parts = TextUtils.split(domain, sDotSeparator)
+
+        // return the 2nd-to-last part
+        if (parts.size >= 2) {
+          val len = parts.size - 2
+          return if (parts[len] != null && parts[len].isNotEmpty()) {
+            parts[len]
+          } else parts[len + 1]
+
+          // return the last part instead.. hmm
+          // should never happen
+        }
+        return "unknown.com"
+      }
+
+      fun join(cookies: HashSet<Cookie?>?): String {
+        if (cookies == null || cookies.isEmpty()) {
+          return ""
+        }
+        val cookieValues = arrayOfNulls<String>(cookies.size)
+        for ((index, cookie) in cookies.withIndex()) {
+          cookie?.let {
+            cookieValues[index] = it.mKey + "=" + it.mValue
+          }
+        }
+        return TextUtils.join(";", cookieValues)
+      }
+    }
+
+    init {
+      val keyValueMatch = sKeyValueMath.matcher(header)
+      while (keyValueMatch.find()) {
+        val key = keyValueMatch.group(1).trim { it <= ' ' }
+        val value = keyValueMatch.group(2)
+        when (key.toLowerCase(Locale.getDefault())) {
+          "domain" -> mDomain = extractDomain(value)
+          "expires", "path", "max-age", "secure" -> {
+          }
+          else -> if (mKey == null) {
+            mKey = key
+            mValue = value
+          }
+        }
+      }
+      mCookie = header
+      mHashable = mKey + mDomain // only hash on key + domain, since value could be a timestamp
+    }
+  }
+
+  fun load(context: Context?) {
+    val preferences = Preferences(context) ?: return
+    val encoded = preferences.getPref(COOKIE_PREF_KEY, "")
+    val cookies = deserialize(encoded) ?: return
+    for (cookie in cookies) {
+      add(cookie)
+    }
+  }
+
+  fun save(context: Context?) {
+    val preferences = Preferences(context) ?: return
+    preferences.setPreference(COOKIE_PREF_KEY, serialize(this))
+  }
+
+  fun size(): Int {
+    return mBulkStore.size
+  }
+
+  fun clear() {
+    mBulkStore.clear()
+  }
+
+  /**
+   * Add a cookie from a Set-Cookie header
+   * partition by domain, and make unique by the cookie key-value
+   * @param cookieHeader the value of Set-Cookie header
+   */
+  fun add(cookieHeader: String?) {
+    if (cookieHeader == null || cookieHeader.length > MAX_COOKIE_HEADER) {
+      return
+    }
+    val cookie = Cookie(cookieHeader)
+    if (!mBulkStore.containsKey(cookie.mDomain)) {
+      mBulkStore[cookie.mDomain] = HashSet()
+    }
+    mBulkStore[cookie.mDomain]!!.add(cookie)
+  }
+
+  /**
+   * Get all available cookies for a given domain, as a string
+   * semi-colon separated string.
+   * @param domain the domain to lookup cookies for
+   * @return all cookies matching that domain
+   */
+  operator fun get(domain: String?): String {
+    val extracted = Cookie.extractDomain(domain)
+    return Cookie.join(
+        mBulkStore[extracted]
+    )
+  }
+
+  /**
+   * Add the correct cookies for the given host
+   * to the Cookie header of the headers map for this request
+   * @param headers a map of headers to be made
+   * @param host the host the request is for
+   */
+  fun apply(
+    headers: MutableMap<String?, String?>,
+    host: String?
+  ) {
+    var existing = headers[COOKIE_HEADER]
+    val cookies = get(host)
+    if (existing == null) {
+      existing = ""
+    }
+    if (cookies.isEmpty() && existing.isEmpty()) {
+      return
+    }
+    val found = get(host)
+    val complete = if (existing.isNotEmpty()) "$found;$existing" else found
+    headers[COOKIE_HEADER] = complete
+  }
+
+  companion object {
+    private const val MAX_COOKIE_HEADER = 4096
+    private const val COOKIE_HEADER = "Cookie"
+    const val SET_COOKIE_HEADER = "Set-Cookie"
+    private val LOCK = Any()
+    private const val DOMAIN_LIMIT = 400 // near the RFC spec
+    private const val DELIMITER = ":^#"
+    private val DELIMITER_PATTERN = Pattern.compile(":\\^#")
+    private const val COOKIE_PREF_KEY = "amBidderDataStore_v23x"
+    private var sInstance: CookieManager? = null
 
     /**
      * Get the singleton instance
      * @return CookieManager instance
      */
-    public static CookieManager getInstance() {
-        synchronized (LOCK) {
-            if (sInstance == null) {
-                sInstance = new CookieManager();
-            }
-            return sInstance;
+    @JvmStatic val instance: CookieManager?
+      get() {
+        synchronized(LOCK) {
+          if (sInstance == null) {
+            sInstance = CookieManager()
+          }
+          return sInstance
         }
-    }
+      }
 
     /**
      * Given a cookie manager, produce a serialized (string)
@@ -167,122 +223,35 @@ public class CookieManager {
      * @param instance a cookie manager
      * @return a single obfuscated string
      */
-    private static String serialize(CookieManager instance) {
-        List<String> cookies = new ArrayList<>();
-        for (Map.Entry<String, HashSet<Cookie>> kvp : instance.mBulkStore.entrySet()) {
-            for (Cookie cookie : kvp.getValue()) {
-                cookies.add(cookie.mCookie);
-            }
+    private fun serialize(instance: CookieManager): String {
+      val cookies: MutableList<String?> = ArrayList()
+      for ((_, value) in instance.mBulkStore) {
+        value?.let {
+          for (cookie in it) {
+            cookies.add(cookie?.mCookie)
+          }
         }
-
-        return RenderingUtils.base64Encode(
-                RenderingUtils.encodeStringByXor(TextUtils.join(DELIMITER, cookies)));
+      }
+      return RenderingUtils.base64Encode(
+          RenderingUtils.encodeStringByXor(TextUtils.join(DELIMITER, cookies))
+      )
     }
 
-    private static List<String> deserialize(String source) {
-        if (source == null || source.isEmpty()) {
-            return null;
-        }
+    private fun deserialize(source: String?): List<String>? {
+      if (source == null || source.isEmpty()) {
+        return null
+      }
+      val components = TextUtils.split(
+          RenderingUtils.encodeStringByXor(
+              RenderingUtils.base64Decode(source)
+          ), DELIMITER_PATTERN
+      )
 
-        String[] components = TextUtils.split(RenderingUtils.encodeStringByXor(
-                RenderingUtils.base64Decode(source)), DELIMITER_PATTERN);
-
-        // we should never have persisted @ only 1 key,
-        // so this would indicate incorrect formatting
-        if (components.length == 1) {
-            return null;
-        }
-
-        return Arrays.asList(components);
+      // we should never have persisted @ only 1 key,
+      // so this would indicate incorrect formatting
+      return if (components.size == 1) {
+        null
+      } else listOf(*components)
     }
-
-    public void load(Context context) {
-        Preferences preferences = new Preferences(context);
-        if (preferences == null) {
-            return;
-        }
-
-        String encoded = preferences.getPref(COOKIE_PREF_KEY, "");
-        List<String> cookies = deserialize(encoded);
-        if (cookies == null) {
-            return;
-        }
-
-        for (String cookie : cookies) {
-            add(cookie);
-        }
-    }
-
-    public void save(Context context) {
-        Preferences preferences = new Preferences(context);
-        if (preferences == null) {
-            return;
-        }
-
-        preferences.setPreference(COOKIE_PREF_KEY, serialize(this));
-    }
-
-    int size() {
-        return mBulkStore != null ? mBulkStore.size() : 0;
-    }
-
-    public void clear() {
-        if (mBulkStore == null) {
-            return;
-        }
-
-        mBulkStore.clear();
-    }
-
-    /**
-     * Add a cookie from a Set-Cookie header
-     * partition by domain, and make unique by the cookie key-value
-     * @param cookieHeader the value of Set-Cookie header
-     */
-    void add(String cookieHeader) {
-        if (cookieHeader == null || cookieHeader.length() > MAX_COOKIE_HEADER) {
-            return;
-        }
-        Cookie cookie = new Cookie(cookieHeader);
-        if (!mBulkStore.containsKey(cookie.mDomain)) {
-            mBulkStore.put(cookie.mDomain, new HashSet<Cookie>());
-        }
-        mBulkStore.get(cookie.mDomain).add(cookie);
-    }
-
-    /**
-     * Get all available cookies for a given domain, as a string
-     * semi-colon separated string.
-     * @param domain the domain to lookup cookies for
-     * @return all cookies matching that domain
-     */
-    String get(String domain) {
-        String extracted = Cookie.extractDomain(domain);
-        return Cookie.join(
-                mBulkStore.get(extracted));
-    }
-
-    /**
-     * Add the correct cookies for the given host
-     * to the Cookie header of the headers map for this request
-     * @param headers a map of headers to be made
-     * @param host the host the request is for
-     */
-    void apply(Map<String, String> headers, String host) {
-        String existing = headers.get(COOKIE_HEADER);
-        String cookies = get(host);
-
-        if (existing  == null) {
-            existing = "";
-        }
-
-        if (cookies.isEmpty() && existing.isEmpty()) {
-            return;
-        }
-
-        String found = get(host);
-        String complete = (existing != null && !existing.isEmpty()) ? (found + ";" + existing) : found;
-        headers.put(COOKIE_HEADER, complete);
-    }
-
+  }
 }

@@ -1,38 +1,30 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import androidx.annotation.NonNull;
+import com.google.android.gms.ads.mediation.MediationAdRequest
+import com.monet.bidder.auction.AuctionRequest
 
-import com.google.android.gms.ads.mediation.MediationAdRequest;
-import com.monet.bidder.auction.AuctionRequest;
-
-class AdRequestFactory {
-  private AdRequestFactory() {
+internal object AdRequestFactory {
+  fun fromAuctionRequest(
+    isPublisherAdView: Boolean,
+    auctionRequest: AuctionRequest
+  ): AdServerAdRequest {
+    return if (isPublisherAdView) {
+      DFPAdRequest.fromAuctionRequest(auctionRequest)
+    } else DFPAdViewRequest.fromAuctionRequest(auctionRequest)
   }
 
-  @NonNull
-  static AdServerAdRequest fromAuctionRequest(boolean isPublisherAdView,
-      AuctionRequest auctionRequest) {
-    if (isPublisherAdView) {
-      return DFPAdRequest.fromAuctionRequest(auctionRequest);
-    }
-    return DFPAdViewRequest.fromAuctionRequest(auctionRequest);
+  fun createEmptyRequest(isPublisherAdView: Boolean): AdServerAdRequest {
+    return if (isPublisherAdView) {
+      DFPAdRequest()
+    } else DFPAdViewRequest()
   }
 
-  @NonNull
-  static AdServerAdRequest createEmptyRequest(boolean isPublisherAdView) {
-    if (isPublisherAdView) {
-      return new DFPAdRequest();
-    }
-    return new DFPAdViewRequest();
-  }
-
-  @NonNull
-  static AdServerAdRequest fromMediationRequest(boolean isPublisherAdView,
-      @NonNull MediationAdRequest adRequest) {
-    if (isPublisherAdView) {
-      return new DFPAdRequest(adRequest);
-    }
-
-    return new DFPAdViewRequest(adRequest);
+  fun fromMediationRequest(
+    isPublisherAdView: Boolean,
+    adRequest: MediationAdRequest
+  ): AdServerAdRequest {
+    return if (isPublisherAdView) {
+      DFPAdRequest(adRequest)
+    } else DFPAdViewRequest(adRequest)
   }
 }

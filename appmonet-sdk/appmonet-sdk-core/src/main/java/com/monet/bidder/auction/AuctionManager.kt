@@ -345,7 +345,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
   fun addBids(
     adServerAdView: AdServerAdView,
     baseRequest: AdServerAdRequest
-  ): AdServerAdRequest? {
+  ): AdServerAdRequest {
     return appMonetBidder.addBids(adServerAdView, baseRequest)
   }
 

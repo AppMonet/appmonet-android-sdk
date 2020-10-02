@@ -1,258 +1,286 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.ActivityNotFoundException;
-import android.content.Context;
-import android.webkit.ValueCallback;
-
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.ads.doubleclick.PublisherAdRequest;
-import com.google.android.gms.ads.doubleclick.PublisherAdView;
-import com.google.android.gms.ads.doubleclick.PublisherInterstitialAd;
-
-import static com.monet.bidder.Constants.MISSING_INIT_ERROR_MESSAGE;
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.webkit.ValueCallback
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdRequest.Builder
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.InterstitialAd
+import com.google.android.gms.ads.doubleclick.PublisherAdRequest
+import com.google.android.gms.ads.doubleclick.PublisherAdView
+import com.google.android.gms.ads.doubleclick.PublisherInterstitialAd
+import com.monet.bidder.Constants.MISSING_INIT_ERROR_MESSAGE
 
 /**
  * Created by jose on 8/28/17.
  */
-
-class SdkManager extends BaseManager {
-  private final static Logger sLogger = new Logger("SdkManager");
-  private static final Object LOCK = new Object();
-  private static SdkManager sInstance;
-  boolean isPublisherAdView = true;
-  static AppMonetConfiguration appMonetConfiguration;
-
-  protected SdkManager(Context context, String applicationId) {
-    super(context, applicationId, new DFPAdServerWrapper());
-  }
-
-  static void initialize(Context context, AppMonetConfiguration appMonetConfiguration) {
-    try {
-      synchronized (LOCK) {
-        if (sInstance != null) {
-          sLogger.warn("Sdk has already been initialized. No need to initialize it again.");
-          return;
-        }
-        sInstance =
-            new SdkManager(context.getApplicationContext(), appMonetConfiguration.applicationId);
-        ((DFPAdServerWrapper) sInstance.getAdServerWrapper()).setSdkManager(sInstance);
-      }
-    } catch (Exception e) {
-      if (initRetry < 3) {
-        sLogger.error("error initializing ... retrying " + e);
-        initRetry += 1;
-        initialize(context, appMonetConfiguration);
-      }
-    }
-  }
-
-  static SdkManager get() {
-    synchronized (LOCK) {
-      if (sInstance == null) {
-        sLogger.error(MISSING_INIT_ERROR_MESSAGE);
-      }
-      return sInstance;
-    }
-  }
-
-  void addBids(final com.google.android.gms.ads.AdView adView, final AdRequest adRequest,
-      final String appMonetAdUnitId, final int timeout, final ValueCallback<AdRequest> onDone) {
-    getAuctionManager().timedCallback(timeout, new TimedCallback() {
-      @Override
-      public void execute(int remainingTime) {
-        logState();
-        isPublisherAdView = false;
-        DFPAdView dfpAdView = new DFPAdView(adView);
-        dfpAdView.setAdUnitId(appMonetAdUnitId);
-        getAuctionManager().addBids(dfpAdView, new DFPAdViewRequest(adRequest), remainingTime,
-            new ValueCallback<AdServerAdRequest>() {
-              @Override
-              public void onReceiveValue(AdServerAdRequest value) {
-                if (value == null) {
-                  sLogger.debug("value is null");
-                  onDone.onReceiveValue(adRequest);
-                  return;
-                }
-                sLogger.debug("value is valid");
-                onDone.onReceiveValue(((DFPAdViewRequest) value).getDFPRequest());
+internal class SdkManager constructor(
+  context: Context,
+  applicationId: String?
+) : BaseManager(
+    context, applicationId, DFPAdServerWrapper()
+) {
+  var isPublisherAdView = true
+  fun addBids(
+    adView: AdView?,
+    adRequest: AdRequest?,
+    appMonetAdUnitId: String?,
+    timeout: Int,
+    onDone: ValueCallback<AdRequest?>
+  ) {
+    auctionManager.timedCallback(timeout, object : TimedCallback {
+      override fun execute(remainingTime: Int) {
+        logState()
+        isPublisherAdView = false
+        val dfpAdView = DFPAdView(adView)
+        dfpAdView.adUnitId = appMonetAdUnitId!!
+        auctionManager.addBids(dfpAdView, DFPAdViewRequest(adRequest!!), remainingTime,
+            ValueCallback { value ->
+              if (value == null) {
+                onDone.onReceiveValue(adRequest)
+                return@ValueCallback
               }
+              onDone.onReceiveValue((value as DFPAdViewRequest).dfpRequest)
             }
-        );
+        )
       }
 
-      @Override
-      public void timeout() {
-        trackTimeoutEvent(appMonetAdUnitId, timeout);
-        onDone.onReceiveValue((adRequest == null) ? new AdRequest.Builder().build() : adRequest);
+      override fun timeout() {
+        trackTimeoutEvent(appMonetAdUnitId, timeout.toFloat())
+        onDone.onReceiveValue(
+            adRequest ?: Builder().build()
+        )
       }
-    });
+    })
   }
 
-  void addBids(final PublisherAdView adView, final PublisherAdRequest adRequest,
-      final String appMonetAdUnitId,
-      final int timeout, final ValueCallback<PublisherAdRequest> onDone) {
-    getAuctionManager().timedCallback(timeout, new TimedCallback() {
-      @Override
-      public void execute(int remainingTime) {
-        DFPPublisherAdView dfpPublisherAdView = new DFPPublisherAdView(adView);
-        dfpPublisherAdView.setAdUnitId(appMonetAdUnitId);
-        final AddBidsParams addBidsParams = generateAddBidsParams(dfpPublisherAdView,
-            adRequest, remainingTime, onDone);
-        onBidManagerReadyCallback(addBidsParams);
+  fun addBids(
+    adView: PublisherAdView?,
+    adRequest: PublisherAdRequest,
+    appMonetAdUnitId: String?,
+    timeout: Int,
+    onDone: ValueCallback<PublisherAdRequest>
+  ) {
+    auctionManager.timedCallback(timeout, object : TimedCallback {
+      override fun execute(remainingTime: Int) {
+        val dfpPublisherAdView = DFPPublisherAdView(adView!!)
+        dfpPublisherAdView.adUnitId = appMonetAdUnitId!!
+        val addBidsParams = generateAddBidsParams(
+            dfpPublisherAdView,
+            adRequest, remainingTime, onDone
+        )
+        onBidManagerReadyCallback(addBidsParams)
       }
 
-      @Override
-      public void timeout() {
-        trackTimeoutEvent(appMonetAdUnitId, timeout);
-        onDone.onReceiveValue(getPublisherAdRequest(adRequest));
+      override fun timeout() {
+        trackTimeoutEvent(appMonetAdUnitId, timeout.toFloat())
+        onDone.onReceiveValue(getPublisherAdRequest(adRequest))
       }
-    });
+    })
   }
 
-  void addBids(final PublisherInterstitialAd interstitialAd, final PublisherAdRequest adRequest,
-      final String appMonetAdUnitId, final int timeout, final
-  ValueCallback<PublisherAdRequest> onDone) {
-    getAuctionManager().timedCallback(timeout, new TimedCallback() {
-
-      @Override
-      public void execute(int remainingTime) {
-        Context ctx = getContext().get();
+  fun addBids(
+    interstitialAd: PublisherInterstitialAd?,
+    adRequest: PublisherAdRequest,
+    appMonetAdUnitId: String?,
+    timeout: Int,
+    onDone: ValueCallback<PublisherAdRequest>
+  ) {
+    auctionManager.timedCallback(timeout, object : TimedCallback {
+      override fun execute(remainingTime: Int) {
+        val ctx = context.get()
         if (ctx == null) {
-          sLogger.warn("failed to bind context. Returning");
-          onDone.onReceiveValue(adRequest);
-          return;
+          sLogger.warn("failed to bind context. Returning")
+          onDone.onReceiveValue(adRequest)
+          return
         }
+        if (!isInterstitialActivityRegistered(ctx, MonetDfpActivity::class.java.name)) {
+          val error = """
+                    Unable to create activity. Not defined in AndroidManifest.xml. Please refer to https://docs.appmonet.com/ for integration infomration.
 
-        if (!isInterstitialActivityRegistered(ctx, MonetDfpActivity.class.getName())) {
-          String error = "Unable to create activity. Not defined in AndroidManifest.xml. " +
-              "Please refer to https://docs.appmonet.com/ for integration infomration.\n";
-          sLogger.error(error);
-          getAuctionManager().trackEvent("integration_error",
-              "missing_interstitial_activity", appMonetAdUnitId, 0f, 0L);
-          throw new ActivityNotFoundException(error);
+                    """.trimIndent()
+          sLogger.error(error)
+          auctionManager.trackEvent(
+              "integration_error",
+              "missing_interstitial_activity", appMonetAdUnitId!!, 0f, 0L
+          )
+          throw ActivityNotFoundException(error)
         }
-
-        DFPPublisherInterstitialAdView dfpPublisherInterstitialAdView = new DFPPublisherInterstitialAdView(interstitialAd);
-        dfpPublisherInterstitialAdView.setAdUnitId(appMonetAdUnitId);
-        final AddBidsParams addBidsParams = generateAddBidsParams(dfpPublisherInterstitialAdView,
-            adRequest, remainingTime, onDone);
-        onBidManagerReadyCallback(addBidsParams);
+        val dfpPublisherInterstitialAdView = DFPPublisherInterstitialAdView(interstitialAd)
+        dfpPublisherInterstitialAdView.adUnitId = appMonetAdUnitId!!
+        val addBidsParams = generateAddBidsParams(
+            dfpPublisherInterstitialAdView,
+            adRequest, remainingTime, onDone
+        )
+        onBidManagerReadyCallback(addBidsParams)
       }
 
-      @Override
-      public void timeout() {
-        trackTimeoutEvent(appMonetAdUnitId, timeout);
-        onDone.onReceiveValue(getPublisherAdRequest(adRequest));
+      override fun timeout() {
+        trackTimeoutEvent(appMonetAdUnitId, timeout.toFloat())
+        onDone.onReceiveValue(getPublisherAdRequest(adRequest))
       }
-    });
+    })
   }
 
-  void addBids(final InterstitialAd interstitialAd, final AdRequest adRequest,
-      final String appMonetAdUnitId, final int timeout, final ValueCallback<AdRequest> onDone) {
-    getAuctionManager().timedCallback(timeout, new TimedCallback() {
-      @Override
-      public void execute(int remainingTime) {
-        logState();
-        isPublisherAdView = false;
-        DFPInterstitialAdView dfpInterstitialAdView = new DFPInterstitialAdView(interstitialAd);
-        dfpInterstitialAdView.setAdUnitId(appMonetAdUnitId);
-        getAuctionManager().addBids(dfpInterstitialAdView, new DFPAdViewRequest(adRequest),
+  fun addBids(
+    interstitialAd: InterstitialAd?,
+    adRequest: AdRequest?,
+    appMonetAdUnitId: String?,
+    timeout: Int,
+    onDone: ValueCallback<AdRequest?>
+  ) {
+    auctionManager.timedCallback(timeout, object : TimedCallback {
+      override fun execute(remainingTime: Int) {
+        logState()
+        isPublisherAdView = false
+        val dfpInterstitialAdView = DFPInterstitialAdView(interstitialAd)
+        dfpInterstitialAdView.adUnitId = appMonetAdUnitId!!
+        auctionManager.addBids(dfpInterstitialAdView, DFPAdViewRequest(adRequest!!),
             remainingTime,
-            new ValueCallback<AdServerAdRequest>() {
-              @Override
-              public void onReceiveValue(AdServerAdRequest value) {
-                if (value == null) {
-                  sLogger.debug("value is null");
-                  onDone.onReceiveValue(adRequest);
-                  return;
-                }
-                sLogger.debug("value is valid");
-                onDone.onReceiveValue(((DFPAdViewRequest) value).getDFPRequest());
+            ValueCallback { value ->
+              if (value == null) {
+                sLogger.debug("value is null")
+                onDone.onReceiveValue(adRequest)
+                return@ValueCallback
               }
+              sLogger.debug("value is valid")
+              onDone.onReceiveValue((value as DFPAdViewRequest).dfpRequest)
             }
-        );
+        )
       }
 
-      @Override
-      public void timeout() {
-        trackTimeoutEvent(appMonetAdUnitId, timeout);
-        onDone.onReceiveValue((adRequest == null) ? new AdRequest.Builder().build() : adRequest);
+      override fun timeout() {
+        trackTimeoutEvent(appMonetAdUnitId, timeout.toFloat())
+        onDone.onReceiveValue(
+            adRequest ?: Builder().build()
+        )
       }
-    });
+    })
   }
 
-  void addBids(final PublisherAdRequest adRequest, final String appMonetAdUnitId, final int timeout,
-      final ValueCallback<PublisherAdRequest> onDone) {
-    getAuctionManager().timedCallback(timeout, new TimedCallback() {
-      @Override
-      public void execute(int remainingTime) {
-        Context ctx = getContext().get();
+  fun addBids(
+    adRequest: PublisherAdRequest,
+    appMonetAdUnitId: String,
+    timeout: Int,
+    onDone: ValueCallback<PublisherAdRequest>
+  ) {
+    auctionManager.timedCallback(timeout, object : TimedCallback {
+      override fun execute(remainingTime: Int) {
+        val ctx = context.get()
         if (ctx == null) {
-          sLogger.warn("failed to bind context. Returning");
-          onDone.onReceiveValue(adRequest);
-          return;
+          sLogger.warn("failed to bind context. Returning")
+          onDone.onReceiveValue(adRequest)
+          return
         }
-        DFPPublisherAdView dfpPublisherAdView = new DFPPublisherAdView(appMonetAdUnitId);
-        final AddBidsParams addBidsParams = generateAddBidsParams(dfpPublisherAdView,
-            adRequest, remainingTime, onDone);
-        onBidManagerReadyCallback(addBidsParams);
+        val dfpPublisherAdView = DFPPublisherAdView(appMonetAdUnitId)
+        val addBidsParams = generateAddBidsParams(
+            dfpPublisherAdView,
+            adRequest, remainingTime, onDone
+        )
+        onBidManagerReadyCallback(addBidsParams)
       }
 
-      @Override
-      public void timeout() {
-        trackTimeoutEvent(appMonetAdUnitId, timeout);
-        onDone.onReceiveValue(getPublisherAdRequest(adRequest));
+      override fun timeout() {
+        trackTimeoutEvent(appMonetAdUnitId, timeout.toFloat())
+        onDone.onReceiveValue(getPublisherAdRequest(adRequest))
       }
-    });
+    })
   }
 
-  PublisherAdRequest addBids(PublisherAdView adView, PublisherAdRequest adRequest,
-      String appMonetAdUnitId) {
-    DFPPublisherAdView dfpPublisherAdView = new DFPPublisherAdView(adView);
-    dfpPublisherAdView.setAdUnitId(appMonetAdUnitId);
-
-    PublisherAdRequest localAdRequest = (adRequest == null) ?
-        new PublisherAdRequest.Builder().build() : adRequest;
-
-    DFPAdRequest request = (DFPAdRequest) getAuctionManager().addBids(dfpPublisherAdView,
-        new DFPAdRequest(localAdRequest));
+  fun addBids(
+    adView: PublisherAdView,
+    adRequest: PublisherAdRequest?,
+    appMonetAdUnitId: String
+  ): PublisherAdRequest {
+    val dfpPublisherAdView = DFPPublisherAdView(adView)
+    dfpPublisherAdView.adUnitId = appMonetAdUnitId
+    val localAdRequest = adRequest ?: PublisherAdRequest.Builder().build()
+    val request = auctionManager.addBids(
+        dfpPublisherAdView, DFPAdRequest(localAdRequest)
+    ) as DFPAdRequest
 
     // if the request is null, just pass through the original
-    return (request != null) ? request.getDFPRequest() : localAdRequest;
+    return request.dfpRequest
   }
 
-  PublisherAdRequest addBids(PublisherAdRequest adRequest, String appMonetAdUnitId) {
-    PublisherAdRequest localAdRequest = (adRequest == null) ?
-        new PublisherAdRequest.Builder().build() : adRequest;
-    DFPPublisherAdView dfpPublisherAdView = new DFPPublisherAdView(appMonetAdUnitId);
-    DFPAdRequest request = (DFPAdRequest) getAuctionManager().addBids(
-        dfpPublisherAdView, new DFPAdRequest(localAdRequest));
-    return (request != null) ? request.getDFPRequest() : localAdRequest;
+  fun addBids(
+    adRequest: PublisherAdRequest?,
+    appMonetAdUnitId: String
+  ): PublisherAdRequest {
+    val localAdRequest = adRequest ?: PublisherAdRequest.Builder().build()
+    val dfpPublisherAdView = DFPPublisherAdView(appMonetAdUnitId)
+    val request = auctionManager.addBids(
+        dfpPublisherAdView, DFPAdRequest(localAdRequest)
+    ) as DFPAdRequest
+    return request.dfpRequest
   }
 
-  private AddBidsParams generateAddBidsParams(AdServerAdView adServerAdView,
-      final PublisherAdRequest adRequest, int timeout,
-      final ValueCallback<PublisherAdRequest> onDone) {
-    return new AddBidsParams(adServerAdView,
-        new DFPAdRequest(getPublisherAdRequest(adRequest)),
-        timeout, adServerAdRequest -> {
+  private fun generateAddBidsParams(
+    adServerAdView: AdServerAdView,
+    adRequest: PublisherAdRequest,
+    timeout: Int,
+    onDone: ValueCallback<PublisherAdRequest>
+  ): AddBidsParams {
+    return AddBidsParams(adServerAdView,
+        DFPAdRequest(getPublisherAdRequest(adRequest)),
+        timeout, ValueCallback { adServerAdRequest: AdServerAdRequest? ->
       if (adServerAdRequest == null) {
-        sLogger.debug("value null");
-        onDone.onReceiveValue(adRequest);
-        return;
+        sLogger.debug("value null")
+        onDone.onReceiveValue(adRequest)
+        return@ValueCallback
       }
-      sLogger.debug("value is valid");
-      onDone.onReceiveValue(((DFPAdRequest) adServerAdRequest).getDFPRequest());
-    });
+      sLogger.debug("value is valid")
+      onDone.onReceiveValue((adServerAdRequest as DFPAdRequest).dfpRequest)
+    })
   }
 
-  private void onBidManagerReadyCallback(final AddBidsParams addBidsParams) {
-    getAuctionManager().addBids(addBidsParams.getAdView(), addBidsParams.getRequest(),
-        addBidsParams.getTimeout(), addBidsParams.getCallback());
+  private fun onBidManagerReadyCallback(addBidsParams: AddBidsParams) {
+    auctionManager.addBids(
+        addBidsParams.adView, addBidsParams.request,
+        addBidsParams.timeout, addBidsParams.callback
+    )
   }
 
-  private PublisherAdRequest getPublisherAdRequest(PublisherAdRequest adRequest) {
-    return (adRequest == null) ? new PublisherAdRequest.Builder().build() : adRequest;
+  private fun getPublisherAdRequest(adRequest: PublisherAdRequest?): PublisherAdRequest {
+    return adRequest ?: PublisherAdRequest.Builder().build()
+  }
+
+  companion object {
+    private val sLogger = Logger("SdkManager")
+    private val LOCK = Any()
+    private var sInstance: SdkManager? = null
+    @JvmStatic fun initialize(
+      context: Context,
+      appMonetConfiguration: AppMonetConfiguration
+    ) {
+      try {
+        synchronized(LOCK) {
+          if (sInstance != null) {
+            sLogger.warn("Sdk has already been initialized. No need to initialize it again.")
+            return
+          }
+          sInstance = SdkManager(context.applicationContext, appMonetConfiguration.applicationId)
+          (sInstance!!.adServerWrapper as DFPAdServerWrapper).setSdkManager(sInstance)
+        }
+      } catch (e: Exception) {
+        if (initRetry < 3) {
+          sLogger.error(
+              "error initializing ... retrying $e"
+          )
+          initRetry += 1
+          initialize(context, appMonetConfiguration)
+        }
+      }
+    }
+
+    @JvmStatic fun get(): SdkManager? {
+      synchronized(LOCK) {
+        if (sInstance == null) {
+          sLogger.error(MISSING_INIT_ERROR_MESSAGE)
+        }
+        return sInstance
+      }
+    }
   }
 }

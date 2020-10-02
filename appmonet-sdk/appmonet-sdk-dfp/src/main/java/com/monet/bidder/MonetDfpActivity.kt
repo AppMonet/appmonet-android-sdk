@@ -1,132 +1,132 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Bundle;
+import android.content.ActivityNotFoundException
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup.LayoutParams
+import android.widget.RelativeLayout
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
+import com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_BROADCAST
+import com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_CLOSE
+import org.json.JSONException
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.RelativeLayout;
-
-import org.json.JSONException;
-
-import static com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE;
-import static com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_BROADCAST;
-import static com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_CLOSE;
-
-public class MonetDfpActivity extends TrustedInterstitialActivity {
-  private static final MonetLogger logger = new MonetLogger("MonetDfpActivity");
-  private static final String BID_ID = "bidId";
-  private static final String APPMONET_BROADCAST = "appmonet-broadcast";
-  private static final String INTERNAL_ERROR = "internal_error";
-  private SdkManager sdkManager;
-
-  private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      String message = intent.getStringExtra(APPMONET_BROADCAST_MESSAGE);
-      if (INTERSTITIAL_ACTIVITY_CLOSE.equals(message)) {
-        finish();
+class MonetDfpActivity : TrustedInterstitialActivity() {
+  private var sdkManager: SdkManager? = null
+  private val messageReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+    override fun onReceive(
+      context: Context,
+      intent: Intent
+    ) {
+      val message = intent.getStringExtra(APPMONET_BROADCAST_MESSAGE)
+      if (INTERSTITIAL_ACTIVITY_CLOSE == message) {
+        finish()
       }
     }
-  };
-
-  public static void start(@NonNull Context context, @NonNull SdkManager sdkManager,
-      @Nullable String uuid, @Nullable String url) {
-    Intent intent = new Intent(context, MonetDfpActivity.class);
-    intent.putExtra(UUID, uuid);
-    intent.putExtra(URL, url);
-    startActivity(context, sdkManager, intent);
   }
 
-  private static void startActivity(@NonNull Context context, @NonNull SdkManager sdkManager,
-      @NonNull Intent intent) {
-    try {
-      context.startActivity(intent);
-    } catch (ActivityNotFoundException e) {
-      sdkManager.getAuctionManager().trackEvent("integration_error",
-          "missing_interstitial_activity", "onStart", 0f, 0L);
-      logger.error("Unable to create activity. Not defined in AndroidManifest.xml.");
-    }
-  }
-
-  @Override
-  protected void onCreate(@Nullable Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    //noinspection
-    sdkManager = SdkManager.get();
-
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    sdkManager = SdkManager.get()
     if (sdkManager == null) {
       LocalBroadcastManager.getInstance(this)
-          .sendBroadcast(getBroadcastIntent(INTERNAL_ERROR));
-      return;
+          .sendBroadcast(getBroadcastIntent(INTERNAL_ERROR))
+      return
     }
-
     try {
-      LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver,
-          new IntentFilter(INTERSTITIAL_ACTIVITY_BROADCAST));
+      LocalBroadcastManager.getInstance(this).registerReceiver(
+          messageReceiver,
+          IntentFilter(INTERSTITIAL_ACTIVITY_BROADCAST)
+      )
       if (uuid != null) {
-        View view;
-        if (getIntent().getStringExtra(BID_ID) == null) {
-          view = createSingleAdView();
+        val view = if (intent.getStringExtra(BID_ID) == null) {
+          createSingleAdView()
         } else {
-          view = createInteractiveView();
+          createInteractiveView()
         }
-
         if (view == null) {
           LocalBroadcastManager.getInstance(this)
-              .sendBroadcast(getBroadcastIntent(INTERNAL_ERROR));
-          return;
+              .sendBroadcast(getBroadcastIntent(INTERNAL_ERROR))
+          return
         }
-
-        setContentView(view, new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT));
+        setContentView(
+            view, RelativeLayout.LayoutParams(
+            LayoutParams.MATCH_PARENT,
+            LayoutParams.MATCH_PARENT
+        )
+        )
       }
-    } catch (Exception e) {
+    } catch (e: Exception) {
       LocalBroadcastManager.getInstance(this)
-          .sendBroadcast(getBroadcastIntent(INTERNAL_ERROR));
+          .sendBroadcast(getBroadcastIntent(INTERNAL_ERROR))
     }
   }
 
-  @Override
-  public void onBackPressed() {
+  override fun onBackPressed() {
     // do nothing
   }
 
-  @Override
-  protected void onDestroy() {
-    super.onDestroy();
-    LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver);
+  override fun onDestroy() {
+    super.onDestroy()
+    LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver)
   }
 
-  @Nullable
-  private View createInteractiveView() {
-    try {
-      return new InterstitialView(this, sdkManager, getIntent().getStringExtra(UUID));
-    } catch (JSONException e) {
-      return null;
+  private fun createInteractiveView(): View? {
+    return try {
+      InterstitialView(this, sdkManager, intent.getStringExtra(UUID))
+    } catch (e: JSONException) {
+      null
     }
   }
 
-  @Nullable
-  private View createSingleAdView() {
-    try {
-      return new InterstitialView(this, sdkManager, getIntent().getStringExtra(UUID));
-    } catch (JSONException e) {
-      return null;
+  private fun createSingleAdView(): View? {
+    return try {
+      InterstitialView(this, sdkManager, intent.getStringExtra(UUID))
+    } catch (e: JSONException) {
+      null
     }
   }
 
-  private static Intent getBroadcastIntent(@NonNull String message) {
-    return new Intent(APPMONET_BROADCAST)
-        .putExtra("message", message);
+  companion object {
+    private val logger = MonetLogger("MonetDfpActivity")
+    private const val BID_ID = "bidId"
+    private const val APPMONET_BROADCAST = "appmonet-broadcast"
+    private const val INTERNAL_ERROR = "internal_error"
+    internal fun start(
+      context: Context,
+      sdkManager: SdkManager,
+      uuid: String?,
+      url: String?
+    ) {
+      val intent = Intent(context, MonetDfpActivity::class.java)
+      intent.putExtra(UUID, uuid)
+      intent.putExtra(URL, url)
+      startActivity(context, sdkManager, intent)
+    }
+
+    private fun startActivity(
+      context: Context,
+      sdkManager: SdkManager,
+      intent: Intent
+    ) {
+      try {
+        context.startActivity(intent)
+      } catch (e: ActivityNotFoundException) {
+        sdkManager.auctionManager.trackEvent(
+            "integration_error",
+            "missing_interstitial_activity", "onStart", 0f, 0L
+        )
+        logger.error("Unable to create activity. Not defined in AndroidManifest.xml.")
+      }
+    }
+
+    private fun getBroadcastIntent(message: String): Intent {
+      return Intent(APPMONET_BROADCAST)
+          .putExtra("message", message)
+    }
   }
 }

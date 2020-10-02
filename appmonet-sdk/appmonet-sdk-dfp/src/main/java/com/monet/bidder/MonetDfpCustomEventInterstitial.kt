@@ -1,170 +1,171 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Bundle;
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Bundle
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.mediation.MediationAdRequest
+import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitial
+import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitialListener
+import com.monet.bidder.AdType.INTERSTITIAL
+import com.monet.bidder.Constants.APPMONET_BROADCAST
+import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
+import com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_BROADCAST
+import com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_CLOSE
+import com.monet.bidder.Constants.INTERSTITIAL_HEIGHT
+import com.monet.bidder.Constants.INTERSTITIAL_WIDTH
+import com.monet.bidder.Constants.Interstitial.AD_CONTENT_INTERSTITIAL
+import com.monet.bidder.Constants.Interstitial.AD_UUID_INTERSTITIAL
+import com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL
+import com.monet.bidder.bid.BidRenderer
+import com.monet.bidder.bid.BidResponse
+import com.monet.bidder.bid.BidResponse.Mapper.from
 
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
-import com.monet.bidder.bid.BidRenderer;
-import com.monet.bidder.bid.BidResponse;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.mediation.MediationAdRequest;
-import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitial;
-import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitialListener;
-
-import static com.monet.bidder.Constants.APPMONET_BROADCAST;
-import static com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE;
-import static com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_BROADCAST;
-import static com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_CLOSE;
-import static com.monet.bidder.Constants.INTERSTITIAL_HEIGHT;
-import static com.monet.bidder.Constants.INTERSTITIAL_WIDTH;
-import static com.monet.bidder.Constants.Interstitial.AD_CONTENT_INTERSTITIAL;
-import static com.monet.bidder.Constants.Interstitial.AD_UUID_INTERSTITIAL;
-import static com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL;
-
-public class MonetDfpCustomEventInterstitial implements CustomEventInterstitial {
-  private static final MonetLogger logger = new MonetLogger("MonetDfpCustomEventInterstitial");
-
-  private CustomEventInterstitialListener customEventInterstitialListener;
-  private AppMonetViewLayout mAdView;
-  private Context mContext;
-  private BidResponse bidResponse;
-  private SdkManager sdkManager;
-  private MonetDfpInterstitialListener mAdServerListener = null;
-
-  private void onActivityClosed(Context context) {
-    Intent i = new Intent(INTERSTITIAL_ACTIVITY_BROADCAST);
-    i.putExtra("message", INTERSTITIAL_ACTIVITY_CLOSE);
-    LocalBroadcastManager.getInstance(context).sendBroadcast(i);
-    onDestroy();
+open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
+  private var customEventInterstitialListener: CustomEventInterstitialListener? = null
+  private var mAdView: AppMonetViewLayout? = null
+  private var mContext: Context? = null
+  private var bidResponse: BidResponse? = null
+  private var sdkManager: SdkManager? = null
+  private var mAdServerListener: MonetDfpInterstitialListener? = null
+  private fun onActivityClosed(context: Context) {
+    val i = Intent(INTERSTITIAL_ACTIVITY_BROADCAST)
+    i.putExtra("message", INTERSTITIAL_ACTIVITY_CLOSE)
+    LocalBroadcastManager.getInstance(context).sendBroadcast(i)
+    onDestroy()
   }
 
-  private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      String message = intent.getStringExtra(APPMONET_BROADCAST_MESSAGE);
-      switch (message) {
-        case "interstitial_dismissed":
-          customEventInterstitialListener.onAdClosed();
-          onActivityClosed(context);
-          break;
-        default:
-          customEventInterstitialListener.onAdFailedToLoad(AdRequest.ERROR_CODE_INTERNAL_ERROR);
-          onActivityClosed(context);
-          break;
+  private val mMessageReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+    override fun onReceive(
+      context: Context,
+      intent: Intent
+    ) {
+      val message = intent.getStringExtra(APPMONET_BROADCAST_MESSAGE)
+      when (message) {
+        "interstitial_dismissed" -> {
+          customEventInterstitialListener?.onAdClosed()
+          onActivityClosed(context)
+        }
+        else -> {
+          customEventInterstitialListener?.onAdFailedToLoad(AdRequest.ERROR_CODE_INTERNAL_ERROR)
+          onActivityClosed(context)
+        }
       }
-      logger.debug("receiver", "Got message: " + message);
+      logger.debug("receiver", "Got message: $message")
     }
-  };
+  }
 
-  public void requestInterstitialAd(final Context context, CustomEventInterstitialListener listener,
-      String serverParameter, MediationAdRequest mediationAdRequest,
-      Bundle customEventExtras) {
-    this.customEventInterstitialListener = listener;
-    AdSize adSize = new AdSize(INTERSTITIAL_WIDTH, INTERSTITIAL_HEIGHT);
-    String adUnitId = DfpRequestHelper.getAdUnitID(customEventExtras, serverParameter, adSize);
-    sdkManager = SdkManager.get();
-    mContext = context;
-
+  override fun requestInterstitialAd(
+    context: Context,
+    listener: CustomEventInterstitialListener,
+    serverParameter: String,
+    mediationAdRequest: MediationAdRequest,
+    customEventExtras: Bundle
+  ) {
+    customEventInterstitialListener = listener
+    val adSize = AdSize(INTERSTITIAL_WIDTH, INTERSTITIAL_HEIGHT)
+    val adUnitId = DfpRequestHelper.getAdUnitID(customEventExtras, serverParameter, adSize)
+    sdkManager = SdkManager.get()
+    mContext = context
     if (sdkManager == null) {
-      logger.warn("AppMonet SDK Has not been initialized. Unable to serve ads.");
-      customEventInterstitialListener.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL);
-      return;
+      logger.warn("AppMonet SDK Has not been initialized. Unable to serve ads.")
+      customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
+      return
     }
-
     if (adUnitId == null || adUnitId.isEmpty()) {
-      logger.debug("no adUnit/tagId: floor line item configured incorrectly");
-      customEventInterstitialListener.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL);
-      return;
+      logger.debug("no adUnit/tagId: floor line item configured incorrectly")
+      customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
+      return
     }
-    sdkManager.getAuctionManager()
-        .trackRequest(adUnitId, WebViewUtils.generateTrackingSource(AdType.INTERSTITIAL));
-
-    BidResponse bid = null;
-    if (serverParameter != null && !serverParameter.equals(adUnitId)) {
-      bid = BidResponse.Mapper.from(customEventExtras);
+    sdkManager!!.auctionManager
+        .trackRequest(adUnitId, WebViewUtils.generateTrackingSource(INTERSTITIAL))
+    var bid: BidResponse? = null
+    if (serverParameter != null && serverParameter != adUnitId) {
+      bid = from(customEventExtras)
     }
-
-    if (bid != null && sdkManager.getAuctionManager().getBidManager().isValid(bid)) {
-      logger.debug("bid from bundle is valid. Attaching!");
-      setupBid(context, bid);
-      return;
+    if (bid != null && sdkManager!!.auctionManager.bidManager.isValid(
+            bid
+        ) && customEventInterstitialListener != null
+    ) {
+      logger.debug("bid from bundle is valid. Attaching!")
+      setupBid(context, bid, customEventInterstitialListener!!)
+      return
     }
-
-    double floorCpm = DfpRequestHelper.getCpm(serverParameter);
-    if (bid == null || bid.getId().isEmpty()) {
-      bid = sdkManager.getAuctionManager()
-          .getMediationManager()
-          .getBidForMediation(adUnitId, floorCpm);
+    val floorCpm = DfpRequestHelper.getCpm(serverParameter)
+    if (bid == null || bid.id.isEmpty()) {
+      bid = sdkManager!!.auctionManager
+          .mediationManager
+          .getBidForMediation(adUnitId, floorCpm)
     }
-    MediationManager mediationManager = sdkManager.getAuctionManager().getMediationManager();
+    val mediationManager = sdkManager!!.auctionManager.mediationManager
+    mediationManager.getBidReadyForMediationAsync(bid, adUnitId, adSize, INTERSTITIAL,
+        floorCpm, object : Callback<BidResponse> {
+      override fun onSuccess(response: BidResponse) {
+        setupBid(context, response, customEventInterstitialListener!!)
+      }
 
-    mediationManager.getBidReadyForMediationAsync(bid, adUnitId, adSize, AdType.INTERSTITIAL,
-        floorCpm, new Callback<BidResponse>() {
-          @Override
-          public void onSuccess(BidResponse response) {
-            setupBid(context, response);
-          }
-
-          @Override
-          public void onError() {
-            customEventInterstitialListener.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL);
-          }
-        });
+      override fun onError() {
+        customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
+      }
+    })
   }
 
-  private void setupBid(Context context, BidResponse bid) {
+  private fun setupBid(
+    context: Context,
+    bid: BidResponse,
+    customEventInterstitial: CustomEventInterstitialListener
+  ) {
     try {
-      LocalBroadcastManager.getInstance(context).registerReceiver(mMessageReceiver,
-          new IntentFilter(APPMONET_BROADCAST));
-      bidResponse = bid;
-      mAdServerListener =
-          new MonetDfpInterstitialListener(customEventInterstitialListener, context);
-      if (bidResponse.getInterstitial() != null && bidResponse.getInterstitial().getTrusted()) {
-        mAdServerListener.onAdLoaded(null);
-        return;
+      LocalBroadcastManager.getInstance(context).registerReceiver(
+          mMessageReceiver,
+          IntentFilter(APPMONET_BROADCAST)
+      )
+      bidResponse = bid
+      mAdServerListener = MonetDfpInterstitialListener(customEventInterstitial, context)
+      if (bidResponse!!.interstitial != null && bidResponse!!.interstitial!!.trusted) {
+        mAdServerListener?.onAdLoaded(null)
+        return
       }
-      mAdView = BidRenderer.renderBid(mContext, sdkManager, bidResponse, null, mAdServerListener);
+      mAdView =
+        BidRenderer.renderBid(mContext!!, sdkManager!!, bidResponse!!, null, mAdServerListener!!)
       if (mAdView == null) {
-        logger.error("unexpected: could not generate the adView");
-        customEventInterstitialListener.onAdFailedToLoad(AdRequest.ERROR_CODE_INTERNAL_ERROR);
+        logger.error("unexpected: could not generate the adView")
+        customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_INTERNAL_ERROR)
       }
-    } catch (Exception e) {
-      logger.error("failed to render bid: " + e.getLocalizedMessage());
-      customEventInterstitialListener.onAdFailedToLoad(AdRequest.ERROR_CODE_INTERNAL_ERROR);
+    } catch (e: Exception) {
+      logger.error("failed to render bid: " + e.localizedMessage)
+      customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_INTERNAL_ERROR)
     }
   }
 
   /**
    * This methods is called when an interstitial is requested to be displayed.
    */
-  public void showInterstitial() {
-    sdkManager.getPreferences().setPreference(AD_CONTENT_INTERSTITIAL, bidResponse.getAdm());
-    sdkManager.getPreferences().setPreference(BID_ID_INTERSTITIAL, bidResponse.getId());
-    String uuid = (mAdView != null) ? mAdView.getAdViewUUID() : null;
-    sdkManager.getPreferences().setPreference(AD_UUID_INTERSTITIAL, uuid);
-    MonetDfpActivity.start(mContext, sdkManager, uuid, bidResponse.getAdm());
+  override fun showInterstitial() {
+    sdkManager!!.preferences.setPreference(AD_CONTENT_INTERSTITIAL, bidResponse!!.adm)
+    sdkManager!!.preferences.setPreference(BID_ID_INTERSTITIAL, bidResponse!!.id)
+    val uuid = if (mAdView != null) mAdView!!.adViewUUID else null
+    sdkManager!!.preferences.setPreference(AD_UUID_INTERSTITIAL, uuid)
+    MonetDfpActivity.start(mContext!!, sdkManager!!, uuid, bidResponse!!.adm)
   }
 
-  public void onDestroy() {
+  override fun onDestroy() {
     if (mAdView != null) {
-      mAdView.destroyAdView(true);
+      mAdView!!.destroyAdView(true)
     }
-    if (mContext == null) {
-      return;
+    mContext?.let{
+      LocalBroadcastManager.getInstance(it).unregisterReceiver(mMessageReceiver)
     }
-
-    LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mMessageReceiver);
-  }
-
-  public void onPause() {
 
   }
 
-  public void onResume() {
+  override fun onPause() {}
+  override fun onResume() {}
 
+  companion object {
+    private val logger = MonetLogger("MonetDfpCustomEventInterstitial")
   }
 }
