@@ -12,9 +12,9 @@
     <a href="https://docs.appmonet.com/docs/get-started-with-appmonet"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Report Bug</a>
+    <a href="https://github.com/AppMonet/appmonet-android-sdk/issues">Report Bug</a>
     ·
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Request Feature</a>
+    <a href="https://github.com/AppMonet/appmonet-android-sdk/issues">Request Feature</a>
   </p>
 </p>
 
