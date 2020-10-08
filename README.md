@@ -49,7 +49,7 @@ To get a local copy up and running follow these simple example steps.
 
 1. Clone the repo
 ```sh
-git clone https://github.com/AppMonet/android-sdk.git
+git clone https://github.com/AppMonet/appmonet-android-sdk.git
 ```
 2. Gradle Sync
 3. Choose a flavor
