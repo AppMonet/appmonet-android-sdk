@@ -1,4 +1,7 @@
 <resources>
   <string name="app_name">AppMonet MoPub Sample App</string>
   <string name="app_title">MoPub Sample App</string>
+  <string name="title_activity_native_sample">Native Sample Ad</string>
+  <!-- Strings used for fragments for navigation -->
+  <string name="advertisement_featured_sponsored">Sponsored Ad</string>
 </resources>

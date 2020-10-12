@@ -13,7 +13,7 @@ data class AuctionRequest internal constructor(
   val admobExtras: Bundle = Bundle(),
   var requestData: RequestData? = null,
   var bid: BidResponse? = null,
-  var adUnitId: String? = null
+  var adUnitId: String = ""
 ) {
   internal companion object {
     fun from(

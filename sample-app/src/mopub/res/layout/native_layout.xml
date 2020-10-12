@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/native_ad_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/white">
+
+  <View
+      android:id="@+id/native_ad_bottom_separator"
+      android:layout_width="match_parent"
+      android:layout_height="1dp"
+      android:layout_gravity="bottom"
+      android:background="#ddd"
+      android:visibility="gone" />
+
+  <LinearLayout
+      android:id="@+id/native_ad_container"
+      android:layout_width="match_parent"
+      android:layout_height="150dp"
+      android:baselineAligned="false"
+      android:orientation="horizontal">
+
+    <FrameLayout
+        android:layout_width="195dp"
+        android:layout_height="match_parent">
+
+      <ImageView
+          android:id="@+id/native_ad_image"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:layout_marginRight="1dp"
+          android:scaleType="fitXY"
+          android:visibility="gone"
+          tools:background="#f00" />
+
+      <!--<com.mopub.nativeads.MediaLayout-->
+      <!--android:id="@+id/native_ad_video"-->
+      <!--android:layout_width="match_parent"-->
+      <!--android:layout_height="match_parent"-->
+      <!--android:layout_marginRight="1dp"-->
+      <!--android:visibility="gone"-->
+      <!--tools:background="#0f0" />-->
+
+      <com.mopub.nativeads.MediaLayout
+          android:id="@+id/native_ad_video"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:layout_marginRight="1dp"
+          android:orientation="horizontal"
+          android:visibility="visible"
+          tools:background="#0f0" />
+
+      <TextView
+          android:id="@+id/native_ad_sponsored"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="bottom"
+          android:layout_marginEnd="25dp"
+          android:layout_marginRight="25dp"
+          android:lines="1"
+          android:maxLines="1"
+          android:text="@string/advertisement_featured_sponsored"
+          android:textColor="#434343"
+          android:textSize="14sp" />
+
+      <TextView
+          android:id="@+id/native_ad_provider"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="top|right"
+
+          android:textColor="@android:color/black"
+          android:textSize="10dp"
+          android:visibility="gone"
+          tools:text="MoPubStaticNativeAd"
+          tools:visibility="visible" />
+
+      <View
+          android:layout_width="1dp"
+          android:layout_height="match_parent"
+          android:layout_gravity="right"
+          android:background="#ddd" />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+      <LinearLayout
+          android:layout_width="match_parent"
+          android:orientation="horizontal"
+          android:layout_height="wrap_content">
+
+        <ImageView
+            android:layout_width="30dp"
+            android:id="@+id/native_icon_image"
+            tools:src="@color/colorPrimaryDark"
+            android:src="@null"
+            android:layout_marginRight="5dp"
+            android:layout_gravity="center_vertical"
+            android:layout_height="30dp" />
+
+        <TextView
+            android:id="@+id/native_ad_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:lineSpacingExtra="0dp"
+            android:maxLines="2"
+            android:textColor="#434343"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:ignore="RtlSymmetry"
+            tools:text="Get Money with AppMonet" />
+
+      </LinearLayout>
+
+      <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:gravity="bottom"
+          android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/native_ad_action_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="14dp"
+            android:padding="6dp"
+            android:text="more"
+            android:textSize="13sp"
+            android:textStyle="normal" />
+
+        <androidx.legacy.widget.Space
+            android:layout_width="0dp"
+            android:layout_height="0px"
+            android:layout_weight="1" />
+
+        <FrameLayout
+            android:id="@+id/native_ad_choice_icon_container"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="-10.5dp"
+            android:layout_marginRight="-10.5dp"
+            android:padding="10.5dp">
+
+          <ImageView
+              android:id="@+id/native_ad_daa_icon_image"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              tools:background="#0f0" />
+        </FrameLayout>
+
+      </LinearLayout>
+
+    </LinearLayout>
+
+  </LinearLayout>
+
+</FrameLayout>

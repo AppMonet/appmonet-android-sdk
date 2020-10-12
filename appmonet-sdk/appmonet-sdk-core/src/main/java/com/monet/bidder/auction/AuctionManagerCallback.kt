@@ -8,7 +8,7 @@ import com.monet.bidder.bid.BidResponse
 /**
  * Interface to be implemented for controlling and retrieving aspects of an auction.
  */
-internal interface AuctionManagerCallback {
+interface AuctionManagerCallback {
 
   /**
    * Retrieves an instance of [MediationManager].
@@ -29,7 +29,7 @@ internal interface AuctionManagerCallback {
    */
   fun cancelRequest(
     adUnitId: String?,
-    adRequest: AdServerAdRequest?,
+    adRequest: AdServerAdRequest,
     bid: BidResponse?
   )
 

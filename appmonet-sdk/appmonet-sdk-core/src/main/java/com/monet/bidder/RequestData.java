@@ -100,13 +100,11 @@ public class RequestData {
   private Map<String, String> buildAdditional(AdServerAdRequest adRequest) {
     Map<String, String> output = new HashMap<>();
     Bundle bundle = adRequest.getCustomTargeting();
-    if (bundle != null) {
-      for (String key : bundle.keySet()) {
-        Object value = bundle.get(key);
-        String serialized = serializeBundleObject(value);
-        if (serialized != null) {
-          output.put(key, serialized);
-        }
+    for (String key : bundle.keySet()) {
+      Object value = bundle.get(key);
+      String serialized = serializeBundleObject(value);
+      if (serialized != null) {
+        output.put(key, serialized);
       }
     }
     return output;

@@ -11,26 +11,26 @@ internal object CustomEventUtil {
   private const val SERVER_EXTRA_ADUNIT_KEY = "adunitId"
   private const val SERVER_EXTRA_CPM_KEY = "cpm"
 
-  @JvmStatic fun getAdUnitId(
-    serverExtras: Map<String, String?>,
-    localExtras: Map<String?, Any?>,
-    adSize: AdSize?
+  fun getAdUnitId(
+    serverExtras: Map<String, String>,
+    localExtras: Map<String, Any>,
+    adSize: AdSize
   ): String? {
     return if (localExtras[ADUNIT_KEYWORD_KEY] != null) {
-      localExtras[ADUNIT_KEYWORD_KEY] as String?
+      localExtras[ADUNIT_KEYWORD_KEY] as String
     } else getAdUnitIdFromExtras(serverExtras, adSize)
   }
 
-  @JvmStatic fun getAdUnitId(
+  fun getAdUnitId(
     serverExtras: Map<String, String?>,
-    adSize: AdSize?
+    adSize: AdSize
   ): String? {
     return if (serverExtras[ADUNIT_KEYWORD_KEY] != null) {
       serverExtras[ADUNIT_KEYWORD_KEY]
     } else getAdUnitIdFromExtras(serverExtras, adSize)
   }
 
-  @JvmStatic fun getServerExtraCpm(
+  fun getServerExtraCpm(
     serverExtras: Map<String, String?>,
     defaultValue: Double
   ): Double {

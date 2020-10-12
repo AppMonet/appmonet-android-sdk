@@ -2,6 +2,7 @@
   <string name="load_mrect">Load</string>
   <string name="load_interstitial">Load</string>
   <string name="navigate_to_native_screen">Navigate To Native Screen</string>
+  <string name="load_native_ad">Load Native Ad</string>
   <string name="show_interstitial">Show</string>
   <string name="interstitial_header">Interstitial</string>
   <string name="native_header">Native</string>

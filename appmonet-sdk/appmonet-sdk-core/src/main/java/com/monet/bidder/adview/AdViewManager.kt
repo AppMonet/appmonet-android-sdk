@@ -884,7 +884,7 @@ class AdViewManager : AdViewManagerCallback {
     parentGroup?.removeView(containerView)
   }
 
-  fun resize(adSize: AdSize?) {
+  fun resize(adSize: AdSize) {
     val layout: FrameLayout.LayoutParams =
       RenderingUtils.getCenterLayoutParams(adView.context, adSize)
     adView.layoutParams = layout
@@ -1002,7 +1002,7 @@ class AdViewManager : AdViewManagerCallback {
     }
     var bidToBeTracked = bid
     if (!match.isForBid(bidToBeTracked)) {
-      bidToBeTracked = auctionManagerCallback.getBidById(match.bidId)
+      bidToBeTracked = auctionManagerCallback.getBidById(match.bidId ?: "")
     }
     if (bidToBeTracked == null) {
       sLogger.warn("failed to find bid to be logged. Skipping event.")

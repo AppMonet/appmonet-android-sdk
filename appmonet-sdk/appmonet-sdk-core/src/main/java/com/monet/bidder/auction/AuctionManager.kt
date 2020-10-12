@@ -87,8 +87,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     this.addBidsManager = AddBidsManager(auctionManagerReadyCallbacks)
     this.appMonetContext = appMonetContext
     appMonetBidder = AppMonetBidder(
-        context, baseManager, bidManager,
-        adServerWrapper, this, backgroundThread
+        context, bidManager, adServerWrapper, this, backgroundThread
     )
     setPreferencesListener(preferences)
     val runnable: Runnable = object : InternalRunnable() {
@@ -153,7 +152,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
 
   override fun cancelRequest(
     adUnitId: String?,
-    adRequest: AdServerAdRequest?,
+    adRequest: AdServerAdRequest,
     bid: BidResponse?
   ) {
     appMonetBidder.cancelRequest(adUnitId, adRequest, bid)
@@ -415,12 +414,15 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     }
   }
 
-  fun registerFloatingAd(adConfiguration: AppMonetFloatingAdConfiguration) {
+  fun registerFloatingAd(
+    adUnitId: String,
+    jsonString: String
+  ) {
     auctionManagerReadyCallbacks.onReady { webView ->
       try {
         webView.executeJs(
-            REGISTER_FLOATING_AD, quote(adConfiguration.adUnitId),
-            adConfiguration.toJson().toString()
+            REGISTER_FLOATING_AD, quote(adUnitId),
+            jsonString
         )
       } catch (e: JSONException) {
         sLogger.error("error registering floating ad with auction manager")

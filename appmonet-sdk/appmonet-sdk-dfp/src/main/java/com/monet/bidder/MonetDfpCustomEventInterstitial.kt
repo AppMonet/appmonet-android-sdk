@@ -61,9 +61,9 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
   override fun requestInterstitialAd(
     context: Context,
     listener: CustomEventInterstitialListener,
-    serverParameter: String,
+    serverParameter: String?,
     mediationAdRequest: MediationAdRequest,
-    customEventExtras: Bundle
+    customEventExtras: Bundle?
   ) {
     customEventInterstitialListener = listener
     val adSize = AdSize(INTERSTITIAL_WIDTH, INTERSTITIAL_HEIGHT)
@@ -72,23 +72,23 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
     mContext = context
     if (sdkManager == null) {
       logger.warn("AppMonet SDK Has not been initialized. Unable to serve ads.")
-      customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
+      customEventInterstitialListener?.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
       return
     }
     if (adUnitId == null || adUnitId.isEmpty()) {
       logger.debug("no adUnit/tagId: floor line item configured incorrectly")
-      customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
+      customEventInterstitialListener?.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
       return
     }
-    sdkManager!!.auctionManager
-        .trackRequest(adUnitId, WebViewUtils.generateTrackingSource(INTERSTITIAL))
+    sdkManager?.auctionManager?.trackRequest(
+        adUnitId, WebViewUtils.generateTrackingSource(INTERSTITIAL)
+    )
     var bid: BidResponse? = null
     if (serverParameter != null && serverParameter != adUnitId) {
       bid = from(customEventExtras)
     }
-    if (bid != null && sdkManager!!.auctionManager.bidManager.isValid(
-            bid
-        ) && customEventInterstitialListener != null
+    if (bid != null && sdkManager?.auctionManager?.bidManager?.isValid(bid) == true
+        && customEventInterstitialListener != null
     ) {
       logger.debug("bid from bundle is valid. Attaching!")
       setupBid(context, bid, customEventInterstitialListener!!)
@@ -156,7 +156,7 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
     if (mAdView != null) {
       mAdView!!.destroyAdView(true)
     }
-    mContext?.let{
+    mContext?.let {
       LocalBroadcastManager.getInstance(it).unregisterReceiver(mMessageReceiver)
     }
 

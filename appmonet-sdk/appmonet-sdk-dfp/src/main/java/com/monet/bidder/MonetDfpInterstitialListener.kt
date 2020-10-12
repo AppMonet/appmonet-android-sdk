@@ -38,6 +38,6 @@ internal class MonetDfpInterstitialListener(
   }
 
   override fun onAdError(errorCode: ErrorCode) {}
-  override fun onAdRefreshed(view: View) {}
+  override fun onAdRefreshed(view: View?) {}
 
 }

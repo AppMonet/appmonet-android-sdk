@@ -76,10 +76,10 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
   override fun requestBannerAd(
     context: Context,
     customEventBannerListener: CustomEventBannerListener,
-    code: String,
+    code: String?,
     adSize: com.google.android.gms.ads.AdSize,
     mediationAdRequest: MediationAdRequest,
-    bundle: Bundle
+    bundle: Bundle?
   ) {
     sdkManager = SdkManager.get()
     if (sdkManager == null) {
@@ -99,10 +99,10 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
   @SuppressLint("DefaultLocale") private fun requestBannerAdInner(
     context: Context,
     listener: CustomEventBannerListener,
-    serverParameter: String,
+    serverParameter: String?,
     adSize: com.google.android.gms.ads.AdSize,
     mediationAdRequest: MediationAdRequest,
-    customEventExtras: Bundle
+    customEventExtras: Bundle?
   ) {
     val amAdSize = AdSize(adSize.width, adSize.height)
     val adUnitId = DfpRequestHelper.getAdUnitID(customEventExtras, serverParameter, amAdSize)
@@ -163,13 +163,12 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
 
   override fun onPause() {}
   override fun onResume() {}
-  override fun onAdRefreshed(view: View) {
-    mAdView = view as AppMonetViewLayout
+  override fun onAdRefreshed(view: View?) {
+    mAdView = view as AppMonetViewLayout?
   }
 
-  override fun getCurrentView(): AppMonetViewLayout {
-    return mAdView!!
-  }
+  override val currentView: AppMonetViewLayout?
+    get() = mAdView
 
   companion object {
     private val logger = MonetLogger("CustomEventBanner")

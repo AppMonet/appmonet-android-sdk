@@ -9,6 +9,7 @@ import com.google.android.gms.ads.doubleclick.PublisherAdRequest
 import com.google.android.gms.ads.mediation.MediationAdRequest
 import com.google.android.gms.ads.mediation.admob.AdMobExtras
 import com.monet.bidder.auction.AuctionRequest
+import com.monet.bidder.bid.BidResponse
 import java.util.Date
 
 internal class DFPAdViewRequest : AdServerAdRequest {
@@ -44,36 +45,34 @@ internal class DFPAdViewRequest : AdServerAdRequest {
       }
       return Bundle()
     }
-
-  override fun getCustomTargeting(): Bundle? {
-    // also get the admob extras and merge it here
-    val extras = adMobExtras
-
-    // create a bundle merging both
-    val merged = Bundle()
-    merged.putAll(extras)
-    return merged
-  }
-
-  public override fun getBirthday(): Date {
-    return dfpRequest.birthday
-  }
-
-  public override fun getGender(): String {
-    return when (dfpRequest.gender) {
-      PublisherAdRequest.GENDER_FEMALE -> "female"
-      PublisherAdRequest.GENDER_MALE -> "male"
-      else -> "unknown"
+  override val customTargeting: Bundle
+    get() {
+      val extras = adMobExtras
+      // create a bundle merging both
+      val merged = Bundle()
+      merged.putAll(extras)
+      return merged
     }
-  }
 
-  public override fun getLocation(): Location {
-    return dfpRequest.location
-  }
+  override val birthday: Date?
+    get() = dfpRequest.birthday
 
-  public override fun getContentUrl(): String {
-    return dfpRequest.contentUrl
-  }
+  override val gender: String?
+    get() {
+      return when (dfpRequest.gender) {
+        PublisherAdRequest.GENDER_FEMALE -> "female"
+        PublisherAdRequest.GENDER_MALE -> "male"
+        else -> "unknown"
+      }
+    }
+  override val bid: BidResponse?
+    get() = null
+
+  override val location: Location?
+    get() = dfpRequest.location
+
+  override val contentUrl: String?
+    get() = dfpRequest.contentUrl
 
   override fun apply(
     request: AuctionRequest,
@@ -101,9 +100,8 @@ internal class DFPAdViewRequest : AdServerAdRequest {
     return request
   }
 
-  public override fun getPublisherProvidedId(): String {
-    return ""
-  }
+  override val publisherProvidedId: String?
+    get() = null
 
   companion object {
     fun fromAuctionRequest(request: AuctionRequest): DFPAdViewRequest {
@@ -126,7 +124,9 @@ internal class DFPAdViewRequest : AdServerAdRequest {
         // do nothing
       }
       if (request.requestData != null) {
-        builder.setContentUrl(request.requestData!!.contentURL)
+        if(request.requestData?.contentURL!=null) {
+          builder.setContentUrl(request.requestData!!.contentURL)
+        }
         builder.setLocation(request.requestData!!.location)
       }
       val adRequest = builder.build()

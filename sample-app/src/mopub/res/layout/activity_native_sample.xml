@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.monet.app.NativeSampleActivity"
+    >
+
+  <ImageView
+      android:id="@+id/imageView"
+      android:layout_width="wrap_content"
+      android:layout_height="30dp"
+      android:layout_gravity="center"
+      android:layout_marginTop="16dp"
+      android:adjustViewBounds="true"
+      android:src="@mipmap/appmonet_logo_new"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="parent"
+      />
+
+  <LinearLayout
+      android:id="@+id/nativeAdContainer"
+      android:layout_width="match_parent"
+      android:layout_height="500dp"
+      android:orientation="horizontal"
+      android:padding="5dp"
+      app:layout_constraintBottom_toTopOf="@+id/loadNativeAd"
+      app:layout_constraintTop_toBottomOf="@+id/imageView"
+      />
+
+
+  <com.google.android.material.button.MaterialButton
+      android:id="@+id/loadNativeAd"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:layout_marginBottom="16dp"
+      android:text="@string/load_native_ad"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintHorizontal_bias="0.496"
+      app:layout_constraintStart_toStartOf="parent"
+      style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+      />
+</androidx.constraintlayout.widget.ConstraintLayout>
+

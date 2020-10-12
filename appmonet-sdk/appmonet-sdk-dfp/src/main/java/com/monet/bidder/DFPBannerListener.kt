@@ -55,7 +55,7 @@ internal class DFPBannerListener(
     )
   }
 
-  override fun onAdRefreshed(view: View) {
+  override fun onAdRefreshed(view: View?) {
     viewListener.onAdRefreshed(view)
   }
 
@@ -72,13 +72,13 @@ internal class DFPBannerListener(
    * @param view the view in which the ad was rendered. It will be added to the PublisherAdView
    * @return boolean indicating if the load was successful, or if another error was encountered.
    */
-  override fun onAdLoaded(view: View): Boolean {
+  override fun onAdLoaded(view: View?): Boolean {
     uiThread.run(object : InternalRunnable() {
       override fun runInternal() {
-        val viewLayout = view as AppMonetViewLayout
+        val viewLayout = view as AppMonetViewLayout?
         val currentView = viewListener.currentView
-        if (viewLayout.isAdRefreshed) {
-          currentView.swapViews(viewLayout, this@DFPBannerListener)
+        if (viewLayout?.isAdRefreshed == true) {
+          currentView?.swapViews(viewLayout, this@DFPBannerListener)
           return
         }
         sLogger.debug("DFP: Ad Loaded - Indicating to DFP")

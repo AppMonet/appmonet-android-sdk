@@ -10,7 +10,7 @@ class AppMonetApp : Application() {
     super.onCreate()
     //AppMonet initialization.
     val appMonetConfiguration = AppMonetConfiguration.Builder()
-        .applicationId("pjdfkud")
+        .applicationId("qw9tp1sy")
         .build()
     AppMonet.init(this, appMonetConfiguration)
 

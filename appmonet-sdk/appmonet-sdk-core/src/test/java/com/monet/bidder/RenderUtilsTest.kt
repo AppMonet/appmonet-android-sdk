@@ -45,7 +45,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val magicPosition = FloatingPosition("", position)
+        val magicPosition = com.monet.bidder.FloatingPosition("", position)
         val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(125, adViewPositioning.x)

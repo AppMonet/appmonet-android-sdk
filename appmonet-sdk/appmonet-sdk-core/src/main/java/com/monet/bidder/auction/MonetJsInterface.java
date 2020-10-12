@@ -121,11 +121,6 @@ public class MonetJsInterface {
   }
 
   @JavascriptInterface
-  public String getSdkVersion() {
-    return Constants.SDK_VERSION;
-  }
-
-  @JavascriptInterface
   public String getAvailableBidCount(String adUnitId) {
     int count = mBidManager.countBids(adUnitId);
     return Integer.toString(

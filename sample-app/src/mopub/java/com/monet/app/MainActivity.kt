@@ -1,17 +1,26 @@
 package com.monet.app
 
+import android.content.Intent
+import android.opengl.Visibility
+import android.os.Bundle
+import android.view.View
 import com.monet.bidder.AppMonet
 import com.mopub.mobileads.MoPubErrorCode
 import com.mopub.mobileads.MoPubInterstitial
 import com.mopub.mobileads.MoPubView
 import kotlinx.android.synthetic.main.activity_main.loadInterstitial
 import kotlinx.android.synthetic.main.activity_main.loadMrect
+import kotlinx.android.synthetic.main.activity_main.nativeContainer
 import kotlinx.android.synthetic.main.activity_main.navigateToNativeScreen
 import kotlinx.android.synthetic.main.activity_main.showInterstitial
 import kotlinx.android.synthetic.mopub.adview_layout.moPubView
 
 class MainActivity : BaseActivity() {
   private lateinit var interstitial: MoPubInterstitial
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    nativeContainer.visibility = View.VISIBLE
+  }
 
   override fun setupMrect() {
     moPubView.setAdUnitId("b03e6dccfe9e4abab02470a39c88d5dc")
@@ -99,7 +108,8 @@ class MainActivity : BaseActivity() {
 
   override fun setupNativeClickListener() {
     navigateToNativeScreen.setOnClickListener {
-
+      val intent = Intent(this@MainActivity, NativeSampleActivity::class.java)
+      startActivity(intent)
     }
   }
 }
