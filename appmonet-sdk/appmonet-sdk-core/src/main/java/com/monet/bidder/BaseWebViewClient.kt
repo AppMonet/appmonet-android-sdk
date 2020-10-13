@@ -13,11 +13,6 @@ import java.util.HashMap
 open class BaseWebViewClient : WebViewClient() {
   private var mDefaultHeaders: Map<String, String> = HashMap()
   val blankPixelResponse = buildResponse("", "text/plain")
-  fun setHeaders(headers: Map<String, String>?) {
-    if (headers != null) {
-      mDefaultHeaders = headers
-    }
-  }
 
   open fun shouldInterceptRequestInner(
     view: WebView,
