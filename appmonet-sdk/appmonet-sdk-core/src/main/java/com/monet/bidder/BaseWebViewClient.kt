@@ -11,7 +11,6 @@ import com.monet.bidder.WebViewUtils.buildResponse
 import java.util.HashMap
 
 open class BaseWebViewClient : WebViewClient() {
-  private var mDefaultHeaders: Map<String, String> = HashMap()
   val blankPixelResponse = buildResponse("", "text/plain")
 
   open fun shouldInterceptRequestInner(
