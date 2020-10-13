@@ -261,7 +261,9 @@ class AuctionManagerTest {
     val auctionManagerComponent = auctionManagerSetup()
     auctionManagerComponent.auctionManagerReadyCallbacks
         .executeReady(auctionManagerComponent.appMonetWebView)
-    auctionManagerComponent.auctionManager.registerFloatingAd(mockk(relaxed = true))
+    auctionManagerComponent.auctionManager.registerFloatingAd(
+        mockk(relaxed = true), mockk(relaxed = true)
+    )
     verify(exactly = 1) {
       auctionManagerComponent.appMonetWebView.executeJs(
           Constants.JSMethods.REGISTER_FLOATING_AD,

@@ -1,653 +1,206 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.annotation.SuppressLint;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.Flushable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.Proxy;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
-import java.security.AccessController;
-import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.zip.GZIPInputStream;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
-import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static java.net.HttpURLConnection.HTTP_CREATED;
-import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_NOT_MODIFIED;
-import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
-import static java.net.HttpURLConnection.HTTP_OK;
-import static java.net.Proxy.Type.HTTP;
+import android.annotation.SuppressLint
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.Closeable
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.Flushable
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.OutputStream
+import java.io.OutputStreamWriter
+import java.io.PrintStream
+import java.io.Reader
+import java.io.UnsupportedEncodingException
+import java.io.Writer
+import java.net.HttpURLConnection
+import java.net.InetSocketAddress
+import java.net.MalformedURLException
+import java.net.Proxy
+import java.net.Proxy.Type.HTTP
+import java.net.URI
+import java.net.URISyntaxException
+import java.net.URL
+import java.net.URLEncoder
+import java.nio.CharBuffer
+import java.nio.charset.Charset
+import java.nio.charset.CharsetEncoder
+import java.security.AccessController
+import java.security.GeneralSecurityException
+import java.security.KeyManagementException
+import java.security.NoSuchAlgorithmException
+import java.security.PrivilegedAction
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import java.util.ArrayList
+import java.util.Arrays
+import java.util.LinkedHashMap
+import java.util.concurrent.Callable
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
+import java.util.zip.GZIPInputStream
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import kotlin.collections.Map.Entry
 
 /**
  * A fluid interface for making HTTP requests using an underlying
- * {@link HttpURLConnection} (or sub-class).
- * <p>
+ * [HttpURLConnection] (or sub-class).
+ *
+ *
  * Each instance supports making a single request and cannot be reused for
  * further requests.
  */
-class HttpRequest {
-
+internal class HttpRequest {
   /**
-   * 'UTF-8' charset name
+   * Creates [HTTP connections][HttpURLConnection] for
+   * [urls][URL].
    */
-  static final String CHARSET_UTF8 = "UTF-8";
-
-  /**
-   * 'application/x-www-form-urlencoded' content type header value
-   */
-  static final String CONTENT_TYPE_FORM = "application/x-www-form-urlencoded";
-
-  /**
-   * 'application/json' content type header value
-   */
-  static final String CONTENT_TYPE_JSON = "application/json";
-
-  /**
-   * 'gzip' encoding header value
-   */
-  static final String ENCODING_GZIP = "gzip";
-
-  /**
-   * 'Accept' header name
-   */
-  static final String HEADER_ACCEPT = "Accept";
-
-  /**
-   * 'Accept-Charset' header name
-   */
-  static final String HEADER_ACCEPT_CHARSET = "Accept-Charset";
-
-  /**
-   * 'Accept-Encoding' header name
-   */
-  static final String HEADER_ACCEPT_ENCODING = "Accept-Encoding";
-
-  /**
-   * 'Authorization' header name
-   */
-  static final String HEADER_AUTHORIZATION = "Authorization";
-
-  /**
-   * 'Cache-Control' header name
-   */
-  static final String HEADER_CACHE_CONTROL = "Cache-Control";
-
-  /**
-   * 'Content-Encoding' header name
-   */
-  static final String HEADER_CONTENT_ENCODING = "Content-Encoding";
-
-  /**
-   * 'Content-Length' header name
-   */
-  static final String HEADER_CONTENT_LENGTH = "Content-Length";
-
-  /**
-   * 'Content-Type' header name
-   */
-  static final String HEADER_CONTENT_TYPE = "Content-Type";
-
-  /**
-   * 'Date' header name
-   */
-  static final String HEADER_DATE = "Date";
-
-  /**
-   * 'ETag' header name
-   */
-  static final String HEADER_ETAG = "ETag";
-
-  /**
-   * 'Expires' header name
-   */
-  static final String HEADER_EXPIRES = "Expires";
-
-  /**
-   * 'If-None-Match' header name
-   */
-  static final String HEADER_IF_NONE_MATCH = "If-None-Match";
-
-  /**
-   * 'Last-Modified' header name
-   */
-  static final String HEADER_LAST_MODIFIED = "Last-Modified";
-
-  /**
-   * 'Location' header name
-   */
-  static final String HEADER_LOCATION = "Location";
-
-  /**
-   * 'Proxy-Authorization' header name
-   */
-  static final String HEADER_PROXY_AUTHORIZATION = "Proxy-Authorization";
-
-  /**
-   * 'Referer' header name
-   */
-  static final String HEADER_REFERER = "Referer";
-
-  /**
-   * 'Server' header name
-   */
-  static final String HEADER_SERVER = "Server";
-
-  /**
-   * 'User-Agent' header name
-   */
-  static final String HEADER_USER_AGENT = "User-Agent";
-
-  /**
-   * 'DELETE' request method
-   */
-  static final String METHOD_DELETE = "DELETE";
-
-  /**
-   * 'GET' request method
-   */
-  static final String METHOD_GET = "GET";
-
-  /**
-   * 'HEAD' request method
-   */
-  static final String METHOD_HEAD = "HEAD";
-
-  /**
-   * 'OPTIONS' options method
-   */
-  static final String METHOD_OPTIONS = "OPTIONS";
-
-  /**
-   * 'POST' request method
-   */
-  static final String METHOD_POST = "POST";
-
-  /**
-   * 'PUT' request method
-   */
-  static final String METHOD_PUT = "PUT";
-
-  /**
-   * 'TRACE' request method
-   */
-  static final String METHOD_TRACE = "TRACE";
-
-  /**
-   * 'charset' header value parameter
-   */
-  static final String PARAM_CHARSET = "charset";
-
-  private static final String BOUNDARY = "00content0boundary00";
-
-  private static final String CONTENT_TYPE_MULTIPART = "multipart/form-data; boundary="
-      + BOUNDARY;
-
-  private static final String CRLF = "\r\n";
-
-  private static final String[] EMPTY_STRINGS = new String[0];
-
-  private static SSLSocketFactory TRUSTED_FACTORY;
-
-  private static HostnameVerifier TRUSTED_VERIFIER;
-
-  private static String getValidCharset(final String charset) {
-    if (charset != null && charset.length() > 0)
-      return charset;
-    else
-      return CHARSET_UTF8;
-  }
-
-  private static SSLSocketFactory getTrustedFactory()
-      throws HttpRequestException {
-    if (TRUSTED_FACTORY == null) {
-      final TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-
-        public X509Certificate[] getAcceptedIssuers() {
-          return new X509Certificate[0];
-        }
-
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {
-          // Intentionally left blank
-        }
-
-        public void checkServerTrusted(X509Certificate[] chain, String authType) {
-          // Intentionally left blank
-        }
-      }};
-      try {
-        SSLContext context = SSLContext.getInstance("TLS");
-        context.init(null, trustAllCerts, new SecureRandom());
-        TRUSTED_FACTORY = context.getSocketFactory();
-      } catch (GeneralSecurityException e) {
-        IOException ioException = new IOException(
-            "Security exception configuring SSL context");
-        ioException.initCause(e);
-        throw new HttpRequestException(ioException);
-      }
-    }
-
-    return TRUSTED_FACTORY;
-  }
-
-  private static HostnameVerifier getTrustedVerifier() {
-    if (TRUSTED_VERIFIER == null)
-      TRUSTED_VERIFIER = new HostnameVerifier() {
-
-        public boolean verify(String hostname, SSLSession session) {
-          return true;
-        }
-      };
-
-    return TRUSTED_VERIFIER;
-  }
-
-  private static StringBuilder addPathSeparator(final String baseUrl,
-                                                final StringBuilder result) {
-    // Add trailing slash if the base URL doesn't have any path segments.
-    //
-    // The following test is checking for the last slash not being part of
-    // the protocol to host separator: '://'.
-    if (baseUrl.indexOf(':') + 2 == baseUrl.lastIndexOf('/'))
-      result.append('/');
-    return result;
-  }
-
-  private static StringBuilder addParamPrefix(final String baseUrl,
-                                              final StringBuilder result) {
-    // Add '?' if missing and add '&' if params already exist in base url
-    final int queryStart = baseUrl.indexOf('?');
-    final int lastChar = result.length() - 1;
-    if (queryStart == -1)
-      result.append('?');
-    else if (queryStart < lastChar && baseUrl.charAt(lastChar) != '&')
-      result.append('&');
-    return result;
-  }
-
-  private static StringBuilder addParam(final Object key, Object value,
-                                        final StringBuilder result) {
-    if (value != null && value.getClass().isArray())
-      value = arrayToList(value);
-
-    if (value instanceof Iterable<?>) {
-      Iterator<?> iterator = ((Iterable<?>) value).iterator();
-      while (iterator.hasNext()) {
-        result.append(key);
-        result.append("[]=");
-        Object element = iterator.next();
-        if (element != null)
-          result.append(element);
-        if (iterator.hasNext())
-          result.append("&");
-      }
-    } else {
-      result.append(key);
-      result.append("=");
-      if (value != null)
-        result.append(value);
-    }
-
-    return result;
-  }
-
-  /**
-   * Creates {@link HttpURLConnection HTTP connections} for
-   * {@link URL urls}.
-   */
-  interface ConnectionFactory {
+  internal interface ConnectionFactory {
     /**
-     * Open an {@link HttpURLConnection} for the specified {@link URL}.
+     * Open an [HttpURLConnection] for the specified [URL].
      *
      * @throws IOException
      */
-    HttpURLConnection create(URL url) throws IOException;
+    @Throws(IOException::class) fun create(url: URL): HttpURLConnection
 
     /**
-     * Open an {@link HttpURLConnection} for the specified {@link URL}
-     * and {@link Proxy}.
+     * Open an [HttpURLConnection] for the specified [URL]
+     * and [Proxy].
      *
      * @throws IOException
      */
-    HttpURLConnection create(URL url, Proxy proxy) throws IOException;
+    @Throws(IOException::class) fun create(
+      url: URL,
+      proxy: Proxy?
+    ): HttpURLConnection
 
-    /**
-     * A {@link ConnectionFactory} which uses the built-in
-     * {@link URL#openConnection()}
-     */
-    ConnectionFactory DEFAULT = new ConnectionFactory() {
-      public HttpURLConnection create(URL url) throws IOException {
-        return (HttpURLConnection) url.openConnection();
+    companion object {
+      /**
+       * A [ConnectionFactory] which uses the built-in
+       * [URL.openConnection]
+       */
+      val DEFAULT: ConnectionFactory = object : ConnectionFactory {
+        @Throws(IOException::class) override fun create(url: URL): HttpURLConnection {
+          return url.openConnection() as HttpURLConnection
+        }
+
+        @Throws(IOException::class) override fun create(
+          url: URL,
+          proxy: Proxy?
+        ): HttpURLConnection {
+          return url.openConnection(proxy) as HttpURLConnection
+        }
       }
-
-      public HttpURLConnection create(URL url, Proxy proxy) throws IOException {
-        return (HttpURLConnection) url.openConnection(proxy);
-      }
-    };
-  }
-
-  private static ConnectionFactory CONNECTION_FACTORY = ConnectionFactory.DEFAULT;
-
-  /**
-   * Specify the {@link ConnectionFactory} used to create new requests.
-   */
-  static void setConnectionFactory(final ConnectionFactory connectionFactory) {
-    if (connectionFactory == null)
-      CONNECTION_FACTORY = ConnectionFactory.DEFAULT;
-    else
-      CONNECTION_FACTORY = connectionFactory;
+    }
   }
 
   /**
    * Callback interface for reporting upload progress for a request.
    */
-  interface UploadProgress {
+  internal interface UploadProgress {
     /**
      * Callback invoked as data is uploaded by the request.
      *
      * @param uploaded The number of bytes already uploaded
      * @param total    The total number of bytes that will be uploaded or -1 if
-     *                 the length is unknown.
+     * the length is unknown.
      */
-    void onUpload(long uploaded, long total);
+    fun onUpload(
+      uploaded: Long,
+      total: Long
+    )
 
-    UploadProgress DEFAULT = new UploadProgress() {
-      public void onUpload(long uploaded, long total) {
+    companion object {
+      val DEFAULT: UploadProgress = object : UploadProgress {
+        override fun onUpload(
+          uploaded: Long,
+          total: Long
+        ) {
+        }
       }
-    };
+    }
   }
 
   /**
-   * <p>
+   *
+   *
    * Encodes and decodes to and from Base64 notation.
-   * </p>
-   * <p>
+   *
+   *
+   *
    * I am placing this code in the Public Domain. Do with it as you will. This
    * software comes with no guarantees or warranties but with plenty of
-   * well-wishing instead! Please visit <a
-   * href="http://iharder.net/base64">http://iharder.net/base64</a> periodically
+   * well-wishing instead! Please visit [http://iharder.net/base64](http://iharder.net/base64) periodically
    * to check for updates or to contribute improvements.
-   * </p>
+   *
    *
    * @author Robert Harder
    * @author rob@iharder.net
    * @version 2.3.7
    */
-  static class Base64 {
-
+  internal object Base64 {
     /**
      * The equals sign (=) as a byte.
      */
-    private final static byte EQUALS_SIGN = (byte) '=';
+    private const val EQUALS_SIGN = '='.toByte()
 
     /**
      * Preferred encoding.
      */
-    private final static String PREFERRED_ENCODING = "US-ASCII";
+    private const val PREFERRED_ENCODING = "US-ASCII"
 
     /**
      * The 64 valid Base64 values.
      */
-    private final static byte[] _STANDARD_ALPHABET = {(byte) 'A', (byte) 'B',
-        (byte) 'C', (byte) 'D', (byte) 'E', (byte) 'F', (byte) 'G', (byte) 'H',
-        (byte) 'I', (byte) 'J', (byte) 'K', (byte) 'L', (byte) 'M', (byte) 'N',
-        (byte) 'O', (byte) 'P', (byte) 'Q', (byte) 'R', (byte) 'S', (byte) 'T',
-        (byte) 'U', (byte) 'V', (byte) 'W', (byte) 'X', (byte) 'Y', (byte) 'Z',
-        (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f',
-        (byte) 'g', (byte) 'h', (byte) 'i', (byte) 'j', (byte) 'k', (byte) 'l',
-        (byte) 'm', (byte) 'n', (byte) 'o', (byte) 'p', (byte) 'q', (byte) 'r',
-        (byte) 's', (byte) 't', (byte) 'u', (byte) 'v', (byte) 'w', (byte) 'x',
-        (byte) 'y', (byte) 'z', (byte) '0', (byte) '1', (byte) '2', (byte) '3',
-        (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9',
-        (byte) '+', (byte) '/'};
+    private val _STANDARD_ALPHABET = byteArrayOf(
+        'A'.toByte(), 'B'.toByte(),
+        'C'.toByte(), 'D'.toByte(), 'E'.toByte(), 'F'.toByte(), 'G'.toByte(), 'H'.toByte(),
+        'I'.toByte(), 'J'.toByte(), 'K'.toByte(), 'L'.toByte(), 'M'.toByte(), 'N'.toByte(),
+        'O'.toByte(), 'P'.toByte(), 'Q'.toByte(), 'R'.toByte(), 'S'.toByte(), 'T'.toByte(),
+        'U'.toByte(), 'V'.toByte(), 'W'.toByte(), 'X'.toByte(), 'Y'.toByte(), 'Z'.toByte(),
+        'a'.toByte(), 'b'.toByte(), 'c'.toByte(), 'd'.toByte(), 'e'.toByte(), 'f'.toByte(),
+        'g'.toByte(), 'h'.toByte(), 'i'.toByte(), 'j'.toByte(), 'k'.toByte(), 'l'.toByte(),
+        'm'.toByte(), 'n'.toByte(), 'o'.toByte(), 'p'.toByte(), 'q'.toByte(), 'r'.toByte(),
+        's'.toByte(), 't'.toByte(), 'u'.toByte(), 'v'.toByte(), 'w'.toByte(), 'x'.toByte(),
+        'y'.toByte(), 'z'.toByte(), '0'.toByte(), '1'.toByte(), '2'.toByte(), '3'.toByte(),
+        '4'.toByte(), '5'.toByte(), '6'.toByte(), '7'.toByte(), '8'.toByte(), '9'.toByte(),
+        '+'.toByte(), '/'.toByte()
+    )
 
-    /**
-     * Defeats instantiation.
-     */
-    private Base64() {
-    }
-
-    /**
-     * <p>
-     * Encodes up to three bytes of the array <var>source</var> and writes the
-     * resulting four Base64 bytes to <var>destination</var>. The source and
-     * destination arrays can be manipulated anywhere along their length by
-     * specifying <var>srcOffset</var> and <var>destOffset</var>. This method
-     * does not check to make sure your arrays are large enough to accomodate
-     * <var>srcOffset</var> + 3 for the <var>source</var> array or
-     * <var>destOffset</var> + 4 for the <var>destination</var> array. The
-     * actual number of significant bytes in your array is given by
-     * <var>numSigBytes</var>.
-     * </p>
-     * <p>
-     * This is the lowest level of the encoding methods with all possible
-     * parameters.
-     * </p>
-     *
-     * @param source      the array to convert
-     * @param srcOffset   the index where conversion begins
-     * @param numSigBytes the number of significant bytes in your array
-     * @param destination the array to hold the conversion
-     * @param destOffset  the index where output will be put
-     * @return the <var>destination</var> array
-     * @since 1.3
-     */
-    private static byte[] encode3to4(byte[] source, int srcOffset,
-                                     int numSigBytes, byte[] destination, int destOffset) {
-
-      byte[] ALPHABET = _STANDARD_ALPHABET;
-
-      int inBuff = (numSigBytes > 0 ? ((source[srcOffset] << 24) >>> 8) : 0)
-          | (numSigBytes > 1 ? ((source[srcOffset + 1] << 24) >>> 16) : 0)
-          | (numSigBytes > 2 ? ((source[srcOffset + 2] << 24) >>> 24) : 0);
-
-      switch (numSigBytes) {
-        case 3:
-          destination[destOffset] = ALPHABET[(inBuff >>> 18)];
-          destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
-          destination[destOffset + 2] = ALPHABET[(inBuff >>> 6) & 0x3f];
-          destination[destOffset + 3] = ALPHABET[(inBuff) & 0x3f];
-          return destination;
-
-        case 2:
-          destination[destOffset] = ALPHABET[(inBuff >>> 18)];
-          destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
-          destination[destOffset + 2] = ALPHABET[(inBuff >>> 6) & 0x3f];
-          destination[destOffset + 3] = EQUALS_SIGN;
-          return destination;
-
-        case 1:
-          destination[destOffset] = ALPHABET[(inBuff >>> 18)];
-          destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
-          destination[destOffset + 2] = EQUALS_SIGN;
-          destination[destOffset + 3] = EQUALS_SIGN;
-          return destination;
-
-        default:
-          return destination;
-      }
-    }
-
-    /**
-     * Encode string as a byte array in Base64 annotation.
-     *
-     * @param string
-     * @return The Base64-encoded data as a string
-     */
-    static String encode(String string) {
-      byte[] bytes;
-      try {
-        bytes = string.getBytes(PREFERRED_ENCODING);
-      } catch (UnsupportedEncodingException e) {
-        bytes = string.getBytes();
-      }
-      return encodeBytes(bytes);
-    }
-
-    /**
-     * Encodes a byte array into Base64 notation.
-     *
-     * @param source The data to convert
-     * @return The Base64-encoded data as a String
-     * @throws NullPointerException     if source array is null
-     * @throws IllegalArgumentException if source array, offset, or length are invalid
-     * @since 2.0
-     */
-    static String encodeBytes(byte[] source) {
-      return encodeBytes(source, 0, source.length);
-    }
-
-    /**
-     * Encodes a byte array into Base64 notation.
-     *
-     * @param source The data to convert
-     * @param off    Offset in array where conversion should begin
-     * @param len    Length of data to convert
-     * @return The Base64-encoded data as a String
-     * @throws NullPointerException     if source array is null
-     * @throws IllegalArgumentException if source array, offset, or length are invalid
-     * @since 2.0
-     */
-    static String encodeBytes(byte[] source, int off, int len) {
-      byte[] encoded = encodeBytesToBytes(source, off, len);
-      try {
-        return new String(encoded, PREFERRED_ENCODING);
-      } catch (UnsupportedEncodingException uue) {
-        return new String(encoded);
-      }
-    }
-
-    /**
-     * Similar to {@link #encodeBytes(byte[], int, int)} but returns a byte
-     * array instead of instantiating a String. This is more efficient if you're
-     * working with I/O streams and have large data sets to encode.
-     *
-     * @param source The data to convert
-     * @param off    Offset in array where conversion should begin
-     * @param len    Length of data to convert
-     * @return The Base64-encoded data as a String if there is an error
-     * @throws NullPointerException     if source array is null
-     * @throws IllegalArgumentException if source array, offset, or length are invalid
-     * @since 2.3.1
-     */
-    static byte[] encodeBytesToBytes(byte[] source, int off, int len) {
-
-      if (source == null)
-        throw new NullPointerException("Cannot serialize a null array.");
-
-      if (off < 0)
-        throw new IllegalArgumentException("Cannot have negative offset: "
-            + off);
-
-      if (len < 0)
-        throw new IllegalArgumentException("Cannot have length offset: " + len);
-
-      if (off + len > source.length)
-        throw new IllegalArgumentException(
-            String.format("Cannot have offset of %d and length of %d with array of length %d",
-                off, len, source.length));
-
-      // Bytes needed for actual encoding
-      int encLen = (len / 3) * 4 + (len % 3 > 0 ? 4 : 0);
-
-      byte[] outBuff = new byte[encLen];
-
-      int d = 0;
-      int e = 0;
-      int len2 = len - 2;
-      for (; d < len2; d += 3, e += 4)
-        encode3to4(source, d + off, 3, outBuff, e);
-
-      if (d < len) {
-        encode3to4(source, d + off, len - d, outBuff, e);
-        e += 4;
-      }
-
-      if (e <= outBuff.length - 1) {
-        byte[] finalOut = new byte[e];
-        System.arraycopy(outBuff, 0, finalOut, 0, e);
-        return finalOut;
-      } else
-        return outBuff;
-    }
   }
 
   /**
-   * HTTP request exception whose cause is always an {@link IOException}
+   * HTTP request exception whose cause is always an [IOException]
    */
-  static class HttpRequestException extends RuntimeException {
-
-    private static final long serialVersionUID = -1170466989781746231L;
-
+  internal class HttpRequestException
+  /**
+   * Create a new HttpRequestException with the given cause
+   *
+   * @param cause
+   */
+  (cause: IOException?) : RuntimeException(cause) {
     /**
-     * Create a new HttpRequestException with the given cause
+     * Get [IOException] that triggered this request exception
      *
-     * @param cause
+     * @return [IOException] cause
      */
-    public HttpRequestException(final IOException cause) {
-      super(cause);
-    }
+    override val cause: IOException
+      get() = super.cause as IOException
 
-    /**
-     * Get {@link IOException} that triggered this request exception
-     *
-     * @return {@link IOException} cause
-     */
-    @Override
-    public IOException getCause() {
-      return (IOException) super.getCause();
+    companion object {
+      private const val serialVersionUID = -1170466989781746231L
     }
   }
 
@@ -656,9 +209,8 @@ class HttpRequest {
    * nested exceptions
    *
    * @param <V>
-   */
-  protected static abstract class Operation<V> implements Callable<V> {
-
+  </V> */
+  protected abstract class Operation<V> : Callable<V> {
     /**
      * Run operation
      *
@@ -666,120 +218,86 @@ class HttpRequest {
      * @throws HttpRequestException
      * @throws IOException
      */
-    protected abstract V run() throws HttpRequestException, IOException;
+    @Throws(HttpRequestException::class, IOException::class) protected abstract fun run(): V
 
     /**
      * Operation complete callback
      *
      * @throws IOException
      */
-    protected abstract void done() throws IOException;
-
-    public V call() throws HttpRequestException {
-      boolean thrown = false;
-      try {
-        return run();
-      } catch (HttpRequestException e) {
-        thrown = true;
-        throw e;
-      } catch (IOException e) {
-        thrown = true;
-        throw new HttpRequestException(e);
+    @Throws(IOException::class) protected abstract fun done()
+    @Throws(HttpRequestException::class) override fun call(): V {
+      var thrown = false
+      return try {
+        run()
+      } catch (e: HttpRequestException) {
+        thrown = true
+        throw e
+      } catch (e: IOException) {
+        thrown = true
+        throw HttpRequestException(e)
       } finally {
         try {
-          done();
-        } catch (IOException e) {
-          if (!thrown)
-            throw new HttpRequestException(e);
+          done()
+        } catch (e: IOException) {
+          if (!thrown) throw HttpRequestException(e)
         }
       }
     }
   }
 
   /**
-   * Class that ensures a {@link Closeable} gets closed with proper exception
+   * Class that ensures a [Closeable] gets closed with proper exception
    * handling.
    *
    * @param <V>
-   */
-  protected static abstract class CloseOperation<V> extends Operation<V> {
-
-    private final Closeable closeable;
-
-    private final boolean ignoreCloseExceptions;
-
-    /**
-     * Create closer for operation
-     *
-     * @param closeable
-     * @param ignoreCloseExceptions
-     */
-    protected CloseOperation(final Closeable closeable,
-                             final boolean ignoreCloseExceptions) {
-      this.closeable = closeable;
-      this.ignoreCloseExceptions = ignoreCloseExceptions;
-    }
-
-    @Override
-    protected void done() throws IOException {
-      if (closeable instanceof Flushable)
-        ((Flushable) closeable).flush();
-      if (ignoreCloseExceptions)
-        try {
-          closeable.close();
-        } catch (IOException e) {
-          // Ignored
-        }
-      else
-        closeable.close();
+  </V> */
+  protected abstract class CloseOperation<V>
+  /**
+   * Create closer for operation
+   *
+   * @param closeable
+   * @param ignoreCloseExceptions
+   */ protected constructor(
+    private val closeable: Closeable,
+    private val ignoreCloseExceptions: Boolean
+  ) : Operation<V>() {
+    @Throws(IOException::class) override fun done() {
+      if (closeable is Flushable) (closeable as Flushable).flush()
+      if (ignoreCloseExceptions) try {
+        closeable.close()
+      } catch (e: IOException) {
+        // Ignored
+      } else closeable.close()
     }
   }
 
   /**
-   * Class that and ensures a {@link Flushable} gets flushed with proper
+   * Class that and ensures a [Flushable] gets flushed with proper
    * exception handling.
    *
    * @param <V>
-   */
-  protected static abstract class FlushOperation<V> extends Operation<V> {
-
-    private final Flushable flushable;
-
-    /**
-     * Create flush operation
-     *
-     * @param flushable
-     */
-    protected FlushOperation(final Flushable flushable) {
-      this.flushable = flushable;
-    }
-
-    @Override
-    protected void done() throws IOException {
-      flushable.flush();
+  </V> */
+  protected abstract class FlushOperation<V>
+  /**
+   * Create flush operation
+   *
+   * @param flushable
+   */ protected constructor(private val flushable: Flushable) : Operation<V>() {
+    @Throws(IOException::class) override fun done() {
+      flushable.flush()
     }
   }
 
   /**
    * Request output stream
    */
-  static class RequestOutputStream extends BufferedOutputStream {
-
-    private final CharsetEncoder encoder;
-
-    /**
-     * Create request output stream
-     *
-     * @param stream
-     * @param charset
-     * @param bufferSize
-     */
-    RequestOutputStream(final OutputStream stream, final String charset,
-                        final int bufferSize) {
-      super(stream, bufferSize);
-
-      encoder = Charset.forName(getValidCharset(charset)).newEncoder();
-    }
+  internal class RequestOutputStream(
+    stream: OutputStream?,
+    charset: String?,
+    bufferSize: Int
+  ) : BufferedOutputStream(stream, bufferSize) {
+    val encoder: CharsetEncoder
 
     /**
      * Write string to stream
@@ -788,607 +306,38 @@ class HttpRequest {
      * @return this stream
      * @throws IOException
      */
-    RequestOutputStream write(final String value) throws IOException {
-      final ByteBuffer bytes = encoder.encode(CharBuffer.wrap(value));
+    @Throws(IOException::class) fun write(value: String?): RequestOutputStream {
+      val bytes = encoder.encode(CharBuffer.wrap(value))
+      super.write(bytes.array(), 0, bytes.limit())
+      return this
+    }
 
-      super.write(bytes.array(), 0, bytes.limit());
-
-      return this;
+    /**
+     * Create request output stream
+     *
+     * @param stream
+     * @param charset
+     * @param bufferSize
+     */
+    init {
+      encoder = Charset.forName(getValidCharset(charset)).newEncoder()
     }
   }
 
-  /**
-   * Represents array of any type as list of objects so we can easily iterate over it
-   *
-   * @param array of elements
-   * @return list with the same elements
-   */
-  private static List<Object> arrayToList(final Object array) {
-    if (array instanceof Object[])
-      return Arrays.asList((Object[]) array);
-
-    List<Object> result = new ArrayList<Object>();
-    // Arrays of the primitive types can't be cast to array of Object, so this:
-    if (array instanceof int[])
-      for (int value : (int[]) array) result.add(value);
-    else if (array instanceof boolean[])
-      for (boolean value : (boolean[]) array) result.add(value);
-    else if (array instanceof long[])
-      for (long value : (long[]) array) result.add(value);
-    else if (array instanceof float[])
-      for (float value : (float[]) array) result.add(value);
-    else if (array instanceof double[])
-      for (double value : (double[]) array) result.add(value);
-    else if (array instanceof short[])
-      for (short value : (short[]) array) result.add(value);
-    else if (array instanceof byte[])
-      for (byte value : (byte[]) array) result.add(value);
-    else if (array instanceof char[])
-      for (char value : (char[]) array) result.add(value);
-    return result;
-  }
-
-  /**
-   * Encode the given URL as an ASCII {@link String}
-   * <p>
-   * This method ensures the path and query segments of the URL are properly
-   * encoded such as ' ' characters being encoded to '%20' or any UTF-8
-   * characters that are non-ASCII. No encoding of URLs is done by default by
-   * the {@link HttpRequest} constructors and so if URL encoding is needed this
-   * method should be called before calling the {@link HttpRequest} constructor.
-   *
-   * @param url
-   * @return encoded URL
-   * @throws HttpRequestException
-   */
-  static String encode(final CharSequence url)
-      throws HttpRequestException {
-    URL parsed;
-    try {
-      parsed = new URL(url.toString());
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
-    }
-
-    String host = parsed.getHost();
-    int port = parsed.getPort();
-    if (port != -1)
-      host = host + ':' + Integer.toString(port);
-
-    try {
-      String encoded = new URI(parsed.getProtocol(), host, parsed.getPath(),
-          parsed.getQuery(), null).toASCIIString();
-      int paramsStart = encoded.indexOf('?');
-      if (paramsStart > 0 && paramsStart + 1 < encoded.length())
-        encoded = encoded.substring(0, paramsStart + 1)
-            + encoded.substring(paramsStart + 1).replace("+", "%2B");
-      return encoded;
-    } catch (URISyntaxException e) {
-      IOException io = new IOException("Parsing URI failed");
-      io.initCause(e);
-      throw new HttpRequestException(io);
-    }
-  }
-
-  /**
-   * Append given map as query parameters to the base URL
-   * <p>
-   * Each map entry's key will be a parameter name and the value's
-   * {@link Object#toString()} will be the parameter value.
-   *
-   * @param url
-   * @param params
-   * @return URL with appended query params
-   */
-  static String append(final CharSequence url, final Map<?, ?> params) {
-    final String baseUrl = url.toString();
-    if (params == null || params.isEmpty())
-      return baseUrl;
-
-    final StringBuilder result = new StringBuilder(baseUrl);
-
-    addPathSeparator(baseUrl, result);
-    addParamPrefix(baseUrl, result);
-
-    Entry<?, ?> entry;
-    Iterator<?> iterator = params.entrySet().iterator();
-    entry = (Entry<?, ?>) iterator.next();
-    addParam(entry.getKey().toString(), entry.getValue(), result);
-
-    while (iterator.hasNext()) {
-      result.append('&');
-      entry = (Entry<?, ?>) iterator.next();
-      addParam(entry.getKey().toString(), entry.getValue(), result);
-    }
-
-    return result.toString();
-  }
-
-  /**
-   * Append given name/value pairs as query parameters to the base URL
-   * <p>
-   * The params argument is interpreted as a sequence of name/value pairs so the
-   * given number of params must be divisible by 2.
-   *
-   * @param url
-   * @param params name/value pairs
-   * @return URL with appended query params
-   */
-  static String append(final CharSequence url, final Object... params) {
-    final String baseUrl = url.toString();
-    if (params == null || params.length == 0)
-      return baseUrl;
-
-    if (params.length % 2 != 0)
-      throw new IllegalArgumentException(
-          "Must specify an even number of parameter names/values");
-
-    final StringBuilder result = new StringBuilder(baseUrl);
-
-    addPathSeparator(baseUrl, result);
-    addParamPrefix(baseUrl, result);
-
-    addParam(params[0], params[1], result);
-
-    for (int i = 2; i < params.length; i += 2) {
-      result.append('&');
-      addParam(params[i], params[i + 1], result);
-    }
-
-    return result.toString();
-  }
-
-  /**
-   * Start a 'GET' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest get(final CharSequence url)
-      throws HttpRequestException {
-    return new HttpRequest(url, METHOD_GET);
-  }
-
-  /**
-   * Start a 'GET' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest get(final URL url) throws HttpRequestException {
-    return new HttpRequest(url, METHOD_GET);
-  }
-
-  /**
-   * Start a 'GET' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param params  The query parameters to include as part of the baseUrl
-   * @param encode  true to encode the full URL
-   * @return request
-   * @see #append(CharSequence, Map)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest get(final CharSequence baseUrl,
-                         final Map<?, ?> params, final boolean encode) {
-    String url = append(baseUrl, params);
-    return get(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'GET' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param encode  true to encode the full URL
-   * @param params  the name/value query parameter pairs to include as part of the
-   *                baseUrl
-   * @return request
-   * @see #append(CharSequence, Object...)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest get(final CharSequence baseUrl,
-                         final boolean encode, final Object... params) {
-    String url = append(baseUrl, params);
-    return get(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'POST' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest post(final CharSequence url)
-      throws HttpRequestException {
-    return new HttpRequest(url, METHOD_POST);
-  }
-
-  /**
-   * Start a 'POST' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest post(final URL url) throws HttpRequestException {
-    return new HttpRequest(url, METHOD_POST);
-  }
-
-  /**
-   * Start a 'POST' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param params  the query parameters to include as part of the baseUrl
-   * @param encode  true to encode the full URL
-   * @return request
-   * @see #append(CharSequence, Map)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest post(final CharSequence baseUrl,
-                          final Map<?, ?> params, final boolean encode) {
-    String url = append(baseUrl, params);
-    return post(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'POST' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param encode  true to encode the full URL
-   * @param params  the name/value query parameter pairs to include as part of the
-   *                baseUrl
-   * @return request
-   * @see #append(CharSequence, Object...)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest post(final CharSequence baseUrl,
-                          final boolean encode, final Object... params) {
-    String url = append(baseUrl, params);
-    return post(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'PUT' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest put(final CharSequence url)
-      throws HttpRequestException {
-    return new HttpRequest(url, METHOD_PUT);
-  }
-
-  /**
-   * Start a 'PUT' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest put(final URL url) throws HttpRequestException {
-    return new HttpRequest(url, METHOD_PUT);
-  }
-
-  /**
-   * Start a 'PUT' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param params  the query parameters to include as part of the baseUrl
-   * @param encode  true to encode the full URL
-   * @return request
-   * @see #append(CharSequence, Map)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest put(final CharSequence baseUrl,
-                         final Map<?, ?> params, final boolean encode) {
-    String url = append(baseUrl, params);
-    return put(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'PUT' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param encode  true to encode the full URL
-   * @param params  the name/value query parameter pairs to include as part of the
-   *                baseUrl
-   * @return request
-   * @see #append(CharSequence, Object...)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest put(final CharSequence baseUrl,
-                         final boolean encode, final Object... params) {
-    String url = append(baseUrl, params);
-    return put(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'DELETE' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest delete(final CharSequence url)
-      throws HttpRequestException {
-    return new HttpRequest(url, METHOD_DELETE);
-  }
-
-  /**
-   * Start a 'DELETE' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest delete(final URL url) throws HttpRequestException {
-    return new HttpRequest(url, METHOD_DELETE);
-  }
-
-  /**
-   * Start a 'DELETE' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param params  The query parameters to include as part of the baseUrl
-   * @param encode  true to encode the full URL
-   * @return request
-   * @see #append(CharSequence, Map)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest delete(final CharSequence baseUrl,
-                            final Map<?, ?> params, final boolean encode) {
-    String url = append(baseUrl, params);
-    return delete(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'DELETE' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param encode  true to encode the full URL
-   * @param params  the name/value query parameter pairs to include as part of the
-   *                baseUrl
-   * @return request
-   * @see #append(CharSequence, Object...)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest delete(final CharSequence baseUrl,
-                            final boolean encode, final Object... params) {
-    String url = append(baseUrl, params);
-    return delete(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'HEAD' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest head(final CharSequence url)
-      throws HttpRequestException {
-    return new HttpRequest(url, METHOD_HEAD);
-  }
-
-  /**
-   * Start a 'HEAD' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest head(final URL url) throws HttpRequestException {
-    return new HttpRequest(url, METHOD_HEAD);
-  }
-
-  /**
-   * Start a 'HEAD' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param params  The query parameters to include as part of the baseUrl
-   * @param encode  true to encode the full URL
-   * @return request
-   * @see #append(CharSequence, Map)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest head(final CharSequence baseUrl,
-                          final Map<?, ?> params, final boolean encode) {
-    String url = append(baseUrl, params);
-    return head(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start a 'GET' request to the given URL along with the query params
-   *
-   * @param baseUrl
-   * @param encode  true to encode the full URL
-   * @param params  the name/value query parameter pairs to include as part of the
-   *                baseUrl
-   * @return request
-   * @see #append(CharSequence, Object...)
-   * @see #encode(CharSequence)
-   */
-  static HttpRequest head(final CharSequence baseUrl,
-                          final boolean encode, final Object... params) {
-    String url = append(baseUrl, params);
-    return head(encode ? encode(url) : url);
-  }
-
-  /**
-   * Start an 'OPTIONS' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest options(final CharSequence url)
-      throws HttpRequestException {
-    return new HttpRequest(url, METHOD_OPTIONS);
-  }
-
-  /**
-   * Start an 'OPTIONS' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest options(final URL url) throws HttpRequestException {
-    return new HttpRequest(url, METHOD_OPTIONS);
-  }
-
-  /**
-   * Start a 'TRACE' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest trace(final CharSequence url)
-      throws HttpRequestException {
-    return new HttpRequest(url, METHOD_TRACE);
-  }
-
-  /**
-   * Start a 'TRACE' request to the given URL
-   *
-   * @param url
-   * @return request
-   * @throws HttpRequestException
-   */
-  static HttpRequest trace(final URL url) throws HttpRequestException {
-    return new HttpRequest(url, METHOD_TRACE);
-  }
-
-  /**
-   * Set the 'http.keepAlive' property to the given value.
-   * <p>
-   * This setting will apply to all requests.
-   *
-   * @param keepAlive
-   */
-  static void keepAlive(final boolean keepAlive) {
-    setProperty("http.keepAlive", Boolean.toString(keepAlive));
-  }
-
-  /**
-   * Set the 'http.maxConnections' property to the given value.
-   * <p>
-   * This setting will apply to all requests.
-   *
-   * @param maxConnections
-   */
-  static void maxConnections(final int maxConnections) {
-    setProperty("http.maxConnections", Integer.toString(maxConnections));
-  }
-
-  /**
-   * Set the 'http.proxyHost' and 'https.proxyHost' properties to the given host
-   * value.
-   * <p>
-   * This setting will apply to all requests.
-   *
-   * @param host
-   */
-  static void proxyHost(final String host) {
-    setProperty("http.proxyHost", host);
-    setProperty("https.proxyHost", host);
-  }
-
-  /**
-   * Set the 'http.proxyPort' and 'https.proxyPort' properties to the given port
-   * number.
-   * <p>
-   * This setting will apply to all requests.
-   *
-   * @param port
-   */
-  static void proxyPort(final int port) {
-    final String portValue = Integer.toString(port);
-    setProperty("http.proxyPort", portValue);
-    setProperty("https.proxyPort", portValue);
-  }
-
-  /**
-   * Set the 'http.nonProxyHosts' property to the given host values.
-   * <p>
-   * Hosts will be separated by a '|' character.
-   * <p>
-   * This setting will apply to all requests.
-   *
-   * @param hosts
-   */
-  static void nonProxyHosts(final String... hosts) {
-    if (hosts != null && hosts.length > 0) {
-      StringBuilder separated = new StringBuilder();
-      int last = hosts.length - 1;
-      for (int i = 0; i < last; i++)
-        separated.append(hosts[i]).append('|');
-      separated.append(hosts[last]);
-      setProperty("http.nonProxyHosts", separated.toString());
-    } else
-      setProperty("http.nonProxyHosts", null);
-  }
-
-  /**
-   * Set property to given value.
-   * <p>
-   * Specifying a null value will cause the property to be cleared
-   *
-   * @param name
-   * @param value
-   * @return previous value
-   */
-  static String setProperty(final String name, final String value) {
-    final PrivilegedAction<String> action;
-    if (value != null)
-      action = new PrivilegedAction<String>() {
-
-        public String run() {
-          return System.setProperty(name, value);
-        }
-      };
-    else
-      action = new PrivilegedAction<String>() {
-
-        public String run() {
-          return System.clearProperty(name);
-        }
-      };
-    return AccessController.doPrivileged(action);
-  }
-
-  private HttpURLConnection connection = null;
-
-  private final URL url;
-
-  private final String requestMethod;
-
-  private RequestOutputStream output;
-
-  private boolean multipart;
-
-  private boolean form;
-
-  private boolean ignoreCloseExceptions = true;
-
-  private boolean uncompress = false;
-
-  private int bufferSize = 8192;
-
-  private long totalSize = -1;
-
-  private long totalWritten = 0;
-
-  private String httpProxyHost;
-
-  private int httpProxyPort;
-
-  private UploadProgress progress = UploadProgress.DEFAULT;
+  private var connection: HttpURLConnection? = null
+  private val url: URL
+  private val requestMethod: String
+  private var output: RequestOutputStream? = null
+  private var multipart = false
+  private var form = false
+  private var ignoreCloseExceptions = true
+  private var uncompress = false
+  private var bufferSize = 8192
+  private var totalSize: Long = -1
+  private var totalWritten: Long = 0
+  private var httpProxyHost: String? = null
+  private var httpProxyPort = 0
+  private var progress = UploadProgress.DEFAULT
 
   /**
    * Create HTTP connection wrapper
@@ -1397,14 +346,27 @@ class HttpRequest {
    * @param method HTTP request method (e.g., "GET", "POST").
    * @throws HttpRequestException
    */
-  HttpRequest(final CharSequence url, final String method)
-      throws HttpRequestException {
+  constructor(
+    url: CharSequence,
+    method: String
+  ) {
     try {
-      this.url = new URL(url.toString());
-    } catch (MalformedURLException e) {
-      throw new HttpRequestException(e);
+      this.url = URL(url.toString())
+    } catch (e: MalformedURLException) {
+      throw HttpRequestException(e)
     }
-    this.requestMethod = method;
+    requestMethod = method
+  }
+  constructor(
+    url: String,
+    method: String
+  ) {
+    try {
+      this.url = URL(url)
+    } catch (e: MalformedURLException) {
+      throw HttpRequestException(e)
+    }
+    requestMethod = method
   }
 
   /**
@@ -1414,33 +376,33 @@ class HttpRequest {
    * @param method HTTP request method (e.g., "GET", "POST").
    * @throws HttpRequestException
    */
-  HttpRequest(final URL url, final String method)
-      throws HttpRequestException {
-    this.url = url;
-    this.requestMethod = method;
+  constructor(
+    url: URL,
+    method: String
+  ) {
+    this.url = url
+    requestMethod = method
   }
 
-  private Proxy createProxy() {
-    return new Proxy(HTTP, new InetSocketAddress(httpProxyHost, httpProxyPort));
+  private fun createProxy(): Proxy {
+    return Proxy(HTTP, InetSocketAddress(httpProxyHost, httpProxyPort))
   }
 
-  private HttpURLConnection createConnection() {
-    try {
-      final HttpURLConnection connection;
-      if (httpProxyHost != null)
-        connection = CONNECTION_FACTORY.create(url, createProxy());
-      else
-        connection = CONNECTION_FACTORY.create(url);
-      connection.setRequestMethod(requestMethod);
-      return connection;
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  private fun createConnection(): HttpURLConnection {
+    return try {
+      val connection: HttpURLConnection
+      connection = if (httpProxyHost != null) CONNECTION_FACTORY.create(
+          url, createProxy()
+      ) else CONNECTION_FACTORY.create(url)
+      connection.requestMethod = requestMethod
+      connection
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
   }
 
-  @Override
-  public String toString() {
-    return method() + ' ' + url();
+  override fun toString(): String {
+    return method() + ' ' + url()
   }
 
   /**
@@ -1448,34 +410,34 @@ class HttpRequest {
    *
    * @return connection
    */
-  HttpURLConnection getConnection() {
-    if (connection == null)
-      connection = createConnection();
-    return connection;
+  fun getConnection(): HttpURLConnection? {
+    if (connection == null) connection = createConnection()
+    return connection
   }
 
   /**
    * Set whether or not to ignore exceptions that occur from calling
-   * {@link Closeable#close()}
-   * <p>
-   * The default value of this setting is <code>true</code>
+   * [Closeable.close]
+   *
+   *
+   * The default value of this setting is `true`
    *
    * @param ignore
    * @return this request
    */
-  HttpRequest ignoreCloseExceptions(final boolean ignore) {
-    ignoreCloseExceptions = ignore;
-    return this;
+  fun ignoreCloseExceptions(ignore: Boolean): HttpRequest {
+    ignoreCloseExceptions = ignore
+    return this
   }
 
   /**
-   * Get whether or not exceptions thrown by {@link Closeable#close()} are
+   * Get whether or not exceptions thrown by [Closeable.close] are
    * ignored
    *
    * @return true if ignoring, false if throwing
    */
-  boolean ignoreCloseExceptions() {
-    return ignoreCloseExceptions;
+  fun ignoreCloseExceptions(): Boolean {
+    return ignoreCloseExceptions
   }
 
   /**
@@ -1484,27 +446,26 @@ class HttpRequest {
    * @return the response code
    * @throws HttpRequestException
    */
-  int code() throws HttpRequestException {
-    try {
-      closeOutput();
-      return getConnection().getResponseCode();
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  @Throws(HttpRequestException::class) fun code(): Int {
+    return try {
+      closeOutput()
+      getConnection()!!.responseCode
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
   }
 
   /**
-   * Set the value of the given {@link AtomicInteger} to the status code of the
+   * Set the value of the given [AtomicInteger] to the status code of the
    * response
    *
    * @param output
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest code(final AtomicInteger output)
-      throws HttpRequestException {
-    output.set(code());
-    return this;
+  @Throws(HttpRequestException::class) fun code(output: AtomicInteger): HttpRequest {
+    output.set(code())
+    return this
   }
 
   /**
@@ -1513,8 +474,8 @@ class HttpRequest {
    * @return true if 200, false otherwise
    * @throws HttpRequestException
    */
-  boolean ok() throws HttpRequestException {
-    return HTTP_OK == code();
+  @Throws(HttpRequestException::class) fun ok(): Boolean {
+    return HttpURLConnection.HTTP_OK == code()
   }
 
   /**
@@ -1523,8 +484,8 @@ class HttpRequest {
    * @return true if 201, false otherwise
    * @throws HttpRequestException
    */
-  boolean created() throws HttpRequestException {
-    return HTTP_CREATED == code();
+  @Throws(HttpRequestException::class) fun created(): Boolean {
+    return HttpURLConnection.HTTP_CREATED == code()
   }
 
   /**
@@ -1533,8 +494,8 @@ class HttpRequest {
    * @return true if 204, false otherwise
    * @throws HttpRequestException
    */
-  boolean noContent() throws HttpRequestException {
-    return HTTP_NO_CONTENT == code();
+  @Throws(HttpRequestException::class) fun noContent(): Boolean {
+    return HttpURLConnection.HTTP_NO_CONTENT == code()
   }
 
   /**
@@ -1543,8 +504,8 @@ class HttpRequest {
    * @return true if 500, false otherwise
    * @throws HttpRequestException
    */
-  boolean serverError() throws HttpRequestException {
-    return HTTP_INTERNAL_ERROR == code();
+  @Throws(HttpRequestException::class) fun serverError(): Boolean {
+    return HttpURLConnection.HTTP_INTERNAL_ERROR == code()
   }
 
   /**
@@ -1553,8 +514,8 @@ class HttpRequest {
    * @return true if 400, false otherwise
    * @throws HttpRequestException
    */
-  boolean badRequest() throws HttpRequestException {
-    return HTTP_BAD_REQUEST == code();
+  @Throws(HttpRequestException::class) fun badRequest(): Boolean {
+    return HttpURLConnection.HTTP_BAD_REQUEST == code()
   }
 
   /**
@@ -1563,8 +524,8 @@ class HttpRequest {
    * @return true if 404, false otherwise
    * @throws HttpRequestException
    */
-  boolean notFound() throws HttpRequestException {
-    return HTTP_NOT_FOUND == code();
+  @Throws(HttpRequestException::class) fun notFound(): Boolean {
+    return HttpURLConnection.HTTP_NOT_FOUND == code()
   }
 
   /**
@@ -1573,8 +534,8 @@ class HttpRequest {
    * @return true if 304, false otherwise
    * @throws HttpRequestException
    */
-  public boolean notModified() throws HttpRequestException {
-    return HTTP_NOT_MODIFIED == code();
+  @Throws(HttpRequestException::class) fun notModified(): Boolean {
+    return HttpURLConnection.HTTP_NOT_MODIFIED == code()
   }
 
   /**
@@ -1583,12 +544,12 @@ class HttpRequest {
    * @return message
    * @throws HttpRequestException
    */
-  String message() throws HttpRequestException {
-    try {
-      closeOutput();
-      return getConnection().getResponseMessage();
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  @Throws(HttpRequestException::class) fun message(): String {
+    return try {
+      closeOutput()
+      getConnection()!!.responseMessage
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
   }
 
@@ -1597,9 +558,9 @@ class HttpRequest {
    *
    * @return this request
    */
-  HttpRequest disconnect() {
-    getConnection().disconnect();
-    return this;
+  fun disconnect(): HttpRequest {
+    getConnection()!!.disconnect()
+    return this
   }
 
   /**
@@ -1608,61 +569,66 @@ class HttpRequest {
    * @param size
    * @return this request
    */
-  HttpRequest chunk(final int size) {
-    getConnection().setChunkedStreamingMode(size);
-    return this;
+  fun chunk(size: Int): HttpRequest {
+    getConnection()!!.setChunkedStreamingMode(size)
+    return this
   }
 
   /**
    * Set the size used when buffering and copying between streams
-   * <p>
+   *
+   *
    * This size is also used for send and receive buffers created for both char
    * and byte arrays
-   * <p>
+   *
+   *
    * The default buffer size is 8,192 bytes
    *
    * @param size
    * @return this request
    */
-  HttpRequest bufferSize(final int size) {
-    if (size < 1)
-      throw new IllegalArgumentException("Size must be greater than zero");
-    bufferSize = size;
-    return this;
+  fun bufferSize(size: Int): HttpRequest {
+    require(size >= 1) { "Size must be greater than zero" }
+    bufferSize = size
+    return this
   }
 
   /**
    * Get the configured buffer size
-   * <p>
+   *
+   *
    * The default buffer size is 8,192 bytes
    *
    * @return buffer size
    */
-  int bufferSize() {
-    return bufferSize;
+  fun bufferSize(): Int {
+    return bufferSize
   }
 
   /**
    * Set whether or not the response body should be automatically uncompressed
    * when read from.
-   * <p>
+   *
+   *
    * This will only affect requests that have the 'Content-Encoding' response
    * header set to 'gzip'.
-   * <p>
-   * This causes all receive methods to use a {@link GZIPInputStream} when
+   *
+   *
+   * This causes all receive methods to use a [GZIPInputStream] when
    * applicable so that higher level streams and readers can read the data
    * uncompressed.
-   * <p>
+   *
+   *
    * Setting this option does not cause any request headers to be set
-   * automatically so {@link #acceptGzipEncoding()} should be used in
+   * automatically so [.acceptGzipEncoding] should be used in
    * conjunction with this setting to tell the server to gzip the response.
    *
    * @param uncompress
    * @return this request
    */
-  HttpRequest uncompress(final boolean uncompress) {
-    this.uncompress = uncompress;
-    return this;
+  fun uncompress(uncompress: Boolean): HttpRequest {
+    this.uncompress = uncompress
+    return this
   }
 
   /**
@@ -1670,17 +636,14 @@ class HttpRequest {
    *
    * @return stream
    */
-  protected ByteArrayOutputStream byteStream() {
-    final int size = contentLength();
-    if (size > 0)
-      return new ByteArrayOutputStream(size);
-    else
-      return new ByteArrayOutputStream();
+  protected fun byteStream(): ByteArrayOutputStream {
+    val size = contentLength()
+    return if (size > 0) ByteArrayOutputStream(size) else ByteArrayOutputStream()
   }
-
   /**
-   * Get response as {@link String} in given character set
-   * <p>
+   * Get response as [String] in given character set
+   *
+   *
    * This will fall back to using the UTF-8 character set if the given charset
    * is null
    *
@@ -1688,44 +651,43 @@ class HttpRequest {
    * @return string
    * @throws HttpRequestException
    */
-  String body(final String charset) throws HttpRequestException {
-    final ByteArrayOutputStream bao = byteStream();
-    try {
-      BufferedInputStream buffer = buffer();
-      copy(buffer, bao);
-      buffer.close();
-      return bao.toString(getValidCharset(charset));
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
-    }
-  }
-
   /**
-   * Get response as {@link String} using character set returned from
-   * {@link #charset()}
+   * Get response as [String] using character set returned from
+   * [.charset]
    *
    * @return string
    * @throws HttpRequestException
    */
-  String body() throws HttpRequestException {
-    return body(charset());
+  @JvmOverloads @Throws(HttpRequestException::class)
+  fun body(charset: String? = this.charset()): String {
+    val bao = byteStream()
+    return try {
+      val buffer = buffer()
+      copy(buffer, bao)
+      buffer.close()
+      bao.toString(getValidCharset(charset))
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
+    }
   }
 
   /**
-   * Get the response body as a {@link String} and set it as the value of the
+   * Get the response body as a [String] and set it as the value of the
    * given reference.
    *
    * @param output
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest body(final AtomicReference<String> output) throws HttpRequestException {
-    output.set(body());
-    return this;
+  @Throws(
+      HttpRequestException::class
+  ) fun body(output: AtomicReference<String?>): HttpRequest {
+    output.set(body())
+    return this
   }
 
   /**
-   * Get the response body as a {@link String} and set it as the value of the
+   * Get the response body as a [String] and set it as the value of the
    * given reference.
    *
    * @param output
@@ -1733,11 +695,15 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest body(final AtomicReference<String> output, final String charset) throws HttpRequestException {
-    output.set(body(charset));
-    return this;
+  @Throws(
+      HttpRequestException::class
+  ) fun body(
+    output: AtomicReference<String?>,
+    charset: String?
+  ): HttpRequest {
+    output.set(body(charset))
+    return this
   }
-
 
   /**
    * Is the response body empty?
@@ -1745,9 +711,8 @@ class HttpRequest {
    * @return true if the Content-Length response header is 0, false otherwise
    * @throws HttpRequestException
    */
-  boolean isBodyEmpty() throws HttpRequestException {
-    return contentLength() == 0;
-  }
+  @get:Throws(HttpRequestException::class) val isBodyEmpty: Boolean
+    get() = contentLength() == 0
 
   /**
    * Get response as byte array
@@ -1755,15 +720,15 @@ class HttpRequest {
    * @return byte array
    * @throws HttpRequestException
    */
-  byte[] bytes() throws HttpRequestException {
-    final ByteArrayOutputStream baos  = byteStream();
-    try {
-      BufferedInputStream buffer = buffer();
-      copy(buffer, baos);
-      buffer.close();
-      return baos.toByteArray();
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  @Throws(HttpRequestException::class) fun bytes(): ByteArray {
+    val baos = byteStream()
+    return try {
+      val buffer = buffer()
+      copy(buffer, baos)
+      buffer.close()
+      baos.toByteArray()
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
   }
 
@@ -1772,10 +737,10 @@ class HttpRequest {
    *
    * @return stream
    * @throws HttpRequestException
-   * @see #bufferSize(int)
+   * @see .bufferSize
    */
-  BufferedInputStream buffer() throws HttpRequestException {
-    return new BufferedInputStream(stream(), bufferSize);
+  @Throws(HttpRequestException::class) fun buffer(): BufferedInputStream {
+    return BufferedInputStream(stream(), bufferSize)
   }
 
   /**
@@ -1784,41 +749,32 @@ class HttpRequest {
    * @return stream
    * @throws HttpRequestException
    */
-  @SuppressLint ("infer")
-  InputStream stream() throws HttpRequestException {
-    InputStream stream;
-    if (code() < HTTP_BAD_REQUEST)
-      try {
-        stream = getConnection().getInputStream();
-      } catch (IOException e) {
-        throw new HttpRequestException(e);
+  @SuppressLint("infer") @Throws(HttpRequestException::class) fun stream(): InputStream? {
+    var stream: InputStream?
+    if (code() < HttpURLConnection.HTTP_BAD_REQUEST) stream = try {
+      getConnection()!!.inputStream
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
+    } else {
+      stream = getConnection()!!.errorStream
+      if (stream == null) stream = try {
+        getConnection()!!.inputStream
+      } catch (e: IOException) {
+        if (contentLength() > 0) throw HttpRequestException(e) else ByteArrayInputStream(
+            ByteArray(0)
+        )
       }
-    else {
-      stream = getConnection().getErrorStream();
-      if (stream == null)
-        try {
-          stream = getConnection().getInputStream();
-        } catch (IOException e) {
-          if (contentLength() > 0)
-            throw new HttpRequestException(e);
-          else
-            stream = new ByteArrayInputStream(new byte[0]);
-        }
     }
-
-    if (!uncompress || !ENCODING_GZIP.equals(contentEncoding()))
-      return stream;
-    else
-      try {
-        return new GZIPInputStream(stream);
-      } catch (IOException e) {
-        throw new HttpRequestException(e);
-      }
+    return if (!uncompress || ENCODING_GZIP != contentEncoding()) stream else try {
+      GZIPInputStream(stream)
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
+    }
   }
-
   /**
    * Get reader to response body using given character set.
-   * <p>
+   *
+   *
    * This will fall back to using the UTF-8 character set if the given charset
    * is null
    *
@@ -1826,26 +782,21 @@ class HttpRequest {
    * @return reader
    * @throws HttpRequestException
    */
-  InputStreamReader reader(final String charset)
-      throws HttpRequestException {
-    try {
-      return new InputStreamReader(stream(), getValidCharset(charset));
-    } catch (UnsupportedEncodingException e) {
-      throw new HttpRequestException(e);
-    }
-  }
-
   /**
    * Get reader to response body using the character set returned from
-   * {@link #charset()}
+   * [.charset]
    *
    * @return reader
    * @throws HttpRequestException
    */
-  InputStreamReader reader() throws HttpRequestException {
-    return reader(charset());
+  @JvmOverloads @Throws(HttpRequestException::class)
+  fun reader(charset: String? = this.charset()): InputStreamReader {
+    return try {
+      InputStreamReader(stream(), getValidCharset(charset))
+    } catch (e: UnsupportedEncodingException) {
+      throw HttpRequestException(e)
+    }
   }
-
   /**
    * Get buffered reader to response body using the given character set r and
    * the configured buffer size
@@ -1853,23 +804,19 @@ class HttpRequest {
    * @param charset
    * @return reader
    * @throws HttpRequestException
-   * @see #bufferSize(int)
+   * @see .bufferSize
    */
-  BufferedReader bufferedReader(final String charset)
-      throws HttpRequestException {
-    return new BufferedReader(reader(charset), bufferSize);
-  }
-
   /**
    * Get buffered reader to response body using the character set returned from
-   * {@link #charset()} and the configured buffer size
+   * [.charset] and the configured buffer size
    *
    * @return reader
    * @throws HttpRequestException
-   * @see #bufferSize(int)
+   * @see .bufferSize
    */
-  BufferedReader bufferedReader() throws HttpRequestException {
-    return bufferedReader(charset());
+  @JvmOverloads @Throws(HttpRequestException::class)
+  fun bufferedReader(charset: String? = this.charset()): BufferedReader {
+    return BufferedReader(reader(charset), bufferSize)
   }
 
   /**
@@ -1879,34 +826,28 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest receive(final File file) throws HttpRequestException {
-    FileOutputStream fos = null;
-    OutputStream outputStream = null;
-    try {
-      fos = new FileOutputStream(file);
-      outputStream = new BufferedOutputStream(fos, bufferSize);
-      final OutputStream finalOutputStream = outputStream;
-      return new CloseOperation<HttpRequest>(finalOutputStream, ignoreCloseExceptions) {
-        @Override
-        protected HttpRequest run() throws HttpRequestException, IOException {
-          return receive(finalOutputStream);
+  @Throws(HttpRequestException::class) fun receive(file: File?): HttpRequest {
+    var fos: FileOutputStream? = null
+    var outputStream: OutputStream? = null
+    return try {
+      fos = FileOutputStream(file)
+      outputStream = BufferedOutputStream(fos, bufferSize)
+      val finalOutputStream: OutputStream = outputStream
+      object : CloseOperation<HttpRequest?>(finalOutputStream, ignoreCloseExceptions) {
+        @Throws(HttpRequestException::class, IOException::class) override fun run(): HttpRequest {
+          return receive(finalOutputStream)
         }
-      }.call();
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+      }.call()!!
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     } finally {
       try {
-        if (fos != null) {
-          fos.close();
-        }
-        if (outputStream != null) {
-          outputStream.close();
-        }
-      } catch (IOException e) {
+        fos?.close()
+        outputStream?.close()
+      } catch (e: IOException) {
         //do nothing
       }
     }
-
   }
 
   /**
@@ -1916,15 +857,14 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest receive(final OutputStream output)
-      throws HttpRequestException {
-    try {
-      BufferedInputStream buffer = buffer();
-      HttpRequest request = copy(buffer, output);
-      buffer.close();
-      return request;
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  @Throws(HttpRequestException::class) fun receive(output: OutputStream?): HttpRequest {
+    return try {
+      val buffer = buffer()
+      val request = copy(buffer, output)
+      buffer.close()
+      request
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
   }
 
@@ -1935,9 +875,8 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest receive(final PrintStream output)
-      throws HttpRequestException {
-    return receive((OutputStream) output);
+  @Throws(HttpRequestException::class) fun receive(output: PrintStream?): HttpRequest {
+    return receive(output as OutputStream?)
   }
 
   /**
@@ -1947,23 +886,20 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest receive(final Appendable appendable)
-      throws HttpRequestException {
-    final BufferedReader reader = bufferedReader();
-    return new CloseOperation<HttpRequest>(reader, ignoreCloseExceptions) {
-
-      @Override
-      public HttpRequest run() throws IOException {
-        final CharBuffer buffer = CharBuffer.allocate(bufferSize);
-        int read;
-        while ((read = reader.read(buffer)) != -1) {
-          buffer.rewind();
-          appendable.append(buffer, 0, read);
-          buffer.rewind();
+  @Throws(HttpRequestException::class) fun receive(appendable: Appendable): HttpRequest {
+    val reader = bufferedReader()
+    return object : CloseOperation<HttpRequest?>(reader, ignoreCloseExceptions) {
+      @Throws(IOException::class) public override fun run(): HttpRequest {
+        val buffer = CharBuffer.allocate(bufferSize)
+        var read: Int
+        while (reader.read(buffer).also { read = it } != -1) {
+          buffer.rewind()
+          appendable.append(buffer, 0, read)
+          buffer.rewind()
         }
-        return HttpRequest.this;
+        return this@HttpRequest
       }
-    }.call();
+    }.call()!!
   }
 
   /**
@@ -1973,15 +909,13 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest receive(final Writer writer) throws HttpRequestException {
-    final BufferedReader reader = bufferedReader();
-    return new CloseOperation<HttpRequest>(reader, ignoreCloseExceptions) {
-
-      @Override
-      public HttpRequest run() throws IOException {
-        return copy(reader, writer);
+  @Throws(HttpRequestException::class) fun receive(writer: Writer): HttpRequest {
+    val reader = bufferedReader()
+    return object : CloseOperation<HttpRequest?>(reader, ignoreCloseExceptions) {
+      @Throws(IOException::class) public override fun run(): HttpRequest {
+        return copy(reader, writer)
       }
-    }.call();
+    }.call()!!
   }
 
   /**
@@ -1990,9 +924,9 @@ class HttpRequest {
    * @param timeout
    * @return this request
    */
-  HttpRequest readTimeout(final int timeout) {
-    getConnection().setReadTimeout(timeout);
-    return this;
+  fun readTimeout(timeout: Int): HttpRequest {
+    getConnection()!!.readTimeout = timeout
+    return this
   }
 
   /**
@@ -2001,9 +935,9 @@ class HttpRequest {
    * @param timeout
    * @return this request
    */
-  HttpRequest connectTimeout(final int timeout) {
-    getConnection().setConnectTimeout(timeout);
-    return this;
+  fun connectTimeout(timeout: Int): HttpRequest {
+    getConnection()!!.connectTimeout = timeout
+    return this
   }
 
   /**
@@ -2013,9 +947,12 @@ class HttpRequest {
    * @param value
    * @return this request
    */
-  HttpRequest header(final String name, final String value) {
-    getConnection().setRequestProperty(name, value);
-    return this;
+  fun header(
+    name: String?,
+    value: String?
+  ): HttpRequest {
+    getConnection()!!.setRequestProperty(name, value)
+    return this
   }
 
   /**
@@ -2025,8 +962,11 @@ class HttpRequest {
    * @param value
    * @return this request
    */
-  HttpRequest header(final String name, final Number value) {
-    return header(name, value != null ? value.toString() : null);
+  fun header(
+    name: String?,
+    value: Number?
+  ): HttpRequest {
+    return header(name, value?.toString())
   }
 
   /**
@@ -2036,11 +976,9 @@ class HttpRequest {
    * @param headers
    * @return this request
    */
-  HttpRequest headers(final Map<String, String> headers) {
-    if (!headers.isEmpty())
-      for (Entry<String, String> header : headers.entrySet())
-        header(header);
-    return this;
+  fun headers(headers: Map<String?, String?>): HttpRequest {
+    if (!headers.isEmpty()) for (header in headers.entries) header(header)
+    return this
   }
 
   /**
@@ -2049,8 +987,8 @@ class HttpRequest {
    * @param header
    * @return this request
    */
-  HttpRequest header(final Entry<String, String> header) {
-    return header(header.getKey(), header.getValue());
+  fun header(header: Entry<String?, String?>): HttpRequest {
+    return header(header.key, header.value)
   }
 
   /**
@@ -2060,9 +998,9 @@ class HttpRequest {
    * @return response header
    * @throws HttpRequestException
    */
-  String header(final String name) throws HttpRequestException {
-    closeOutputQuietly();
-    return getConnection().getHeaderField(name);
+  @Throws(HttpRequestException::class) fun header(name: String?): String {
+    closeOutputQuietly()
+    return getConnection()!!.getHeaderField(name)
   }
 
   /**
@@ -2071,23 +1009,12 @@ class HttpRequest {
    * @return map of response header names to their value(s)
    * @throws HttpRequestException
    */
-  Map<String, List<String>> headers() throws HttpRequestException {
-    closeOutputQuietly();
-    return getConnection().getHeaderFields();
+  @Throws(
+      HttpRequestException::class
+  ) fun headers(): Map<String, List<String?>> {
+    closeOutputQuietly()
+    return getConnection()!!.headerFields
   }
-
-  /**
-   * Get a date header from the response falling back to returning -1 if the
-   * header is missing or parsing fails
-   *
-   * @param name
-   * @return date, -1 on failures
-   * @throws HttpRequestException
-   */
-  long dateHeader(final String name) throws HttpRequestException {
-    return dateHeader(name, -1L);
-  }
-
   /**
    * Get a date header from the response falling back to returning the given
    * default value if the header is missing or parsing fails
@@ -2097,24 +1024,21 @@ class HttpRequest {
    * @return date, default value on failures
    * @throws HttpRequestException
    */
-  long dateHeader(final String name, final long defaultValue)
-      throws HttpRequestException {
-    closeOutputQuietly();
-    return getConnection().getHeaderFieldDate(name, defaultValue);
-  }
-
   /**
-   * Get an integer header from the response falling back to returning -1 if the
+   * Get a date header from the response falling back to returning -1 if the
    * header is missing or parsing fails
    *
    * @param name
-   * @return header value as an integer, -1 when missing or parsing fails
+   * @return date, -1 on failures
    * @throws HttpRequestException
    */
-  int intHeader(final String name) throws HttpRequestException {
-    return intHeader(name, -1);
+  @JvmOverloads @Throws(HttpRequestException::class) fun dateHeader(
+    name: String?,
+    defaultValue: Long = -1L
+  ): Long {
+    closeOutputQuietly()
+    return getConnection()!!.getHeaderFieldDate(name, defaultValue)
   }
-
   /**
    * Get an integer header value from the response falling back to the given
    * default value if the header is missing or if parsing fails
@@ -2125,28 +1049,33 @@ class HttpRequest {
    * fails
    * @throws HttpRequestException
    */
-  int intHeader(final String name, final int defaultValue)
-      throws HttpRequestException {
-    closeOutputQuietly();
-    return getConnection().getHeaderFieldInt(name, defaultValue);
+  /**
+   * Get an integer header from the response falling back to returning -1 if the
+   * header is missing or parsing fails
+   *
+   * @param name
+   * @return header value as an integer, -1 when missing or parsing fails
+   * @throws HttpRequestException
+   */
+  @JvmOverloads @Throws(HttpRequestException::class) fun intHeader(
+    name: String?,
+    defaultValue: Int = -1
+  ): Int {
+    closeOutputQuietly()
+    return getConnection()!!.getHeaderFieldInt(name, defaultValue)
   }
 
   /**
    * Get all values of the given header from the response
    *
    * @param name
-   * @return non-null but possibly empty array of {@link String} header values
+   * @return non-null but possibly empty array of [String] header values
    */
-  String[] headers(final String name) {
-    final Map<String, List<String>> headers = headers();
-    if (headers == null || headers.isEmpty())
-      return EMPTY_STRINGS;
-
-    final List<String> values = headers.get(name);
-    if (values != null && !values.isEmpty())
-      return values.toArray(new String[values.size()]);
-    else
-      return EMPTY_STRINGS;
+  fun headers(name: String): Array<String?> {
+    val headers = headers()
+    if (headers == null || headers.isEmpty()) return EMPTY_STRINGS
+    val values = headers[name]
+    return if (values != null && !values.isEmpty()) values.toTypedArray() else EMPTY_STRINGS
   }
 
   /**
@@ -2156,21 +1085,25 @@ class HttpRequest {
    * @param paramName
    * @return parameter value or null if missing
    */
-  String parameter(final String headerName, final String paramName) {
-    return getParam(header(headerName), paramName);
+  fun parameter(
+    headerName: String?,
+    paramName: String
+  ): String? {
+    return getParam(header(headerName), paramName)
   }
 
   /**
    * Get all parameters from header value in response
-   * <p>
+   *
+   *
    * This will be all key=value pairs after the first ';' that are separated by
    * a ';'
    *
    * @param headerName
    * @return non-null but possibly empty map of parameter headers
    */
-  Map<String, String> parameters(final String headerName) {
-    return getParams(header(headerName));
+  fun parameters(headerName: String?): Map<String, String> {
+    return getParams(header(headerName))
   }
 
   /**
@@ -2179,43 +1112,30 @@ class HttpRequest {
    * @param header
    * @return parameter value or null if none
    */
-  Map<String, String> getParams(final String header) {
-    if (header == null || header.length() == 0)
-      return Collections.emptyMap();
-
-    final int headerLength = header.length();
-    int start = header.indexOf(';') + 1;
-    if (start == 0 || start == headerLength)
-      return Collections.emptyMap();
-
-    int end = header.indexOf(';', start);
-    if (end == -1)
-      end = headerLength;
-
-    Map<String, String> params = new LinkedHashMap<String, String>();
+  fun getParams(header: String?): Map<String, String> {
+    if (header == null || header.length == 0) return emptyMap()
+    val headerLength = header.length
+    var start = header.indexOf(';') + 1
+    if (start == 0 || start == headerLength) return emptyMap()
+    var end = header.indexOf(';', start)
+    if (end == -1) end = headerLength
+    val params: MutableMap<String, String> = LinkedHashMap()
     while (start < end) {
-      int nameEnd = header.indexOf('=', start);
+      val nameEnd = header.indexOf('=', start)
       if (nameEnd != -1 && nameEnd < end) {
-        String name = header.substring(start, nameEnd).trim();
-        if (name.length() > 0) {
-          String value = header.substring(nameEnd + 1, end).trim();
-          int length = value.length();
-          if (length != 0)
-            if (length > 2 && '"' == value.charAt(0)
-                && '"' == value.charAt(length - 1))
-              params.put(name, value.substring(1, length - 1));
-            else
-              params.put(name, value);
+        val name = header.substring(start, nameEnd).trim { it <= ' ' }
+        if (name.length > 0) {
+          val value = header.substring(nameEnd + 1, end).trim { it <= ' ' }
+          val length = value.length
+          if (length != 0) if (length > 2 && '"' == value[0] && '"' == value[length - 1]) params[name] =
+            value.substring(1, length - 1) else params[name] = value
         }
       }
-
-      start = end + 1;
-      end = header.indexOf(';', start);
-      if (end == -1)
-        end = headerLength;
+      start = end + 1
+      end = header.indexOf(';', start)
+      if (end == -1) end = headerLength
     }
-
-    return params;
+    return params
   }
 
   /**
@@ -2225,40 +1145,31 @@ class HttpRequest {
    * @param paramName
    * @return parameter value or null if none
    */
-  String getParam(final String value, final String paramName) {
-    if (value == null || value.length() == 0)
-      return null;
-
-    final int length = value.length();
-    int start = value.indexOf(';') + 1;
-    if (start == 0 || start == length)
-      return null;
-
-    int end = value.indexOf(';', start);
-    if (end == -1)
-      end = length;
-
+  fun getParam(
+    value: String?,
+    paramName: String
+  ): String? {
+    if (value == null || value.length == 0) return null
+    val length = value.length
+    var start = value.indexOf(';') + 1
+    if (start == 0 || start == length) return null
+    var end = value.indexOf(';', start)
+    if (end == -1) end = length
     while (start < end) {
-      int nameEnd = value.indexOf('=', start);
-      if (nameEnd != -1 && nameEnd < end
-          && paramName.equals(value.substring(start, nameEnd).trim())) {
-        String paramValue = value.substring(nameEnd + 1, end).trim();
-        int valueLength = paramValue.length();
-        if (valueLength != 0)
-          if (valueLength > 2 && '"' == paramValue.charAt(0)
-              && '"' == paramValue.charAt(valueLength - 1))
-            return paramValue.substring(1, valueLength - 1);
-          else
-            return paramValue;
+      val nameEnd = value.indexOf('=', start)
+      if (nameEnd != -1 && nameEnd < end && paramName == value.substring(start, nameEnd)
+              .trim { it <= ' ' }
+      ) {
+        val paramValue = value.substring(nameEnd + 1, end).trim { it <= ' ' }
+        val valueLength = paramValue.length
+        if (valueLength != 0) return if (valueLength > 2 && '"' == paramValue[0] && '"' == paramValue[valueLength - 1]
+        ) paramValue.substring(1, valueLength - 1) else paramValue
       }
-
-      start = end + 1;
-      end = value.indexOf(';', start);
-      if (end == -1)
-        end = length;
+      start = end + 1
+      end = value.indexOf(';', start)
+      if (end == -1) end = length
     }
-
-    return null;
+    return null
   }
 
   /**
@@ -2266,8 +1177,8 @@ class HttpRequest {
    *
    * @return charset or null if none
    */
-  String charset() {
-    return parameter(HEADER_CONTENT_TYPE, PARAM_CHARSET);
+  fun charset(): String? {
+    return parameter(HEADER_CONTENT_TYPE, PARAM_CHARSET)
   }
 
   /**
@@ -2276,8 +1187,8 @@ class HttpRequest {
    * @param userAgent
    * @return this request
    */
-  HttpRequest userAgent(final String userAgent) {
-    return header(HEADER_USER_AGENT, userAgent);
+  fun userAgent(userAgent: String?): HttpRequest {
+    return header(HEADER_USER_AGENT, userAgent)
   }
 
   /**
@@ -2286,20 +1197,20 @@ class HttpRequest {
    * @param referer
    * @return this request
    */
-  HttpRequest referer(final String referer) {
-    return header(HEADER_REFERER, referer);
+  fun referer(referer: String?): HttpRequest {
+    return header(HEADER_REFERER, referer)
   }
 
   /**
-   * Set value of {@link HttpURLConnection#setUseCaches(boolean)}
+   * Set value of [HttpURLConnection.setUseCaches]
    *
    * @param useCaches
    * @return this request
    */
-  HttpRequest useCaches(final boolean useCaches) {
-    getConnection().setUseCaches(useCaches);
-    getConnection().setDefaultUseCaches(useCaches);
-    return this;
+  fun useCaches(useCaches: Boolean): HttpRequest {
+    getConnection()!!.useCaches = useCaches
+    getConnection()!!.defaultUseCaches = useCaches
+    return this
   }
 
   /**
@@ -2308,18 +1219,18 @@ class HttpRequest {
    * @param acceptEncoding
    * @return this request
    */
-  HttpRequest acceptEncoding(final String acceptEncoding) {
-    return header(HEADER_ACCEPT_ENCODING, acceptEncoding);
+  fun acceptEncoding(acceptEncoding: String?): HttpRequest {
+    return header(HEADER_ACCEPT_ENCODING, acceptEncoding)
   }
 
   /**
    * Set the 'Accept-Encoding' header to 'gzip'
    *
    * @return this request
-   * @see #uncompress(boolean)
+   * @see .uncompress
    */
-  HttpRequest acceptGzipEncoding() {
-    return acceptEncoding(ENCODING_GZIP);
+  fun acceptGzipEncoding(): HttpRequest {
+    return acceptEncoding(ENCODING_GZIP)
   }
 
   /**
@@ -2328,8 +1239,8 @@ class HttpRequest {
    * @param acceptCharset
    * @return this request
    */
-  HttpRequest acceptCharset(final String acceptCharset) {
-    return header(HEADER_ACCEPT_CHARSET, acceptCharset);
+  fun acceptCharset(acceptCharset: String?): HttpRequest {
+    return header(HEADER_ACCEPT_CHARSET, acceptCharset)
   }
 
   /**
@@ -2337,8 +1248,8 @@ class HttpRequest {
    *
    * @return this request
    */
-  String contentEncoding() {
-    return header(HEADER_CONTENT_ENCODING);
+  fun contentEncoding(): String {
+    return header(HEADER_CONTENT_ENCODING)
   }
 
   /**
@@ -2346,8 +1257,8 @@ class HttpRequest {
    *
    * @return server
    */
-  String server() {
-    return header(HEADER_SERVER);
+  fun server(): String {
+    return header(HEADER_SERVER)
   }
 
   /**
@@ -2355,8 +1266,8 @@ class HttpRequest {
    *
    * @return date value, -1 on failures
    */
-  long date() {
-    return dateHeader(HEADER_DATE);
+  fun date(): Long {
+    return dateHeader(HEADER_DATE)
   }
 
   /**
@@ -2364,8 +1275,8 @@ class HttpRequest {
    *
    * @return cache control
    */
-  String cacheControl() {
-    return header(HEADER_CACHE_CONTROL);
+  fun cacheControl(): String {
+    return header(HEADER_CACHE_CONTROL)
   }
 
   /**
@@ -2373,8 +1284,8 @@ class HttpRequest {
    *
    * @return entity tag
    */
-  String eTag() {
-    return header(HEADER_ETAG);
+  fun eTag(): String {
+    return header(HEADER_ETAG)
   }
 
   /**
@@ -2382,8 +1293,8 @@ class HttpRequest {
    *
    * @return expires value, -1 on failures
    */
-  long expires() {
-    return dateHeader(HEADER_EXPIRES);
+  fun expires(): Long {
+    return dateHeader(HEADER_EXPIRES)
   }
 
   /**
@@ -2391,8 +1302,8 @@ class HttpRequest {
    *
    * @return last modified value, -1 on failures
    */
-  long lastModified() {
-    return dateHeader(HEADER_LAST_MODIFIED);
+  fun lastModified(): Long {
+    return dateHeader(HEADER_LAST_MODIFIED)
   }
 
   /**
@@ -2400,8 +1311,8 @@ class HttpRequest {
    *
    * @return location
    */
-  String location() {
-    return header(HEADER_LOCATION);
+  fun location(): String {
+    return header(HEADER_LOCATION)
   }
 
   /**
@@ -2410,8 +1321,8 @@ class HttpRequest {
    * @param authorization
    * @return this request
    */
-  HttpRequest authorization(final String authorization) {
-    return header(HEADER_AUTHORIZATION, authorization);
+  fun authorization(authorization: String?): HttpRequest {
+    return header(HEADER_AUTHORIZATION, authorization)
   }
 
   /**
@@ -2420,32 +1331,8 @@ class HttpRequest {
    * @param proxyAuthorization
    * @return this request
    */
-  HttpRequest proxyAuthorization(final String proxyAuthorization) {
-    return header(HEADER_PROXY_AUTHORIZATION, proxyAuthorization);
-  }
-
-  /**
-   * Set the 'Authorization' header to given values in Basic authentication
-   * format
-   *
-   * @param name
-   * @param password
-   * @return this request
-   */
-  HttpRequest basic(final String name, final String password) {
-    return authorization("Basic " + Base64.encode(name + ':' + password));
-  }
-
-  /**
-   * Set the 'Proxy-Authorization' header to given values in Basic authentication
-   * format
-   *
-   * @param name
-   * @param password
-   * @return this request
-   */
-  HttpRequest proxyBasic(final String name, final String password) {
-    return proxyAuthorization("Basic " + Base64.encode(name + ':' + password));
+  fun proxyAuthorization(proxyAuthorization: String?): HttpRequest {
+    return header(HEADER_PROXY_AUTHORIZATION, proxyAuthorization)
   }
 
   /**
@@ -2454,9 +1341,9 @@ class HttpRequest {
    * @param ifModifiedSince
    * @return this request
    */
-  HttpRequest ifModifiedSince(final long ifModifiedSince) {
-    getConnection().setIfModifiedSince(ifModifiedSince);
-    return this;
+  fun ifModifiedSince(ifModifiedSince: Long): HttpRequest {
+    getConnection()!!.ifModifiedSince = ifModifiedSince
+    return this
   }
 
   /**
@@ -2465,20 +1352,9 @@ class HttpRequest {
    * @param ifNoneMatch
    * @return this request
    */
-  HttpRequest ifNoneMatch(final String ifNoneMatch) {
-    return header(HEADER_IF_NONE_MATCH, ifNoneMatch);
+  fun ifNoneMatch(ifNoneMatch: String?): HttpRequest {
+    return header(HEADER_IF_NONE_MATCH, ifNoneMatch)
   }
-
-  /**
-   * Set the 'Content-Type' request header to the given value
-   *
-   * @param contentType
-   * @return this request
-   */
-  HttpRequest contentType(final String contentType) {
-    return contentType(contentType, null);
-  }
-
   /**
    * Set the 'Content-Type' request header to the given value and charset
    *
@@ -2486,12 +1362,23 @@ class HttpRequest {
    * @param charset
    * @return this request
    */
-  HttpRequest contentType(final String contentType, final String charset) {
-    if (charset != null && charset.length() > 0) {
-      final String separator = "; " + PARAM_CHARSET + '=';
-      return header(HEADER_CONTENT_TYPE, contentType + separator + charset);
-    } else
-      return header(HEADER_CONTENT_TYPE, contentType);
+  /**
+   * Set the 'Content-Type' request header to the given value
+   *
+   * @param contentType
+   * @return this request
+   */
+  @JvmOverloads fun contentType(
+    contentType: String,
+    charset: String? = null
+  ): HttpRequest {
+    return if (charset != null && charset.length > 0) {
+      val separator = "; " + PARAM_CHARSET + '='
+      header(
+          HEADER_CONTENT_TYPE,
+          contentType + separator + charset
+      )
+    } else header(HEADER_CONTENT_TYPE, contentType)
   }
 
   /**
@@ -2499,8 +1386,8 @@ class HttpRequest {
    *
    * @return response header value
    */
-  String contentType() {
-    return header(HEADER_CONTENT_TYPE);
+  fun contentType(): String {
+    return header(HEADER_CONTENT_TYPE)
   }
 
   /**
@@ -2508,8 +1395,8 @@ class HttpRequest {
    *
    * @return response header value
    */
-  int contentLength() {
-    return intHeader(HEADER_CONTENT_LENGTH);
+  fun contentLength(): Int {
+    return intHeader(HEADER_CONTENT_LENGTH)
   }
 
   /**
@@ -2518,8 +1405,8 @@ class HttpRequest {
    * @param contentLength
    * @return this request
    */
-  HttpRequest contentLength(final String contentLength) {
-    return contentLength(Integer.parseInt(contentLength));
+  fun contentLength(contentLength: String): HttpRequest {
+    return contentLength(contentLength.toInt())
   }
 
   /**
@@ -2528,9 +1415,9 @@ class HttpRequest {
    * @param contentLength
    * @return this request
    */
-  HttpRequest contentLength(final int contentLength) {
-    getConnection().setFixedLengthStreamingMode(contentLength);
-    return this;
+  fun contentLength(contentLength: Int): HttpRequest {
+    getConnection()!!.setFixedLengthStreamingMode(contentLength)
+    return this
   }
 
   /**
@@ -2539,8 +1426,8 @@ class HttpRequest {
    * @param accept
    * @return this request
    */
-  HttpRequest accept(final String accept) {
-    return header(HEADER_ACCEPT, accept);
+  fun accept(accept: String?): HttpRequest {
+    return header(HEADER_ACCEPT, accept)
   }
 
   /**
@@ -2548,8 +1435,8 @@ class HttpRequest {
    *
    * @return this request
    */
-  HttpRequest acceptJson() {
-    return accept(CONTENT_TYPE_JSON);
+  fun acceptJson(): HttpRequest {
+    return accept(CONTENT_TYPE_JSON)
   }
 
   /**
@@ -2560,22 +1447,22 @@ class HttpRequest {
    * @return this request
    * @throws IOException
    */
-  protected HttpRequest copy(final InputStream input, final OutputStream output)
-      throws IOException {
-    return new CloseOperation<HttpRequest>(input, ignoreCloseExceptions) {
-
-      @Override
-      public HttpRequest run() throws IOException {
-        final byte[] buffer = new byte[bufferSize];
-        int read;
-        while ((read = input.read(buffer)) != -1) {
-          output.write(buffer, 0, read);
-          totalWritten += read;
-          progress.onUpload(totalWritten, totalSize);
+  @Throws(IOException::class) protected fun copy(
+    input: InputStream,
+    output: OutputStream?
+  ): HttpRequest {
+    return object : CloseOperation<HttpRequest?>(input, ignoreCloseExceptions) {
+      @Throws(IOException::class) public override fun run(): HttpRequest {
+        val buffer = ByteArray(bufferSize)
+        var read: Int
+        while (input.read(buffer).also { read = it } != -1) {
+          output!!.write(buffer, 0, read)
+          totalWritten += read.toLong()
+          progress.onUpload(totalWritten, totalSize)
         }
-        return HttpRequest.this;
+        return this@HttpRequest
       }
-    }.call();
+    }.call()!!
   }
 
   /**
@@ -2586,22 +1473,22 @@ class HttpRequest {
    * @return this request
    * @throws IOException
    */
-  protected HttpRequest copy(final Reader input, final Writer output)
-      throws IOException {
-    return new CloseOperation<HttpRequest>(input, ignoreCloseExceptions) {
-
-      @Override
-      public HttpRequest run() throws IOException {
-        final char[] buffer = new char[bufferSize];
-        int read;
-        while ((read = input.read(buffer)) != -1) {
-          output.write(buffer, 0, read);
-          totalWritten += read;
-          progress.onUpload(totalWritten, -1);
+  @Throws(IOException::class) protected fun copy(
+    input: Reader,
+    output: Writer
+  ): HttpRequest {
+    return object : CloseOperation<HttpRequest?>(input, ignoreCloseExceptions) {
+      @Throws(IOException::class) public override fun run(): HttpRequest {
+        val buffer = CharArray(bufferSize)
+        var read: Int
+        while (input.read(buffer).also { read = it } != -1) {
+          output.write(buffer, 0, read)
+          totalWritten += read.toLong()
+          progress.onUpload(totalWritten, -1)
         }
-        return HttpRequest.this;
+        return this@HttpRequest
       }
-    }.call();
+    }.call()!!
   }
 
   /**
@@ -2610,19 +1497,15 @@ class HttpRequest {
    * @param callback
    * @return this request
    */
-  HttpRequest progress(final UploadProgress callback) {
-    if (callback == null)
-      progress = UploadProgress.DEFAULT;
-    else
-      progress = callback;
-    return this;
+  fun progress(callback: UploadProgress?): HttpRequest {
+    progress = callback ?: UploadProgress.DEFAULT
+    return this
   }
 
-  private HttpRequest incrementTotalSize(final long size) {
-    if (totalSize == -1)
-      totalSize = 0;
-    totalSize += size;
-    return this;
+  private fun incrementTotalSize(size: Long): HttpRequest {
+    if (totalSize == -1L) totalSize = 0
+    totalSize += size
+    return this
   }
 
   /**
@@ -2632,37 +1515,31 @@ class HttpRequest {
    * @throws HttpRequestException
    * @throws IOException
    */
-
-  protected HttpRequest closeOutput() throws IOException {
-    progress(null);
-    if (output == null)
-      return this;
-    if (multipart)
-      output.write(CRLF + "--" + BOUNDARY + "--" + CRLF);
-    if (ignoreCloseExceptions)
-      try {
-        output.close();
-      } catch (IOException ignored) {
-        // Ignored
-      }
-    else
-      output.close();
-    output = null;
-    return this;
+  @Throws(IOException::class) protected fun closeOutput(): HttpRequest {
+    progress(null)
+    if (output == null) return this
+    if (multipart) output!!.write(CRLF + "--" + BOUNDARY + "--" + CRLF)
+    if (ignoreCloseExceptions) try {
+      output!!.close()
+    } catch (ignored: IOException) {
+      // Ignored
+    } else output!!.close()
+    output = null
+    return this
   }
 
   /**
-   * Call {@link #closeOutput()} and re-throw a caught {@link IOException}s as
-   * an {@link HttpRequestException}
+   * Call [.closeOutput] and re-throw a caught [IOException]s as
+   * an [HttpRequestException]
    *
    * @return this request
    * @throws HttpRequestException
    */
-  protected HttpRequest closeOutputQuietly() throws HttpRequestException {
-    try {
-      return closeOutput();
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  @Throws(HttpRequestException::class) protected fun closeOutputQuietly(): HttpRequest {
+    return try {
+      closeOutput()
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
   }
 
@@ -2672,15 +1549,17 @@ class HttpRequest {
    * @return this request
    * @throws IOException
    */
-  protected HttpRequest openOutput() throws IOException {
-    if (output != null)
-      return this;
-    getConnection().setDoOutput(true);
-    final String charset = getParam(
-        getConnection().getRequestProperty(HEADER_CONTENT_TYPE), PARAM_CHARSET);
-    output = new RequestOutputStream(getConnection().getOutputStream(), charset,
-        bufferSize);
-    return this;
+  @Throws(IOException::class) protected fun openOutput(): HttpRequest {
+    if (output != null) return this
+    getConnection()!!.doOutput = true
+    val charset = getParam(
+        getConnection()!!.getRequestProperty(HEADER_CONTENT_TYPE), PARAM_CHARSET
+    )
+    output = RequestOutputStream(
+        getConnection()!!.outputStream, charset,
+        bufferSize
+    )
+    return this
   }
 
   /**
@@ -2689,29 +1568,14 @@ class HttpRequest {
    * @return this request
    * @throws IOException
    */
-  protected HttpRequest startPart() throws IOException {
+  @Throws(IOException::class) protected fun startPart(): HttpRequest {
     if (!multipart) {
-      multipart = true;
-      contentType(CONTENT_TYPE_MULTIPART).openOutput();
-      output.write("--" + BOUNDARY + CRLF);
-    } else
-      output.write(CRLF + "--" + BOUNDARY + CRLF);
-    return this;
+      multipart = true
+      contentType(CONTENT_TYPE_MULTIPART).openOutput()
+      output!!.write("--" + BOUNDARY + CRLF)
+    } else output!!.write(CRLF + "--" + BOUNDARY + CRLF)
+    return this
   }
-
-  /**
-   * Write part header
-   *
-   * @param name
-   * @param filename
-   * @return this request
-   * @throws IOException
-   */
-  protected HttpRequest writePartHeader(final String name, final String filename)
-      throws IOException {
-    return writePartHeader(name, filename, null);
-  }
-
   /**
    * Write part header
    *
@@ -2721,17 +1585,26 @@ class HttpRequest {
    * @return this request
    * @throws IOException
    */
-  protected HttpRequest writePartHeader(final String name,
-                                        final String filename, final String contentType) throws IOException {
-    final StringBuilder partBuffer = new StringBuilder();
-    partBuffer.append("form-data; name=\"").append(name);
-    if (filename != null)
-      partBuffer.append("\"; filename=\"").append(filename);
-    partBuffer.append('"');
-    partHeader("Content-Disposition", partBuffer.toString());
-    if (contentType != null)
-      partHeader(HEADER_CONTENT_TYPE, contentType);
-    return send(CRLF);
+  /**
+   * Write part header
+   *
+   * @param name
+   * @param filename
+   * @return this request
+   * @throws IOException
+   */
+  @Throws(IOException::class) protected fun writePartHeader(
+    name: String?,
+    filename: String?,
+    contentType: String? = null
+  ): HttpRequest {
+    val partBuffer = StringBuilder()
+    partBuffer.append("form-data; name=\"").append(name)
+    if (filename != null) partBuffer.append("\"; filename=\"").append(filename)
+    partBuffer.append('"')
+    partHeader("Content-Disposition", partBuffer.toString())
+    if (contentType != null) partHeader(HEADER_CONTENT_TYPE, contentType)
+    return send(CRLF)
   }
 
   /**
@@ -2741,8 +1614,11 @@ class HttpRequest {
    * @param part
    * @return this request
    */
-  HttpRequest part(final String name, final String part) {
-    return part(name, null, part);
+  fun part(
+    name: String?,
+    part: String?
+  ): HttpRequest {
+    return part(name, null, part)
   }
 
   /**
@@ -2754,9 +1630,12 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest part(final String name, final String filename,
-                   final String part) throws HttpRequestException {
-    return part(name, filename, null, part);
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    filename: String?,
+    part: String?
+  ): HttpRequest {
+    return part(name, filename, null, part)
   }
 
   /**
@@ -2769,16 +1648,20 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest part(final String name, final String filename,
-                   final String contentType, final String part) throws HttpRequestException {
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    filename: String?,
+    contentType: String?,
+    part: String?
+  ): HttpRequest {
     try {
-      startPart();
-      writePartHeader(name, filename, contentType);
-      output.write(part);
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+      startPart()
+      writePartHeader(name, filename, contentType)
+      output!!.write(part)
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
-    return this;
+    return this
   }
 
   /**
@@ -2789,36 +1672,11 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest part(final String name, final Number part)
-      throws HttpRequestException {
-    return part(name, null, part);
-  }
-
-  /**
-   * Write part of a multipart request to the request body
-   *
-   * @param name
-   * @param filename
-   * @param part
-   * @return this request
-   * @throws HttpRequestException
-   */
-  HttpRequest part(final String name, final String filename,
-                   final Number part) throws HttpRequestException {
-    return part(name, filename, part != null ? part.toString() : null);
-  }
-
-  /**
-   * Write part of a multipart request to the request body
-   *
-   * @param name
-   * @param part
-   * @return this request
-   * @throws HttpRequestException
-   */
-  HttpRequest part(final String name, final File part)
-      throws HttpRequestException {
-    return part(name, null, part);
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    part: Number?
+  ): HttpRequest {
+    return part(name, null, part)
   }
 
   /**
@@ -2830,9 +1688,44 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest part(final String name, final String filename,
-                   final File part) throws HttpRequestException {
-    return part(name, filename, null, part);
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    filename: String?,
+    part: Number?
+  ): HttpRequest {
+    return part(name, filename, part?.toString())
+  }
+
+  /**
+   * Write part of a multipart request to the request body
+   *
+   * @param name
+   * @param part
+   * @return this request
+   * @throws HttpRequestException
+   */
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    part: File
+  ): HttpRequest {
+    return part(name, null, part)
+  }
+
+  /**
+   * Write part of a multipart request to the request body
+   *
+   * @param name
+   * @param filename
+   * @param part
+   * @return this request
+   * @throws HttpRequestException
+   */
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    filename: String?,
+    part: File
+  ): HttpRequest {
+    return part(name, filename, null, part)
   }
 
   /**
@@ -2845,30 +1738,30 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest part(final String name, final String filename,
-                   final String contentType, final File part) throws HttpRequestException {
-    FileInputStream fis = null;
-    BufferedInputStream stream = null;
-    try {
-      fis = new FileInputStream(part);
-      stream = new BufferedInputStream(fis);
-      incrementTotalSize(part.length());
-      return part(name, filename, contentType, stream);
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    filename: String?,
+    contentType: String?,
+    part: File
+  ): HttpRequest {
+    var fis: FileInputStream? = null
+    var stream: BufferedInputStream? = null
+    return try {
+      fis = FileInputStream(part)
+      stream = BufferedInputStream(fis)
+      incrementTotalSize(part.length())
+      part(name, filename, contentType, stream)
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     } finally {
       try {
-        if (fis != null) {
-          fis.close();
-        }
-      } catch (IOException e) {
+        fis?.close()
+      } catch (e: IOException) {
         //do nothing
       }
       try {
-        if (stream != null) {
-          stream.close();
-        }
-      } catch (IOException e) {
+        stream?.close()
+      } catch (e: IOException) {
         //no nothing
       }
     }
@@ -2882,9 +1775,11 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest part(final String name, final InputStream part)
-      throws HttpRequestException {
-    return part(name, null, null, part);
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    part: InputStream
+  ): HttpRequest {
+    return part(name, null, null, part)
   }
 
   /**
@@ -2897,17 +1792,20 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest part(final String name, final String filename,
-                   final String contentType, final InputStream part)
-      throws HttpRequestException {
+  @Throws(HttpRequestException::class) fun part(
+    name: String?,
+    filename: String?,
+    contentType: String?,
+    part: InputStream
+  ): HttpRequest {
     try {
-      startPart();
-      writePartHeader(name, filename, contentType);
-      copy(part, output);
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+      startPart()
+      writePartHeader(name, filename, contentType)
+      copy(part, output)
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
-    return this;
+    return this
   }
 
   /**
@@ -2918,9 +1816,11 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest partHeader(final String name, final String value)
-      throws HttpRequestException {
-    return send(name).send(": ").send(value).send(CRLF);
+  @Throws(HttpRequestException::class) fun partHeader(
+    name: String,
+    value: String
+  ): HttpRequest {
+    return send(name).send(": ").send(value).send(CRLF)
   }
 
   /**
@@ -2930,16 +1830,16 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest send(final File input) throws HttpRequestException {
-    final InputStream stream;
-    try {
-      stream = new BufferedInputStream(new FileInputStream(input));
-      incrementTotalSize(input.length());
-      HttpRequest httpRequest = send(stream);
-      stream.close();
-      return httpRequest;
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  @Throws(HttpRequestException::class) fun send(input: File): HttpRequest {
+    val stream: InputStream
+    return try {
+      stream = BufferedInputStream(FileInputStream(input))
+      incrementTotalSize(input.length())
+      val httpRequest = send(stream)
+      stream.close()
+      httpRequest
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
   }
 
@@ -2950,86 +1850,85 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest send(final byte[] input) throws HttpRequestException {
-    if (input != null)
-      incrementTotalSize(input.length);
-    return send(new ByteArrayInputStream(input));
+  @Throws(HttpRequestException::class) fun send(input: ByteArray?): HttpRequest {
+    if (input != null) incrementTotalSize(input.size.toLong())
+    return send(ByteArrayInputStream(input))
   }
 
   /**
    * Write stream to request body
-   * <p>
+   *
+   *
    * The given stream will be closed once sending completes
    *
    * @param input
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest send(final InputStream input) throws HttpRequestException {
+  @Throws(HttpRequestException::class) fun send(input: InputStream): HttpRequest {
     try {
-      openOutput();
-      copy(input, output);
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+      openOutput()
+      copy(input, output)
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
-    return this;
+    return this
   }
 
   /**
    * Write reader to request body
-   * <p>
+   *
+   *
    * The given reader will be closed once sending completes
    *
    * @param input
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest send(final Reader input) throws HttpRequestException {
-    Writer writer = null;
-    try {
-      openOutput();
-      writer = new OutputStreamWriter(output,
-          output.encoder.charset());
-      final Writer finalWriter = writer;
-      return new FlushOperation<HttpRequest>(finalWriter) {
-
-        @Override
-        protected HttpRequest run() throws IOException {
-          return copy(input, finalWriter);
+  @Throws(HttpRequestException::class) fun send(input: Reader): HttpRequest {
+    var writer: Writer? = null
+    return try {
+      openOutput()
+      writer = OutputStreamWriter(
+          output,
+          output!!.encoder.charset()
+      )
+      val finalWriter: Writer = writer
+      object : FlushOperation<HttpRequest?>(finalWriter) {
+        @Throws(IOException::class) override fun run(): HttpRequest {
+          return copy(input, finalWriter)
         }
-      }.call();
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+      }.call()!!
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     } finally {
       try {
-        if (writer != null) {
-          writer.close();
-        }
-      } catch (Exception e) {
+        writer?.close()
+      } catch (e: Exception) {
         //do nothing
       }
     }
-
   }
 
   /**
    * Write char sequence to request body
-   * <p>
-   * The charset configured via {@link #contentType(String)} will be used and
+   *
+   *
+   * The charset configured via [.contentType] will be used and
    * UTF-8 will be used if it is unset.
    *
    * @param value
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest send(final CharSequence value) throws HttpRequestException {
+  @Throws(HttpRequestException::class) fun send(value: CharSequence): HttpRequest {
     try {
-      openOutput();
-      output.write(value.toString());
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+      openOutput()
+      output!!.write(value.toString())
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
-    return this;
+    return this
   }
 
   /**
@@ -3038,46 +1937,18 @@ class HttpRequest {
    * @return writer
    * @throws HttpRequestException
    */
-  OutputStreamWriter writer() throws HttpRequestException {
-    try {
-      openOutput();
-      return new OutputStreamWriter(output, output.encoder.charset());
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+  @Throws(HttpRequestException::class) fun writer(): OutputStreamWriter {
+    return try {
+      openOutput()
+      OutputStreamWriter(output, output!!.encoder.charset())
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
   }
-
-  /**
-   * Write the values in the map as form data to the request body
-   * <p>
-   * The pairs specified will be URL-encoded in UTF-8 and sent with the
-   * 'application/x-www-form-urlencoded' content-type
-   *
-   * @param values
-   * @return this request
-   * @throws HttpRequestException
-   */
-  HttpRequest form(final Map<?, ?> values) throws HttpRequestException {
-    return form(values, CHARSET_UTF8);
-  }
-
   /**
    * Write the key and value in the entry as form data to the request body
-   * <p>
-   * The pair specified will be URL-encoded in UTF-8 and sent with the
-   * 'application/x-www-form-urlencoded' content-type
    *
-   * @param entry
-   * @return this request
-   * @throws HttpRequestException
-   */
-  HttpRequest form(final Entry<?, ?> entry) throws HttpRequestException {
-    return form(entry, CHARSET_UTF8);
-  }
-
-  /**
-   * Write the key and value in the entry as form data to the request body
-   * <p>
+   *
    * The pair specified will be URL-encoded and sent with the
    * 'application/x-www-form-urlencoded' content-type
    *
@@ -3086,30 +1957,29 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest form(final Entry<?, ?> entry, final String charset)
-      throws HttpRequestException {
-    return form(entry.getKey(), entry.getValue(), charset);
-  }
-
   /**
-   * Write the name/value pair as form data to the request body
-   * <p>
+   * Write the key and value in the entry as form data to the request body
+   *
+   *
    * The pair specified will be URL-encoded in UTF-8 and sent with the
    * 'application/x-www-form-urlencoded' content-type
    *
-   * @param name
-   * @param value
+   * @param entry
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest form(final Object name, final Object value)
-      throws HttpRequestException {
-    return form(name, value, CHARSET_UTF8);
+  @JvmOverloads @Throws(
+      HttpRequestException::class
+  ) fun form(
+    entry: Entry<*, *>,
+    charset: String? = CHARSET_UTF8
+  ): HttpRequest {
+    return form(entry.key!!, entry.value, charset)
   }
-
   /**
    * Write the name/value pair as form data to the request body
-   * <p>
+   *
+   *
    * The values specified will be URL-encoded and sent with the
    * 'application/x-www-form-urlencoded' content-type
    *
@@ -3119,28 +1989,41 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest form(final Object name, final Object value, String charset)
-      throws HttpRequestException {
-    final boolean first = !form;
+  /**
+   * Write the name/value pair as form data to the request body
+   *
+   *
+   * The pair specified will be URL-encoded in UTF-8 and sent with the
+   * 'application/x-www-form-urlencoded' content-type
+   *
+   * @param name
+   * @param value
+   * @return this request
+   * @throws HttpRequestException
+   */
+  @JvmOverloads @Throws(HttpRequestException::class) fun form(
+    name: Any,
+    value: Any?,
+    charset: String? = CHARSET_UTF8
+  ): HttpRequest {
+    var charset = charset
+    val first = !form
     if (first) {
-      contentType(CONTENT_TYPE_FORM, charset);
-      form = true;
+      contentType(CONTENT_TYPE_FORM, charset)
+      form = true
     }
-    charset = getValidCharset(charset);
+    charset = getValidCharset(charset)
     try {
-      openOutput();
-      if (!first)
-        output.write('&');
-      output.write(URLEncoder.encode(name.toString(), charset));
-      output.write('=');
-      if (value != null)
-        output.write(URLEncoder.encode(value.toString(), charset));
-    } catch (IOException e) {
-      throw new HttpRequestException(e);
+      openOutput()
+      if (!first) output!!.write('&'.toInt())
+      output!!.write(URLEncoder.encode(name.toString(), charset))
+      output!!.write('='.toInt())
+      if (value != null) output!!.write(URLEncoder.encode(value.toString(), charset))
+    } catch (e: IOException) {
+      throw HttpRequestException(e)
     }
-    return this;
+    return this
   }
-
   /**
    * Write the values in the map as encoded form data to the request body
    *
@@ -3149,63 +2032,73 @@ class HttpRequest {
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest form(final Map<?, ?> values, final String charset)
-      throws HttpRequestException {
-    if (!values.isEmpty())
-      for (Entry<?, ?> entry : values.entrySet())
-        form(entry, charset);
-    return this;
+  /**
+   * Write the values in the map as form data to the request body
+   *
+   *
+   * The pairs specified will be URL-encoded in UTF-8 and sent with the
+   * 'application/x-www-form-urlencoded' content-type
+   *
+   * @param values
+   * @return this request
+   * @throws HttpRequestException
+   */
+  @JvmOverloads @Throws(
+      HttpRequestException::class
+  ) fun form(
+    values: Map<*, *>,
+    charset: String? = CHARSET_UTF8
+  ): HttpRequest {
+    if (!values.isEmpty()) for (entry in values.entries) form(entry, charset)
+    return this
   }
 
   /**
    * Configure HTTPS connection to trust all certificates
-   * <p>
+   *
+   *
    * This method does nothing if the current request is not a HTTPS request
    *
    * @return this request
    * @throws HttpRequestException
    */
-  HttpRequest trustAllCerts() throws HttpRequestException {
-    final HttpURLConnection connection = getConnection();
-    if (connection instanceof HttpsURLConnection)
-      ((HttpsURLConnection) connection)
-          .setSSLSocketFactory(getTrustedFactory());
-    return this;
+  @Throws(HttpRequestException::class) fun trustAllCerts(): HttpRequest {
+    val connection = getConnection()
+    if (connection is HttpsURLConnection) connection.sslSocketFactory = trustedFactory
+    return this
   }
 
-  HttpRequest disableSslv3() throws
-      HttpRequestException, NoSuchAlgorithmException, KeyManagementException {
-    final HttpURLConnection connection = getConnection();
-    if (connection instanceof HttpsURLConnection)
-      ((HttpsURLConnection) connection)
-          .setSSLSocketFactory(new com.monet.bidder.TLSSocketFactory());
-    return this;
+  @Throws(
+      HttpRequestException::class, NoSuchAlgorithmException::class, KeyManagementException::class
+  ) fun disableSslv3(): HttpRequest {
+    val connection = getConnection()
+    if (connection is HttpsURLConnection) connection.sslSocketFactory = TLSSocketFactory()
+    return this
   }
 
   /**
    * Configure HTTPS connection to trust all hosts using a custom
-   * {@link HostnameVerifier} that always returns <code>true</code> for each
+   * [HostnameVerifier] that always returns `true` for each
    * host verified
-   * <p>
+   *
+   *
    * This method does nothing if the current request is not a HTTPS request
    *
    * @return this request
    */
-  HttpRequest trustAllHosts() {
-    final HttpURLConnection connection = getConnection();
-    if (connection instanceof HttpsURLConnection)
-      ((HttpsURLConnection) connection)
-          .setHostnameVerifier(getTrustedVerifier());
-    return this;
+  fun trustAllHosts(): HttpRequest {
+    val connection = getConnection()
+    if (connection is HttpsURLConnection) connection.hostnameVerifier = trustedVerifier
+    return this
   }
 
   /**
-   * Get the {@link URL} of this request's connection
+   * Get the [URL] of this request's connection
    *
    * @return request URL
    */
-  URL url() {
-    return getConnection().getURL();
+  fun url(): URL {
+    return getConnection()!!.url
   }
 
   /**
@@ -3213,25 +2106,28 @@ class HttpRequest {
    *
    * @return method
    */
-  String method() {
-    return getConnection().getRequestMethod();
+  fun method(): String {
+    return getConnection()!!.requestMethod
   }
 
   /**
-   * Configure an HTTP proxy on this connection. Use {{@link #proxyBasic(String, String)} if
+   * Configure an HTTP proxy on this connection. Use {[.proxyBasic] if
    * this proxy requires basic authentication.
    *
    * @param proxyHost
    * @param proxyPort
    * @return this request
    */
-  HttpRequest useProxy(final String proxyHost, final int proxyPort) {
-    if (connection != null)
-      throw new IllegalStateException("The connection has already been created. This method must be called before reading or writing to the request.");
-
-    this.httpProxyHost = proxyHost;
-    this.httpProxyPort = proxyPort;
-    return this;
+  fun useProxy(
+    proxyHost: String?,
+    proxyPort: Int
+  ): HttpRequest {
+    check(
+        connection == null
+    ) { "The connection has already been created. This method must be called before reading or writing to the request." }
+    httpProxyHost = proxyHost
+    httpProxyPort = proxyPort
+    return this
   }
 
   /**
@@ -3241,8 +2137,783 @@ class HttpRequest {
    * @param followRedirects - true fo follow redirects, false to not.
    * @return this request
    */
-  HttpRequest followRedirects(final boolean followRedirects) {
-    getConnection().setInstanceFollowRedirects(followRedirects);
-    return this;
+  fun followRedirects(followRedirects: Boolean): HttpRequest {
+    getConnection()!!.instanceFollowRedirects = followRedirects
+    return this
+  }
+
+  companion object {
+    /**
+     * 'UTF-8' charset name
+     */
+    const val CHARSET_UTF8 = "UTF-8"
+
+    /**
+     * 'application/x-www-form-urlencoded' content type header value
+     */
+    const val CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"
+
+    /**
+     * 'application/json' content type header value
+     */
+    const val CONTENT_TYPE_JSON = "application/json"
+
+    /**
+     * 'gzip' encoding header value
+     */
+    const val ENCODING_GZIP = "gzip"
+
+    /**
+     * 'Accept' header name
+     */
+    const val HEADER_ACCEPT = "Accept"
+
+    /**
+     * 'Accept-Charset' header name
+     */
+    const val HEADER_ACCEPT_CHARSET = "Accept-Charset"
+
+    /**
+     * 'Accept-Encoding' header name
+     */
+    const val HEADER_ACCEPT_ENCODING = "Accept-Encoding"
+
+    /**
+     * 'Authorization' header name
+     */
+    const val HEADER_AUTHORIZATION = "Authorization"
+
+    /**
+     * 'Cache-Control' header name
+     */
+    const val HEADER_CACHE_CONTROL = "Cache-Control"
+
+    /**
+     * 'Content-Encoding' header name
+     */
+    const val HEADER_CONTENT_ENCODING = "Content-Encoding"
+
+    /**
+     * 'Content-Length' header name
+     */
+    const val HEADER_CONTENT_LENGTH = "Content-Length"
+
+    /**
+     * 'Content-Type' header name
+     */
+    const val HEADER_CONTENT_TYPE = "Content-Type"
+
+    /**
+     * 'Date' header name
+     */
+    const val HEADER_DATE = "Date"
+
+    /**
+     * 'ETag' header name
+     */
+    const val HEADER_ETAG = "ETag"
+
+    /**
+     * 'Expires' header name
+     */
+    const val HEADER_EXPIRES = "Expires"
+
+    /**
+     * 'If-None-Match' header name
+     */
+    const val HEADER_IF_NONE_MATCH = "If-None-Match"
+
+    /**
+     * 'Last-Modified' header name
+     */
+    const val HEADER_LAST_MODIFIED = "Last-Modified"
+
+    /**
+     * 'Location' header name
+     */
+    const val HEADER_LOCATION = "Location"
+
+    /**
+     * 'Proxy-Authorization' header name
+     */
+    const val HEADER_PROXY_AUTHORIZATION = "Proxy-Authorization"
+
+    /**
+     * 'Referer' header name
+     */
+    const val HEADER_REFERER = "Referer"
+
+    /**
+     * 'Server' header name
+     */
+    const val HEADER_SERVER = "Server"
+
+    /**
+     * 'User-Agent' header name
+     */
+    const val HEADER_USER_AGENT = "User-Agent"
+
+    /**
+     * 'DELETE' request method
+     */
+    const val METHOD_DELETE = "DELETE"
+
+    /**
+     * 'GET' request method
+     */
+    const val METHOD_GET = "GET"
+
+    /**
+     * 'HEAD' request method
+     */
+    const val METHOD_HEAD = "HEAD"
+
+    /**
+     * 'OPTIONS' options method
+     */
+    const val METHOD_OPTIONS = "OPTIONS"
+
+    /**
+     * 'POST' request method
+     */
+    const val METHOD_POST = "POST"
+
+    /**
+     * 'PUT' request method
+     */
+    const val METHOD_PUT = "PUT"
+
+    /**
+     * 'TRACE' request method
+     */
+    const val METHOD_TRACE = "TRACE"
+
+    /**
+     * 'charset' header value parameter
+     */
+    const val PARAM_CHARSET = "charset"
+    private const val BOUNDARY = "00content0boundary00"
+    private const val CONTENT_TYPE_MULTIPART = ("multipart/form-data; boundary="
+        + BOUNDARY)
+    private const val CRLF = "\r\n"
+    private val EMPTY_STRINGS = arrayOfNulls<String>(0)
+    private var TRUSTED_FACTORY: SSLSocketFactory? = null
+    private var TRUSTED_VERIFIER: HostnameVerifier? = null
+    private fun getValidCharset(charset: String?): String {
+      return if (charset != null && charset.length > 0) charset else CHARSET_UTF8
+    }// Intentionally left blank
+
+    // Intentionally left blank
+    @get:Throws(HttpRequestException::class) private val trustedFactory: SSLSocketFactory?
+      private get() {
+        if (TRUSTED_FACTORY == null) {
+          val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            override fun getAcceptedIssuers(): Array<X509Certificate?> {
+              return arrayOfNulls(0)
+            }
+
+            override fun checkClientTrusted(
+              chain: Array<X509Certificate>,
+              authType: String
+            ) {
+              // Intentionally left blank
+            }
+
+            override fun checkServerTrusted(
+              chain: Array<X509Certificate>,
+              authType: String
+            ) {
+              // Intentionally left blank
+            }
+          })
+          try {
+            val context = SSLContext.getInstance("TLS")
+            context.init(null, trustAllCerts, SecureRandom())
+            TRUSTED_FACTORY = context.socketFactory
+          } catch (e: GeneralSecurityException) {
+            val ioException = IOException(
+                "Security exception configuring SSL context"
+            )
+            ioException.initCause(e)
+            throw HttpRequestException(ioException)
+          }
+        }
+        return TRUSTED_FACTORY
+      }
+    private val trustedVerifier: HostnameVerifier?
+      private get() {
+        if (TRUSTED_VERIFIER == null) TRUSTED_VERIFIER =
+          HostnameVerifier { hostname, session -> true }
+        return TRUSTED_VERIFIER
+      }
+
+    private fun addPathSeparator(
+      baseUrl: String,
+      result: StringBuilder
+    ): StringBuilder {
+      // Add trailing slash if the base URL doesn't have any path segments.
+      //
+      // The following test is checking for the last slash not being part of
+      // the protocol to host separator: '://'.
+      if (baseUrl.indexOf(':') + 2 == baseUrl.lastIndexOf('/')) result.append('/')
+      return result
+    }
+
+    private fun addParamPrefix(
+      baseUrl: String,
+      result: StringBuilder
+    ): StringBuilder {
+      // Add '?' if missing and add '&' if params already exist in base url
+      val queryStart = baseUrl.indexOf('?')
+      val lastChar = result.length - 1
+      if (queryStart == -1) result.append(
+          '?'
+      ) else if (queryStart < lastChar && baseUrl[lastChar] != '&') result.append('&')
+      return result
+    }
+
+    private fun addParam(
+      key: Any?,
+      value: Any?,
+      result: StringBuilder
+    ): StringBuilder {
+      var value: Any? = value
+      if (value != null && value.javaClass.isArray) value = arrayToList(value)
+      if (value is Iterable<*>) {
+        val iterator = value.iterator()
+        while (iterator.hasNext()) {
+          result.append(key)
+          result.append("[]=")
+          val element = iterator.next()
+          if (element != null) result.append(element)
+          if (iterator.hasNext()) result.append("&")
+        }
+      } else {
+        result.append(key)
+        result.append("=")
+        if (value != null) result.append(value)
+      }
+      return result
+    }
+
+    private var CONNECTION_FACTORY = ConnectionFactory.DEFAULT
+
+    /**
+     * Specify the [ConnectionFactory] used to create new requests.
+     */
+    fun setConnectionFactory(connectionFactory: ConnectionFactory?) {
+      if (connectionFactory == null) CONNECTION_FACTORY =
+        ConnectionFactory.DEFAULT else CONNECTION_FACTORY = connectionFactory
+    }
+
+    /**
+     * Represents array of any type as list of objects so we can easily iterate over it
+     *
+     * @param array of elements
+     * @return list with the same elements
+     */
+    private fun arrayToList(array: Any): List<Any> {
+      if (array is Array<*>) return Arrays.asList<Any>(*array as Array<Any?>)
+      val result: MutableList<Any> = ArrayList()
+      // Arrays of the primitive types can't be cast to array of Object, so this:
+      if (array is IntArray) for (value in array) result.add(
+          value
+      ) else if (array is BooleanArray) for (value in array) result.add(
+          value
+      ) else if (array is LongArray) for (value in array) result.add(
+          value
+      ) else if (array is FloatArray) for (value in array) result.add(
+          value
+      ) else if (array is DoubleArray) for (value in array) result.add(
+          value
+      ) else if (array is ShortArray) for (value in array) result.add(
+          value
+      ) else if (array is ByteArray) for (value in array) result.add(
+          value
+      ) else if (array is CharArray) for (value in array) result.add(value)
+      return result
+    }
+
+    /**
+     * Encode the given URL as an ASCII [String]
+     *
+     *
+     * This method ensures the path and query segments of the URL are properly
+     * encoded such as ' ' characters being encoded to '%20' or any UTF-8
+     * characters that are non-ASCII. No encoding of URLs is done by default by
+     * the [HttpRequest] constructors and so if URL encoding is needed this
+     * method should be called before calling the [HttpRequest] constructor.
+     *
+     * @param url
+     * @return encoded URL
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun encode(url: CharSequence): String {
+      val parsed: URL
+      parsed = try {
+        URL(url.toString())
+      } catch (e: IOException) {
+        throw HttpRequestException(e)
+      }
+      var host = parsed.host
+      val port = parsed.port
+      if (port != -1) host = host + ':' + Integer.toString(port)
+      return try {
+        var encoded = URI(
+            parsed.protocol, host, parsed.path,
+            parsed.query, null
+        ).toASCIIString()
+        val paramsStart = encoded.indexOf('?')
+        if (paramsStart > 0 && paramsStart + 1 < encoded.length) encoded =
+          (encoded.substring(0, paramsStart + 1)
+              + encoded.substring(paramsStart + 1).replace("+", "%2B"))
+        encoded
+      } catch (e: URISyntaxException) {
+        val io = IOException("Parsing URI failed")
+        io.initCause(e)
+        throw HttpRequestException(io)
+      }
+    }
+
+    /**
+     * Append given map as query parameters to the base URL
+     *
+     *
+     * Each map entry's key will be a parameter name and the value's
+     * [Object.toString] will be the parameter value.
+     *
+     * @param url
+     * @param params
+     * @return URL with appended query params
+     */
+    fun append(
+      url: CharSequence,
+      params: Map<*, *>?
+    ): String {
+      val baseUrl = url.toString()
+      if (params == null || params.isEmpty()) return baseUrl
+      val result = StringBuilder(baseUrl)
+      addPathSeparator(baseUrl, result)
+      addParamPrefix(baseUrl, result)
+      var entry: Entry<*, *>
+      val iterator: Iterator<*> = params.entries.iterator()
+      entry = iterator.next() as Entry<*, *>
+      addParam(entry.key.toString(), entry.value!!, result)
+      while (iterator.hasNext()) {
+        result.append('&')
+        entry = iterator.next() as Entry<*, *>
+        addParam(entry.key.toString(), entry.value!!, result)
+      }
+      return result.toString()
+    }
+
+    /**
+     * Append given name/value pairs as query parameters to the base URL
+     *
+     *
+     * The params argument is interpreted as a sequence of name/value pairs so the
+     * given number of params must be divisible by 2.
+     *
+     * @param url
+     * @param params name/value pairs
+     * @return URL with appended query params
+     */
+    fun append(
+      url: CharSequence,
+      vararg params: Any?
+    ): String {
+      val baseUrl = url.toString()
+      if (params.isEmpty()) return baseUrl
+      require(params.size % 2 == 0) { "Must specify an even number of parameter names/values" }
+      val result = StringBuilder(baseUrl)
+      addPathSeparator(baseUrl, result)
+      addParamPrefix(baseUrl, result)
+      addParam(params[0], params[1], result)
+      var i = 2
+      while (i < params.size) {
+        result.append('&')
+        addParam(params[i], params[i + 1], result)
+        i += 2
+      }
+      return result.toString()
+    }
+
+    /**
+     * Start a 'GET' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) operator fun get(url: CharSequence): HttpRequest {
+      return HttpRequest(url, METHOD_GET)
+    }
+
+    /**
+     * Start a 'GET' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) operator fun get(url: URL): HttpRequest {
+      return HttpRequest(url, METHOD_GET)
+    }
+
+    /**
+     * Start a 'GET' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param params  The query parameters to include as part of the baseUrl
+     * @param encode  true to encode the full URL
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    operator fun get(
+      baseUrl: CharSequence,
+      params: Map<*, *>?,
+      encode: Boolean
+    ): HttpRequest {
+      val url = append(baseUrl, params)
+      return Companion[if (encode) encode(
+          url
+      ) else url]
+    }
+
+    /**
+     * Start a 'GET' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param encode  true to encode the full URL
+     * @param params  the name/value query parameter pairs to include as part of the
+     * baseUrl
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    operator fun get(
+      baseUrl: CharSequence,
+      encode: Boolean,
+      vararg params: Any?
+    ): HttpRequest {
+      val url = append(baseUrl, *params)
+      return Companion[if (encode) encode(url) else url]
+    }
+
+    /**
+     * Start a 'POST' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun post(url: CharSequence): HttpRequest {
+      return HttpRequest(url, METHOD_POST)
+    }
+
+    /**
+     * Start a 'POST' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun post(url: URL): HttpRequest {
+      return HttpRequest(url, METHOD_POST)
+    }
+
+    /**
+     * Start a 'POST' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param params  the query parameters to include as part of the baseUrl
+     * @param encode  true to encode the full URL
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    fun post(
+      baseUrl: CharSequence,
+      params: Map<*, *>?,
+      encode: Boolean
+    ): HttpRequest {
+      val url = append(baseUrl, params)
+      return post(if (encode) encode(url) else url)
+    }
+
+    /**
+     * Start a 'POST' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param encode  true to encode the full URL
+     * @param params  the name/value query parameter pairs to include as part of the
+     * baseUrl
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    fun post(
+      baseUrl: CharSequence,
+      encode: Boolean,
+      vararg params: Any?
+    ): HttpRequest {
+      val url = append(baseUrl, *params)
+      return post(if (encode) encode(url) else url)
+    }
+
+    /**
+     * Start a 'PUT' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun put(url: CharSequence): HttpRequest {
+      return HttpRequest(url, METHOD_PUT)
+    }
+
+    /**
+     * Start a 'PUT' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun put(url: URL): HttpRequest {
+      return HttpRequest(url, METHOD_PUT)
+    }
+
+    /**
+     * Start a 'PUT' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param params  the query parameters to include as part of the baseUrl
+     * @param encode  true to encode the full URL
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    fun put(
+      baseUrl: CharSequence,
+      params: Map<*, *>?,
+      encode: Boolean
+    ): HttpRequest {
+      val url = append(baseUrl, params)
+      return put(if (encode) encode(url) else url)
+    }
+
+    /**
+     * Start a 'PUT' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param encode  true to encode the full URL
+     * @param params  the name/value query parameter pairs to include as part of the
+     * baseUrl
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    fun put(
+      baseUrl: CharSequence,
+      encode: Boolean,
+      vararg params: Any?
+    ): HttpRequest {
+      val url = append(baseUrl, *params)
+      return put(if (encode) encode(url) else url)
+    }
+
+    /**
+     * Start a 'DELETE' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun delete(url: CharSequence): HttpRequest {
+      return HttpRequest(url, METHOD_DELETE)
+    }
+
+    /**
+     * Start a 'DELETE' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun delete(url: URL): HttpRequest {
+      return HttpRequest(url, METHOD_DELETE)
+    }
+
+    /**
+     * Start a 'DELETE' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param params  The query parameters to include as part of the baseUrl
+     * @param encode  true to encode the full URL
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    fun delete(
+      baseUrl: CharSequence,
+      params: Map<*, *>?,
+      encode: Boolean
+    ): HttpRequest {
+      val url = append(baseUrl, params)
+      return delete(if (encode) encode(url) else url)
+    }
+
+    /**
+     * Start a 'DELETE' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param encode  true to encode the full URL
+     * @param params  the name/value query parameter pairs to include as part of the
+     * baseUrl
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    fun delete(
+      baseUrl: CharSequence,
+      encode: Boolean,
+      vararg params: Any?
+    ): HttpRequest {
+      val url = append(baseUrl, *params)
+      return delete(if (encode) encode(url) else url)
+    }
+
+    /**
+     * Start a 'HEAD' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun head(url: CharSequence): HttpRequest {
+      return HttpRequest(url, METHOD_HEAD)
+    }
+
+    /**
+     * Start a 'HEAD' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun head(url: URL): HttpRequest {
+      return HttpRequest(url, METHOD_HEAD)
+    }
+
+    /**
+     * Start a 'HEAD' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param params  The query parameters to include as part of the baseUrl
+     * @param encode  true to encode the full URL
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    fun head(
+      baseUrl: CharSequence,
+      params: Map<*, *>?,
+      encode: Boolean
+    ): HttpRequest {
+      val url = append(baseUrl, params)
+      return head(if (encode) encode(url) else url)
+    }
+
+    /**
+     * Start a 'GET' request to the given URL along with the query params
+     *
+     * @param baseUrl
+     * @param encode  true to encode the full URL
+     * @param params  the name/value query parameter pairs to include as part of the
+     * baseUrl
+     * @return request
+     * @see .append
+     * @see .encode
+     */
+    fun head(
+      baseUrl: CharSequence,
+      encode: Boolean,
+      vararg params: Any?
+    ): HttpRequest {
+      val url = append(baseUrl, *params)
+      return head(if (encode) encode(url) else url)
+    }
+
+    /**
+     * Start an 'OPTIONS' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun options(url: CharSequence): HttpRequest {
+      return HttpRequest(url, METHOD_OPTIONS)
+    }
+
+    /**
+     * Start an 'OPTIONS' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun options(url: URL): HttpRequest {
+      return HttpRequest(url, METHOD_OPTIONS)
+    }
+
+    /**
+     * Start a 'TRACE' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun trace(url: CharSequence): HttpRequest {
+      return HttpRequest(url, METHOD_TRACE)
+    }
+
+    /**
+     * Start a 'TRACE' request to the given URL
+     *
+     * @param url
+     * @return request
+     * @throws HttpRequestException
+     */
+    @Throws(HttpRequestException::class) fun trace(url: URL): HttpRequest {
+      return HttpRequest(url, METHOD_TRACE)
+    }
+
+    /**
+     * Set property to given value.
+     *
+     *
+     * Specifying a null value will cause the property to be cleared
+     *
+     * @param name
+     * @param value
+     * @return previous value
+     */
+    fun setProperty(
+      name: String,
+      value: String?
+    ): String {
+      val action: PrivilegedAction<String>
+      if (value != null) action = PrivilegedAction<String> {
+        System.setProperty(
+            name, value
+        )
+      } else action = PrivilegedAction<String> {
+        System.clearProperty(
+            name
+        )
+      }
+      return AccessController.doPrivileged(action)
+    }
   }
 }

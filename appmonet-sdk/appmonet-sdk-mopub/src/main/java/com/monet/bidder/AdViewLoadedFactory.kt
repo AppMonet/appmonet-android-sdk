@@ -7,14 +7,14 @@ import com.monet.bidder.bid.BidResponse
 
 internal class AdViewLoadedFactory {
   fun getAdView(
-    activity: Activity,
+    activity: Activity?,
     manager: SdkManager,
     originalView: View,
     bid: BidResponse,
     adUnit: String
   ): View {
     val moPubView = manager.getMopubAdView(adUnit)
-    if (manager.currentActivity?.get() != null && manager.getFloatingAdPosition(
+    if (activity != null && manager.getFloatingAdPosition(
             adUnit
         ) != null && moPubView != null
     ) {
@@ -23,9 +23,9 @@ internal class AdViewLoadedFactory {
           moPubView.getAdWidth(), moPubView.getAdHeight(), adUnit
       )
       return FloatingAdView(
-          manager.currentActivity!!.get()!!, manager, params, originalView.context
+          activity, manager, params, originalView.context
       )
-    } else if (manager.currentActivity?.get() != null && manager.getFloatingAdPosition(
+    } else if (activity != null && manager.getFloatingAdPosition(
             adUnit
         ) != null
     ) {

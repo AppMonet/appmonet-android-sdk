@@ -86,17 +86,17 @@ class CustomEventInterstitial : BaseAd() {
   override fun show() {
     sdkManager!!.preferences.setPreference(AD_CONTENT_INTERSTITIAL, bidResponse!!.adm)
     sdkManager!!.preferences.setPreference(BID_ID_INTERSTITIAL, bidResponse!!.id)
-    val uuid = if (mAdView != null) mAdView!!.adViewUUID else null
+    val uuid = if (mAdView != null) mAdView!!.uuid else null
     sdkManager!!.preferences.setPreference(AD_UUID_INTERSTITIAL, uuid)
     MonetActivity.start(mContext!!, sdkManager!!, uuid, bidResponse!!.adm)
   }
 
   override fun onInvalidate() {
-    if (mAdView != null) {
-      if (mAdView!!.adViewState !== AD_RENDERED) {
+    mAdView?.let {
+      if (it.state !== AD_RENDERED) {
         logger.warn("attempt to remove loading adview..")
       }
-      mAdView!!.destroyAdView(true)
+      it.destroyAdView(true)
       MoPubLog.log(adNetworkId, CUSTOM, ADAPTER_NAME, "Interstitial destroyed")
     }
     LocalBroadcastManager.getInstance(mContext!!).unregisterReceiver(mMessageReceiver)
@@ -208,7 +208,7 @@ class CustomEventInterstitial : BaseAd() {
   }
 
   companion object {
-    private val logger = MonetLogger("CustomEventInterstitial")
+    private val logger = Logger("CustomEventInterstitial")
     private const val SERVER_EXTRA_CPM_KEY = "cpm"
     @JvmField val ADAPTER_NAME = CustomEventInterstitial::class.java.simpleName
   }

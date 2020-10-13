@@ -10,11 +10,11 @@ class AdSize(
   val height: Int = 0
 ) {
 
-  fun getWidthInPixels(context: Context?): Int {
+  fun getWidthInPixels(context: Context): Int {
     return Icons.asIntPixels(width.toFloat(), context)
   }
 
-  fun getHeightInPixels(context: Context?): Int {
+  fun getHeightInPixels(context: Context): Int {
     return Icons.asIntPixels(height.toFloat(), context)
   }
 

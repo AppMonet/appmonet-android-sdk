@@ -1,6 +1,10 @@
 package com.monet.bidder
 
+import android.location.Location
+import android.os.Bundle
 import com.monet.bidder.auction.AuctionRequest
+import com.monet.bidder.bid.BidResponse
+import java.util.Date
 
 /**
  * The AdServerWrapper implements a kind of delegate interface, that allows adserver-specific
@@ -8,6 +12,7 @@ import com.monet.bidder.auction.AuctionRequest
  *
  */
 interface AdServerWrapper {
+
   enum class Type {
     INTERSTITIAL,
     BANNER,
@@ -21,19 +26,25 @@ interface AdServerWrapper {
    * @param auctionRequest an AuctionRequest containing information about the request for ads
    * @return an AdServerAdRequest subclass specific to the configured AdServer
    */
-  fun newAdRequest(auctionRequest: AuctionRequest): AdServerAdRequest
+  fun newAdRequest(auctionRequest: AuctionRequest): AdServerAdRequest {
+    return AdServerAdRequestTemplate()
+  }
 
   fun newAdRequest(
     auctionRequest: AuctionRequest,
     type: Type
-  ): AdServerAdRequest
+  ): AdServerAdRequest {
+    return AdServerAdRequestTemplate()
+  }
 
   /**
    * Build an empty/new AdRequest without any attached AuctionRequest.
    *
    * @return an AdserverAdRequest subclass specific to the configured AdServer.
    */
-  fun newAdRequest(): AdServerAdRequest
+  fun newAdRequest(): AdServerAdRequest {
+    return AdServerAdRequestTemplate()
+  }
 
   /**
    * Instantiate an AdSize subclass specific to this AdServer
@@ -46,4 +57,29 @@ interface AdServerWrapper {
     width: Int,
     height: Int
   ): AdSize
+}
+
+private class AdServerAdRequestTemplate : AdServerAdRequest() {
+  override val customTargeting: Bundle
+    get() = Bundle()
+  override val birthday: Date?
+    get() = null
+  override val gender: String?
+    get() = null
+  override val bid: BidResponse?
+    get() = null
+  override val location: Location?
+    get() = null
+  override val contentUrl: String?
+    get() = null
+
+  override fun apply(
+    request: AuctionRequest,
+    adView: AdServerAdView
+  ): AuctionRequest {
+    return request
+  }
+
+  override val publisherProvidedId: String?
+    get() = null
 }

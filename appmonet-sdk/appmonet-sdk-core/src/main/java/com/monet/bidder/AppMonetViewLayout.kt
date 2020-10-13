@@ -1,147 +1,140 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
-
-import androidx.annotation.NonNull;
-
-import android.view.Gravity;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-
-import com.monet.bidder.adview.AdViewManager;
-import com.monet.bidder.adview.AdViewPoolManagerCallback;
-import com.monet.bidder.auction.AuctionManagerCallback;
-import com.monet.bidder.bid.BidResponse;
-
-import java.lang.ref.WeakReference;
-
-import static com.monet.bidder.bid.BidResponse.Constant.FLOATING_AD_TYPE;
+import android.annotation.SuppressLint
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import com.monet.bidder.AdType.BANNER
+import com.monet.bidder.MediationManager.NoBidsFoundException
+import com.monet.bidder.MediationManager.NullBidException
+import com.monet.bidder.adview.AdViewManager
+import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
+import com.monet.bidder.adview.AdViewPoolManagerCallback
+import com.monet.bidder.auction.AuctionManagerCallback
+import com.monet.bidder.bid.BidResponse
+import com.monet.bidder.bid.BidResponse.Constant.FLOATING_AD_TYPE
+import java.lang.ref.WeakReference
 
 @SuppressLint("ViewConstructor")
-public class AppMonetViewLayout extends FrameLayout {
-  private final AdViewPoolManagerCallback adViewPoolManagerCallback;
-  private final AuctionManagerCallback auctionManager;
-  private WeakReference<AdViewManager> adViewManager;
-  private Handler handler;
-  private Runnable runnable;
-  private ViewGroup parent;
-
-  public AppMonetViewLayout(@NonNull Context context,
-                            @NonNull AdViewPoolManagerCallback adViewPoolManagerCallback,
-                            @NonNull AuctionManagerCallback auctionManagerCallback,
-                            AdViewManager adViewManager, AdSize adSize) {
-    super(context);
-    this.adViewManager = new WeakReference<>(adViewManager);
-    this.adViewPoolManagerCallback = adViewPoolManagerCallback;
-    this.auctionManager = auctionManagerCallback;
-    addView(adViewManager.adView, getLayoutParams(adSize));
+class AppMonetViewLayout(
+  context: Context,
+  adViewPoolManagerCallback: AdViewPoolManagerCallback,
+  auctionManagerCallback: AuctionManagerCallback,
+  adViewManager: AdViewManager,
+  adSize: AdSize
+) : FrameLayout(context) {
+  private val adViewPoolManagerCallback: AdViewPoolManagerCallback
+  private val auctionManager: AuctionManagerCallback
+  private val adViewManager: WeakReference<AdViewManager> = WeakReference(adViewManager)
+  private var innerHandler: Handler? = null
+  private var runnable: Runnable? = null
+  private var parent: ViewGroup? = null
+  val uuid = adViewManager.uuid
+  val state = adViewManager.state
+  override fun onAttachedToWindow() {
+    super.onAttachedToWindow()
+    parent = getParent() as ViewGroup
   }
 
-  AdViewManager.AdViewState getAdViewState() {
-    return adViewManager.get().getState();
+  fun destroyAdView(invalidate: Boolean) {
+    adViewManager.get()!!.destroy(invalidate)
+    cleanup()
   }
 
-  @Override
-  protected void onAttachedToWindow() {
-    super.onAttachedToWindow();
-    parent = (ViewGroup) this.getParent();
+  override fun removeAllViews() {
+    super.removeAllViews()
+    cleanup()
   }
 
-  String getAdViewUUID() {
-    return adViewManager.get().getUuid();
-  }
-
-  void destroyAdView(boolean invalidate) {
-    adViewManager.get().destroy(invalidate);
-    cleanup();
-  }
-
-  @Override
-  public void removeAllViews() {
-    super.removeAllViews();
-    cleanup();
-  }
-
-  public void activateRefresh(final BidResponse bid, final AdServerBannerListener listener) {
-    handler = new Handler(Looper.getMainLooper());
-    if (FLOATING_AD_TYPE.equals(bid.getAdType()) || bid.getRefresh() <= 1000) {
-      return;
+  fun activateRefresh(
+    bid: BidResponse,
+    listener: AdServerBannerListener?
+  ) {
+    innerHandler = Handler(Looper.getMainLooper())
+    if (FLOATING_AD_TYPE == bid.adType || bid.refresh <= 1000) {
+      return
     }
-
-    final String adUnit = bid.getAdUnitId();
-    runnable = new Runnable() {
-      @Override
-      public void run() {
-        BidResponse mediationBid = auctionManager.getBidWithFloorCpm(adUnit, 0);
-        MediationManager mediationManager = auctionManager.getMediationManager();
-        try {
-          AdSize adSize = (mediationBid != null) ? new AdSize(mediationBid.getWidth(), mediationBid.getHeight()) : null;
-          BidResponse nextBid = mediationManager.getBidReadyForMediation(mediationBid, adUnit, adSize,
-              AdType.BANNER, 0, true);
-          AdViewManager nextAdView = adViewPoolManagerCallback.request(nextBid);
-
-          if (nextAdView == null) {
-            handler.postDelayed(runnable, bid.getRefresh());
-            return;
-          }
-
-          if (!nextAdView.isLoaded()) {
-            nextAdView.load();
-          }
-          auctionManager.markBidAsUsed(bid);
-          nextAdView.setAdRefreshed(true);
-          nextAdView.setBid(nextBid);
-          nextAdView.setBidForTracking(nextBid);
-          nextAdView.setState(AdViewManager.AdViewState.AD_RENDERED, listener, getContext());
-          // this is always done after the state change
-          nextAdView.inject(nextBid);
-        } catch (MediationManager.NoBidsFoundException | MediationManager.NullBidException e) {
-          handler.postDelayed(runnable, bid.getRefresh());
+    val adUnit = bid.adUnitId
+    runnable = Runnable {
+      val mediationBid = auctionManager.getBidWithFloorCpm(adUnit, 0.0)
+      val mediationManager = auctionManager.mediationManager
+      try {
+        val adSize =
+          if (mediationBid != null) AdSize(mediationBid.width, mediationBid.height) else null
+        val nextBid = mediationManager.getBidReadyForMediation(
+            mediationBid, adUnit, adSize,
+            BANNER, 0.0, true
+        )
+        val nextAdView = adViewPoolManagerCallback.request(nextBid)
+        if (nextAdView == null) {
+          innerHandler?.postDelayed(runnable, bid.refresh.toLong())
+          return@Runnable
         }
+        if (!nextAdView.isLoaded) {
+          nextAdView.load()
+        }
+        auctionManager.markBidAsUsed(bid)
+        nextAdView.isAdRefreshed = true
+        nextAdView.bid = nextBid
+        nextAdView.bidForTracking = nextBid
+        nextAdView.setState(AD_RENDERED, listener, context)
+        // this is always done after the state change
+        nextAdView.inject(nextBid)
+      } catch (e: NoBidsFoundException) {
+        innerHandler?.postDelayed(runnable, bid.refresh.toLong())
+      } catch (e: NullBidException) {
+        innerHandler?.postDelayed(runnable, bid.refresh.toLong())
       }
-    };
-    handler.postDelayed(runnable, bid.getRefresh());
-  }
-
-  private LayoutParams getLayoutParams(AdSize adSize) {
-    return new LayoutParams(
-        adSize.getWidthInPixels(getContext()),
-        adSize.getHeightInPixels(getContext()),
-        Gravity.CENTER);
-  }
-
-  private void cleanup() {
-    if (handler != null && runnable != null) {
-      handler.removeCallbacks(runnable);
     }
-    if (handler != null) {
-      handler.removeCallbacksAndMessages(null);
-    }
-    runnable = null;
-    handler = null;
-    parent = null;
+    innerHandler?.postDelayed(runnable, bid.refresh.toLong())
   }
 
-  void swapViews(AppMonetViewLayout view, AdServerBannerListener listener) {
-    if (view != this) {
-      this.handler.removeCallbacksAndMessages(null);
-      this.handler.removeCallbacks(runnable);
-      view.parent = parent;
-      parent.removeAllViews();
-      parent.addView(view);
-      parent.removeView(this);
-
-      destroyAdView(true);
-      parent = null;
-
-    }
-    listener.onAdRefreshed(view);
+  private fun getLayoutParams(adSize: AdSize): LayoutParams {
+    return LayoutParams(
+        adSize.getWidthInPixels(context),
+        adSize.getHeightInPixels(context),
+        Gravity.CENTER
+    )
   }
 
-  boolean isAdRefreshed() {
-    return adViewManager.get().isAdRefreshed();
+  private fun cleanup() {
+    if (innerHandler != null && runnable != null) {
+      innerHandler?.removeCallbacks(runnable)
+    }
+    if (innerHandler != null) {
+      innerHandler?.removeCallbacksAndMessages(null)
+    }
+    runnable = null
+    innerHandler = null
+    parent = null
+  }
+
+  fun swapViews(
+    view: AppMonetViewLayout,
+    listener: AdServerBannerListener
+  ) {
+    if (view !== this) {
+      innerHandler?.removeCallbacksAndMessages(null)
+      innerHandler?.removeCallbacks(runnable)
+      view.parent = parent
+      parent!!.removeAllViews()
+      parent!!.addView(view)
+      parent!!.removeView(this)
+      destroyAdView(true)
+      parent = null
+    }
+    listener.onAdRefreshed(view)
+  }
+
+  val isAdRefreshed: Boolean
+    get() = adViewManager.get()!!.isAdRefreshed
+
+  init {
+    this.adViewPoolManagerCallback = adViewPoolManagerCallback
+    auctionManager = auctionManagerCallback
+    addView(adViewManager.adView, getLayoutParams(adSize))
   }
 }

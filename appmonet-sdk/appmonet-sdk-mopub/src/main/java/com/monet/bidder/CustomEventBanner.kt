@@ -34,7 +34,7 @@ open class CustomEventBanner : BaseAd(), AppMonetViewListener {
   private var adUnitID = "ZONE_ID"
   override fun onInvalidate() {
     if (mAdView != null) {
-      if (mAdView!!.adViewState !== AD_RENDERED) {
+      if (mAdView!!.state !== AD_RENDERED) {
         sLogger.warn("attempt to remove loading adview..")
       }
       mAdView!!.destroyAdView(true)

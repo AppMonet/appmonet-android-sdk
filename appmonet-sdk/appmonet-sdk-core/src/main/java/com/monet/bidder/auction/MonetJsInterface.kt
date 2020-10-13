@@ -1,40 +1,35 @@
-package com.monet.bidder.auction;
+package com.monet.bidder.auction
 
-import android.os.Handler;
-import android.os.SystemClock;
-
-import androidx.annotation.NonNull;
-
-import android.text.TextUtils;
-import android.webkit.JavascriptInterface;
-import android.webkit.ValueCallback;
-
-import com.monet.bidder.BaseManager;
-import com.monet.bidder.Constants;
-import com.monet.bidder.HttpUtil;
-import com.monet.bidder.Logger;
-import com.monet.bidder.Preferences;
-import com.monet.bidder.RemoteConfiguration;
-import com.monet.bidder.RenderingUtils;
-import com.monet.bidder.adview.AdViewPoolManager;
-import com.monet.bidder.bid.BidManager;
-import com.monet.bidder.threading.BackgroundThread;
-import com.monet.bidder.threading.InternalRunnable;
-import com.monet.bidder.threading.UIThread;
-import com.monet.bidder.CookieManager;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import com.monet.bidder.bid.BidResponse;
-
-import static com.monet.bidder.WebViewUtils.quote;
+import android.os.Handler
+import android.os.SystemClock
+import android.text.TextUtils
+import android.webkit.JavascriptInterface
+import android.webkit.ValueCallback
+import com.monet.bidder.BaseManager
+import com.monet.bidder.CookieManager.Companion.instance
+import com.monet.bidder.HttpUtil.makeRequest
+import com.monet.bidder.Logger
+import com.monet.bidder.Preferences
+import com.monet.bidder.RemoteConfiguration
+import com.monet.bidder.RenderingUtils
+import com.monet.bidder.RenderingUtils.isScreenLocked
+import com.monet.bidder.RenderingUtils.isScreenOn
+import com.monet.bidder.RenderingUtils.numVisibleActivities
+import com.monet.bidder.WebViewUtils
+import com.monet.bidder.adview.AdViewManager
+import com.monet.bidder.adview.AdViewPoolManager
+import com.monet.bidder.bid.BidManager
+import com.monet.bidder.bid.BidResponse
+import com.monet.bidder.bid.BidResponse.Mapper.from
+import com.monet.bidder.threading.BackgroundThread
+import com.monet.bidder.threading.InternalRunnable
+import com.monet.bidder.threading.UIThread
+import org.json.JSONException
+import org.json.JSONObject
+import java.security.MessageDigest
+import java.util.ArrayList
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.experimental.and
 
 /**
  * This JSInterface class provides
@@ -43,39 +38,23 @@ import static com.monet.bidder.WebViewUtils.quote;
  *
  * @see AuctionWebView
  */
-public class MonetJsInterface {
-  private static final Logger sLogger = new Logger("MonetBridge");
-  private static final String JS_CALLBACK = "window['%s'](%s);";
-  private final char[] hexArray;
-  private final Map<String, ValueCallback<String>> mCallbacks;
-  private final String mWebViewUrl;
-  private final Preferences mPreferences;
-  private final BidManager mBidManager;
-  private final RemoteConfiguration remoteConfiguration;
-  private final BackgroundThread backgroundThread;
-  private final AdViewPoolManager adViewPoolManager;
-  private final BaseManager sdkManager;
-  private final AuctionManagerCallback auctionManagerCallback;
-  private final UIThread uiThread;
-
-  public MonetJsInterface(@NonNull BaseManager sdkManager,
-      @NonNull UIThread uiThread,
-      @NonNull BackgroundThread backgroundThread,
-      @NonNull AuctionWebViewParams auctionWebViewParams,
-      @NonNull AuctionManagerCallback auctionManagerCallback,
-      @NonNull Preferences preferences, @NonNull RemoteConfiguration remoteConfiguration) {
-    this.remoteConfiguration = remoteConfiguration;
-    this.uiThread = uiThread;
-    this.backgroundThread = backgroundThread;
-    mCallbacks = new ConcurrentHashMap<>();
-    hexArray = "0123456789ABCDEF".toCharArray();
-    mBidManager = sdkManager.getAuctionManager().getBidManager();
-    adViewPoolManager = sdkManager.getAuctionManager().getAdViewPoolManager();
-    this.sdkManager = sdkManager;
-    this.auctionManagerCallback = auctionManagerCallback;
-    mWebViewUrl = auctionWebViewParams.getAuctionUrl();
-    mPreferences = preferences;
-  }
+class MonetJsInterface(
+  sdkManager: BaseManager,
+  private val uiThread: UIThread,
+  private val backgroundThread: BackgroundThread,
+  auctionWebViewParams: AuctionWebViewParams,
+  auctionManagerCallback: AuctionManagerCallback,
+  preferences: Preferences,
+  private val remoteConfiguration: RemoteConfiguration
+) {
+  private val hexArray: CharArray
+  private val mCallbacks: MutableMap<String?, ValueCallback<String?>?>
+  @get:JavascriptInterface val auctionUrl: String
+  private val mPreferences: Preferences
+  private val mBidManager: BidManager
+  private val adViewPoolManager: AdViewPoolManager
+  private val sdkManager: BaseManager
+  private val auctionManagerCallback: AuctionManagerCallback
 
   /**
    * Indicate that the javascript loaded in the webView has finished
@@ -83,350 +62,323 @@ public class MonetJsInterface {
    *
    * @return a message indicating that the
    */
-  @JavascriptInterface
-  public String indicateInit() {
-    sLogger.debug("javascript initialized..");
-    auctionManagerCallback.onInit();
-    return success("init accepted");
+  @JavascriptInterface fun indicateInit(): String {
+    sLogger.debug("javascript initialized..")
+    auctionManagerCallback.onInit()
+    return success("init accepted")
   }
 
-  @JavascriptInterface
-  public String getAuctionUrl() {
-    return mWebViewUrl;
+  @JavascriptInterface fun setAdUnitNames(adUnitNameJson: String?): String {
+    sLogger.debug("Syncing adunit names")
+    return if (mBidManager.setAdUnitNames(adUnitNameJson)) {
+      success("names set")
+    } else error("failed to set names")
   }
 
-  @JavascriptInterface
-  public String setAdUnitNames(String adUnitNameJson) {
-    sLogger.debug("Syncing adunit names");
-    if (mBidManager.setAdUnitNames(adUnitNameJson)) {
-      return success("names set");
-    }
-    return error("failed to set names");
-  }
-
-  @JavascriptInterface
-  public String hash(String str, String algorithm) {
+  @JavascriptInterface fun hash(
+    str: String,
+    algorithm: String?
+  ): String {
+    var algorithm = algorithm
     if (algorithm == null) {
-      algorithm = "SHA-1";
+      algorithm = "SHA-1"
     }
-
-    try {
-      MessageDigest md = MessageDigest.getInstance(algorithm);
-      byte[] textBytes = str.getBytes("UTF-8");
-      md.update(textBytes, 0, textBytes.length);
-      return bytesToHex(md.digest());
-    } catch (Exception e) {
-      return "";
+    return try {
+      val md = MessageDigest.getInstance(algorithm)
+      val textBytes = str.toByteArray(charset("UTF-8"))
+      md.update(textBytes, 0, textBytes.size)
+      bytesToHex(md.digest())
+    } catch (e: Exception) {
+      ""
     }
   }
 
-  @JavascriptInterface
-  public String getAvailableBidCount(String adUnitId) {
-    int count = mBidManager.countBids(adUnitId);
+  @JavascriptInterface fun getAvailableBidCount(adUnitId: String?): String {
+    val count = mBidManager.countBids(adUnitId)
     return Integer.toString(
-        count); // the JS can just go off of the native code; no need to keep our own store
+        count
+    ) // the JS can just go off of the native code; no need to keep our own store
   }
 
-  @JavascriptInterface
-  public void getConfiguration(final boolean forceServer, final String cb) {
-    backgroundThread.submit(new InternalRunnable() {
-      @Override
-      public void runInternal() {
-        String config = remoteConfiguration.getRemoteConfiguration(forceServer);
-        auctionManagerCallback.executeCode(
-            String.format(JS_CALLBACK, cb, config));
+  @JavascriptInterface fun getConfiguration(
+    forceServer: Boolean,
+    cb: String?
+  ) {
+    backgroundThread.submit(object : InternalRunnable() {
+      override fun runInternal() {
+        val config = remoteConfiguration.getRemoteConfiguration(forceServer)
+        auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, config))
       }
 
-      @Override
-      public void catchException(Exception e) {
-        auctionManagerCallback.executeCode(
-            String.format(JS_CALLBACK, cb, null));
+      override fun catchException(e: Exception?) {
+        auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, null))
       }
-    });
+    })
   }
 
-  @JavascriptInterface
-  public String setBidsForAdUnit(String payload) {
+  @JavascriptInterface fun setBidsForAdUnit(payload: String): String {
     try {
-      JSONObject json = new JSONObject(payload);
-      JSONArray bidsJson = json.getJSONArray("bids");
+      val json = JSONObject(payload)
+      val bidsJson = json.getJSONArray("bids")
 
       // turn the bids into an array
-      List<BidResponse> bids = new ArrayList<>(bidsJson.length());
-      for (int i = 0, l = bidsJson.length(); i < l; i++) {
-        BidResponse bid = BidResponse.Mapper.from(bidsJson.getJSONObject(i));
+      val bids: MutableList<BidResponse?> = ArrayList(bidsJson.length())
+      var i = 0
+      val l = bidsJson.length()
+      while (i < l) {
+        val bid = from(bidsJson.getJSONObject(i))
         if (bid == null) {
-          continue;
+          i++
+          continue
         }
-
-        if (bid.getUrl() == null || bid.getUrl().isEmpty()) {
-          bid.setUrl(mWebViewUrl);
+        if (bid.url == null || bid.url.isEmpty()) {
+          bid.url = auctionUrl
         }
-
-        bids.add(bid);
+        bids.add(bid)
+        i++
       }
-
-      mBidManager.addBids(bids);
-    } catch (Exception e) {
-      sLogger.error("bad json passed for setBids: " + payload);
-      return error("invalid json");
+      mBidManager.addBids(bids)
+    } catch (e: Exception) {
+      sLogger.error("bad json passed for setBids: $payload")
+      return error("invalid json")
     }
-    return success("bids received");
+    return success("bids received")
   }
 
-  @JavascriptInterface
-  public String ajax(String request) {
-    if (request == null || request.isEmpty()) {
-      return "{}";
-    }
-
-    return HttpUtil.makeRequest(auctionManagerCallback.getMonetWebView(), request);
+  @JavascriptInterface fun ajax(request: String?): String {
+    return if (request == null || request.isEmpty()) {
+      "{}"
+    } else makeRequest(auctionManagerCallback.getMonetWebView(), request)
   }
 
-  @JavascriptInterface
-  public String getValue(String request) {
-    try {
-      JSONObject json = new JSONObject(request);
-      String key = json.getString("key");
-      String type = json.getString("type");
-
-      if (type.equals("boolean")) {
-        return mPreferences.getPref(key, false) ? "true" : "false";
-      }
-
-      return mPreferences.getPref(key, "");
-    } catch (Exception e) {
-      return error("invalid request");
+  @JavascriptInterface fun getValue(request: String?): String {
+    return try {
+      val json = JSONObject(request)
+      val key = json.getString("key")
+      val type = json.getString("type")
+      if (type == "boolean") {
+        if (mPreferences.getPref(key, false)) "true" else "false"
+      } else mPreferences.getPref(key, "")
+    } catch (e: Exception) {
+      error("invalid request")
     }
   }
 
-  @JavascriptInterface
-  public String setValue(String request) {
-    try {
-      JSONObject json = new JSONObject(request);
-      String key = json.getString("key");
-      String type = json.getString("type");
-      if (type.equals("boolean")) {
-        mPreferences.setPreference(key, json.getBoolean("value"));
+  @JavascriptInterface fun setValue(request: String?): String {
+    return try {
+      val json = JSONObject(request)
+      val key = json.getString("key")
+      val type = json.getString("type")
+      if (type == "boolean") {
+        mPreferences.setPreference(key, json.getBoolean("value"))
       } else {
-        mPreferences.setPreference(key, json.getString("value"));
+        mPreferences.setPreference(key, json.getString("value"))
       }
-      return success("set value");
-    } catch (JSONException e) {
-      sLogger.warn("error syncing native preferences: " + e.getMessage());
-      return error("invalid request");
+      success("set value")
+    } catch (e: JSONException) {
+      sLogger.warn("error syncing native preferences: " + e.message)
+      error("invalid request")
     }
   }
 
   // js interface (bridge methods)
-  @JavascriptInterface
-  public void getAdvertisingInfo() {
-    auctionManagerCallback.getAdvertisingInfo();
-  }
+  @get:JavascriptInterface val advertisingInfo: Unit
+    get() {
+      auctionManagerCallback.getAdvertisingInfo()
+    }
 
   // helpful when/if we need to avoid running
   // when nothing is visible or something..
-
-  @JavascriptInterface
-  public String getActivitiesInfo() {
-    return TextUtils.join(";", RenderingUtils.getActivitiesInfo());
-  }
-
-  @JavascriptInterface
-  public String getVisibleActivityCount() {
-    return Integer.toString(RenderingUtils.numVisibleActivities());
-  }
-
-  @JavascriptInterface
-  public String isScreenLocked() {
-    return Boolean.toString(
-        RenderingUtils.isScreenLocked(auctionManagerCallback.getDeviceData().getContext()));
-  }
-
-  @JavascriptInterface
-  public String isScreenOn() {
-    return Boolean.toString(
-        RenderingUtils.isScreenOn(auctionManagerCallback.getDeviceData().getContext()));
-  }
+  @get:JavascriptInterface val activitiesInfo: String
+    get() = TextUtils.join(";", RenderingUtils.activitiesInfo)
+  @get:JavascriptInterface val visibleActivityCount: String
+    get() = Integer.toString(numVisibleActivities())
+  @get:JavascriptInterface val isScreenLocked: String
+    get() = java.lang.Boolean.toString(
+        isScreenLocked(auctionManagerCallback.getDeviceData().context)
+    )
+  @get:JavascriptInterface val isScreenOn: String
+    get() = java.lang.Boolean.toString(
+        isScreenOn(auctionManagerCallback.getDeviceData().context)
+    )
 
   // adView aka "helpers" interface
-
-  @JavascriptInterface
-  public String exec(String uuid, final String test) {
-    return adViewPoolManager.executeInContext(uuid, test) ?
-        success("called") : error("invalid");
+  @JavascriptInterface fun exec(
+    uuid: String?,
+    test: String?
+  ): String {
+    return if (adViewPoolManager.executeInContext(uuid!!, test)) success("called") else error(
+        "invalid"
+    )
   }
 
-  @JavascriptInterface
-  public String remove(String uuid) {
+  @JavascriptInterface fun remove(uuid: String?): String {
     if (uuid == null) {
-      return error("empty uuid");
+      return error("empty uuid")
     }
-    if (auctionManagerCallback.removeHelper(uuid)) {
-      return success("removed");
-    }
-    return error("failed to remove");
+    return if (auctionManagerCallback.removeHelper(uuid)) {
+      success("removed")
+    } else error("failed to remove")
   }
 
-  @JavascriptInterface
-  public String requestHelperDestroy(String uuid) {
+  @JavascriptInterface fun requestHelperDestroy(uuid: String?): String {
     if (uuid == null) {
-      return error("null uuid");
+      return error("null uuid")
     }
-    if (auctionManagerCallback.requestHelperDestroy(uuid)) {
-      return success("requested");
-    }
-    return error("request failed");
+    return if (auctionManagerCallback.requestHelperDestroy(uuid)) {
+      success("requested")
+    } else error("request failed")
   }
 
-  @JavascriptInterface
-  public String getRefCount(String wvUUID) {
+  @JavascriptInterface fun getRefCount(wvUUID: String?): String {
     // this way the javascript can determine if
     // it wants to remove one of the helpers
-    return Integer.toString(adViewPoolManager.getReferenceCount(wvUUID));
+    return Integer.toString(adViewPoolManager.getReferenceCount(wvUUID))
   }
 
-  @JavascriptInterface
-  public void getAdViewUrl(final String wvUUID, final String cb) {
+  @JavascriptInterface fun getAdViewUrl(
+    wvUUID: String?,
+    cb: String?
+  ) {
     // must be async since getUrl accesses the webView
-    uiThread.run(new InternalRunnable() {
-      @Override
-      public void runInternal() {
-        String url = adViewPoolManager.getUrl(wvUUID);
-        auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, quote(url)));
+    uiThread.run(object : InternalRunnable() {
+      override fun runInternal() {
+        val url = adViewPoolManager.getUrl(wvUUID!!)
+        auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, WebViewUtils.quote(url)))
       }
 
-      @Override
-      public void catchException(Exception e) {
-        sLogger.warn("Unable to get url", e.getMessage());
+      override fun catchException(e: Exception?) {
+        sLogger.warn("Unable to get url", e!!.message)
       }
-    });
+    })
   }
 
-  @JavascriptInterface
-  public String getNetworkCount(String wvUUID) {
-    return Integer.toString(adViewPoolManager.getNetworkCount(wvUUID));
+  @JavascriptInterface fun getNetworkCount(wvUUID: String?): String {
+    return Integer.toString(adViewPoolManager.getNetworkCount(wvUUID!!))
   }
 
-  @JavascriptInterface
-  public String getHelperCreatedAt(String wvUUID) {
+  @JavascriptInterface fun getHelperCreatedAt(wvUUID: String?): String {
     // this is in milliseconds, so can be used with javascript timestamp
-    return Long.toString(adViewPoolManager.getCreatedAt(wvUUID));
+    return java.lang.Long.toString(adViewPoolManager.getCreatedAt(wvUUID!!))
   }
 
-  @JavascriptInterface
-  public String getHelperRenderCount(String wvUUID) {
-    return Integer.toString(adViewPoolManager.getRenderCount(wvUUID));
+  @JavascriptInterface fun getHelperRenderCount(wvUUID: String?): String {
+    return Integer.toString(adViewPoolManager.getRenderCount(wvUUID!!))
   }
 
-  @JavascriptInterface
-  public String getHelperState(String wvUUID) {
-    return adViewPoolManager.getState(wvUUID);
+  @JavascriptInterface fun getHelperState(wvUUID: String?): String {
+    return adViewPoolManager.getState(wvUUID!!)
   }
 
-  @JavascriptInterface
-  public boolean reloadConfigurations() {
-    return sdkManager.reloadConfigurations();
+  @JavascriptInterface fun reloadConfigurations(): Boolean {
+    return sdkManager.reloadConfigurations()
   }
 
-  @JavascriptInterface
-  public String launch(final String requestID, String url, String ua, String html, String widthStr,
-      String heightStr, String adUnitId) {
+  @JavascriptInterface fun launch(
+    requestID: String,
+    url: String?,
+    ua: String?,
+    html: String?,
+    widthStr: String,
+    heightStr: String,
+    adUnitId: String?
+  ): String {
     // try to parse the integers
-    Integer height;
-    Integer width;
-
+    val height: Int
+    val width: Int
     try {
-      width = Integer.parseInt(widthStr);
-      height = Integer.parseInt(heightStr);
-    } catch (NumberFormatException e) {
-      return error("invalid integer");
+      width = widthStr.toInt()
+      height = heightStr.toInt()
+    } catch (e: NumberFormatException) {
+      return error("invalid integer")
     }
     if (url == null || ua == null || adUnitId == null) {
-      return error("null values");
+      return error("null values")
     }
-    auctionManagerCallback.loadHelper(url, ua, html, width, height, adUnitId,
-        value -> auctionManagerCallback.executeJs("helperReady", "'" + requestID + "'",
-            "'" + value.getUuid() + "'"));
-
-    return success("created");
+    auctionManagerCallback.loadHelper(url, ua, html!!, width, height, adUnitId,
+        ValueCallback { value: AdViewManager ->
+          auctionManagerCallback.executeJs(
+              "helperReady", "'$requestID'",
+              "'" + value.uuid + "'"
+          )
+        })
+    return success("created")
   }
 
-  @JavascriptInterface
-  public void resetCookieManager() {
-    CookieManager.getInstance().clear();
+  @JavascriptInterface fun resetCookieManager() {
+    instance!!.clear()
   }
 
-  @JavascriptInterface
-  public void loadCookieManager() {
-    CookieManager.getInstance().load(auctionManagerCallback.getDeviceData().getContext());
+  @JavascriptInterface fun loadCookieManager() {
+    instance!!.load(auctionManagerCallback.getDeviceData().context)
   }
 
-  @JavascriptInterface
-  public void saveCookieManager() {
-    CookieManager.getInstance().save(auctionManagerCallback.getDeviceData().getContext());
+  @JavascriptInterface fun saveCookieManager() {
+    instance!!.save(auctionManagerCallback.getDeviceData().context)
   }
 
-  @JavascriptInterface
-  public String getVMState() {
-    JSONObject json = auctionManagerCallback.getDeviceData().getVMStats();
-    return json.toString();
-  }
+  @get:JavascriptInterface val vMState: String
+    get() {
+      val json = auctionManagerCallback.getDeviceData().vMStats
+      return json.toString()
+    }
 
-  @JavascriptInterface
-  public String trigger(String eventName, String response) {
-    synchronized (mCallbacks) {
+  @JavascriptInterface fun trigger(
+    eventName: String?,
+    response: String?
+  ): String {
+    synchronized(mCallbacks) {
       if (eventName == null || response == null) {
-        return error("null");
+        return error("null")
       }
-
-      ValueCallback<String> callback = mCallbacks.get(eventName);
-      if (callback == null) {
-        return error("no callback");
-      }
-
+      val callback = mCallbacks[eventName]
+          ?: return error("no callback")
       try {
-        callback.onReceiveValue(response);
-        mCallbacks.remove(eventName);
-      } catch (Exception e) {
-        sLogger.warn("trigger error:", e.getMessage());
-        return error(e.getMessage());
+        callback.onReceiveValue(response)
+        mCallbacks.remove(eventName)
+      } catch (e: Exception) {
+        sLogger.warn("trigger error:", e.message)
+        return error(e.message)
       }
-
-      return success("received");
+      return success("received")
     }
   }
 
-  @JavascriptInterface
-  public String getDeviceData() {
-    return auctionManagerCallback.getDeviceData().toJSON();
+  @get:JavascriptInterface val deviceData: String
+    get() = auctionManagerCallback.getDeviceData().toJSON()
+
+  @JavascriptInterface fun getSharedPreference(
+    key: String?,
+    subKey: String?,
+    keyType: String,
+    defaultBool: Boolean
+  ): String {
+    if (keyType == "string") {
+      return Preferences.getStringAtKey(
+          auctionManagerCallback.getDeviceData().context, key,
+          subKey, "null"
+      )
+    }
+    return if (keyType == "boolean") {
+      java.lang.Boolean.toString(
+          Preferences.getBoolAtKey(
+              auctionManagerCallback.getDeviceData().context, key, subKey,
+              defaultBool
+          )
+      )
+    } else "null"
   }
 
-  @JavascriptInterface
-  public String getSharedPreference(String key, String subKey, String keyType,
-      boolean defaultBool) {
-    if (keyType.equals("string")) {
-      return Preferences.getStringAtKey(auctionManagerCallback.getDeviceData().getContext(), key,
-          subKey, "null");
-    }
-
-    if (keyType.equals("boolean")) {
-      return Boolean.toString(
-          Preferences.getBoolAtKey(auctionManagerCallback.getDeviceData().getContext(), key, subKey,
-              defaultBool));
-    }
-
-    return "null";
-  }
-
-  @JavascriptInterface
-  public void subscribeKV(String key, String valueType) {
+  @JavascriptInterface fun subscribeKV(
+    key: String?,
+    valueType: String?
+  ) {
     try {
       if (valueType != null && key != null) {
-        mPreferences.keyValueFilter.put(key, valueType);
+        mPreferences.keyValueFilter[key] = valueType
       }
-    } catch (Exception e) {
-      sLogger.error("Error subscribing kV");
+    } catch (e: Exception) {
+      sLogger.error("Error subscribing kV")
     }
   }
 
@@ -437,40 +389,40 @@ public class MonetJsInterface {
    * @param eventName the name of the event (usually a message UUID)
    * @param callback the handler to be called when the eventName is received
    */
-  public synchronized void listenOnce(final String eventName, int timeout, final Handler handler,
-      final ValueCallback<String> callback) {
-    final Object handlerToken = new Object();
-    final ValueCallback<String> onEvent = new ValueCallback<String>() {
-      @Override
-      public void onReceiveValue(String value) {
+  @Synchronized fun listenOnce(
+    eventName: String?,
+    timeout: Int,
+    handler: Handler,
+    callback: ValueCallback<String?>
+  ) {
+    val handlerToken = Any()
+    val onEvent: ValueCallback<String?> = object : ValueCallback<String?> {
+      override fun onReceiveValue(value: String?) {
         try {
-          handler.removeCallbacksAndMessages(handlerToken);
-          callback.onReceiveValue(value);
-        } catch (Exception e) {
+          handler.removeCallbacksAndMessages(handlerToken)
+          callback.onReceiveValue(value)
+        } catch (e: Exception) {
         }
         // remove the listener
-        removeListener(eventName, this);
+        removeListener(eventName, this)
       }
-    };
-    Runnable timeoutRunnable = new Runnable() {
-      @Override
-      public void run() {
-        removeListener(eventName, onEvent);
-        callback.onReceiveValue(null);
-      }
-    };
-    handler.postAtTime(timeoutRunnable, handlerToken, SystemClock.uptimeMillis() + timeout);
-    mCallbacks.put(eventName, onEvent);
+    }
+    val timeoutRunnable = Runnable {
+      removeListener(eventName, onEvent)
+      callback.onReceiveValue(null)
+    }
+    handler.postAtTime(timeoutRunnable, handlerToken, SystemClock.uptimeMillis() + timeout)
+    mCallbacks[eventName] = onEvent
   }
 
-  private String bytesToHex(byte[] bytes) {
-    char[] hexChars = new char[bytes.length * 2];
-    for (int j = 0; j < bytes.length; j++) {
-      int v = bytes[j] & 0xFF;
-      hexChars[j * 2] = hexArray[v >>> 4];
-      hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+  private fun bytesToHex(bytes: ByteArray): String {
+    val hexChars = CharArray(bytes.size * 2)
+    for (j in bytes.indices) {
+      val v: Int = bytes[j].toInt() and 0xFF
+      hexChars[j * 2] = hexArray[v ushr 4]
+      hexChars[j * 2 + 1] = hexArray[v and 0x0F]
     }
-    return new String(hexChars);
+    return String(hexChars)
   }
 
   /**
@@ -481,9 +433,12 @@ public class MonetJsInterface {
    * @param eventName the name of the event the listener is subscribed to
    * @param callback the instance of ValueCallback listening
    */
-  synchronized void removeListener(String eventName, ValueCallback<String> callback) {
-    if (mCallbacks.containsKey(eventName) && mCallbacks.get(eventName) == callback) {
-      mCallbacks.remove(eventName);
+  @Synchronized fun removeListener(
+    eventName: String?,
+    callback: ValueCallback<String?>
+  ) {
+    if (mCallbacks.containsKey(eventName) && mCallbacks[eventName] === callback) {
+      mCallbacks.remove(eventName)
     }
   }
 
@@ -493,8 +448,8 @@ public class MonetJsInterface {
    * @param message an error message string (must not contain double quotes)
    * @return a JSON-formatted error message to be sent to javascript
    */
-  private String error(String message) {
-    return "{\"error\": \"" + message + "\"}";
+  private fun error(message: String?): String {
+    return "{\"error\": \"$message\"}"
   }
 
   /**
@@ -503,7 +458,23 @@ public class MonetJsInterface {
    * @param message the message to be returned as JSON. Must not contain double quotes
    * @return a JSON-encoded form of the message
    */
-  private String success(String message) {
-    return "{\"success\": \"" + message + "\"}";
+  private fun success(message: String): String {
+    return "{\"success\": \"$message\"}"
+  }
+
+  companion object {
+    private val sLogger = Logger("MonetBridge")
+    private const val JS_CALLBACK = "window['%s'](%s);"
+  }
+
+  init {
+    mCallbacks = ConcurrentHashMap()
+    hexArray = "0123456789ABCDEF".toCharArray()
+    mBidManager = sdkManager.auctionManager.bidManager
+    adViewPoolManager = sdkManager.auctionManager.adViewPoolManager
+    this.sdkManager = sdkManager
+    this.auctionManagerCallback = auctionManagerCallback
+    auctionUrl = auctionWebViewParams.auctionUrl
+    mPreferences = preferences
   }
 }

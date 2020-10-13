@@ -19,7 +19,7 @@ class AppMonetApp : Application() {
     }
 
     //AppMonet initialization.
-    val appMonetConfiguration = AppMonetConfiguration.Builder().applicationId("rdateu7").build()
+    val appMonetConfiguration = AppMonetConfiguration.Builder().applicationId("3zeuyua").build()
     AppMonet.init(this, appMonetConfiguration)
 
     //Use this only during testing in order to get test ads.

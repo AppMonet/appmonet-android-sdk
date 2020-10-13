@@ -100,7 +100,7 @@ open class AppMonetNativeAdRenderer(private val mViewBinder: AppMonetNativeViewB
   }
 
   companion object {
-    private val logger = MonetLogger("AppMonetNativeAdRenderer")
+    private val logger = Logger("AppMonetNativeAdRenderer")
   }
 
 }

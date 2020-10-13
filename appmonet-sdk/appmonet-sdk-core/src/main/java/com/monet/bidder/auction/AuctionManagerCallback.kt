@@ -63,7 +63,7 @@ interface AuctionManagerCallback {
   fun executeJs(
     timeout: Int,
     method: String,
-    callback: ValueCallback<String>?,
+    callback: ValueCallback<String?>?,
     vararg args: String
   )
 

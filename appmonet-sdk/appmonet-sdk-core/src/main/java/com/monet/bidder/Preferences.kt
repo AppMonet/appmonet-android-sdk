@@ -1,92 +1,71 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-import androidx.annotation.VisibleForTesting;
-
-import java.util.HashMap;
-import java.util.Map;
+import android.content.Context
+import android.content.SharedPreferences
+import android.preference.PreferenceManager
+import androidx.annotation.VisibleForTesting
+import java.util.HashMap
 
 /**
- * This class serves as a wrapper for {@link SharedPreferences} for a much easier way of accessing
+ * This class serves as a wrapper for [SharedPreferences] for a much easier way of accessing
  * and saving values locally.
  */
-public class Preferences {
-  private static final String SHARED_PREFERENCE_NAME = "AppMonetBidder";
-  private static final Logger sLogger = new Logger("Bdr");
-  private final SharedPreferences mSharedPreferences;
-  private final SharedPreferences defaultSharedPreferences;
-  public Map<String, String> keyValueFilter = new HashMap<>();
+class Preferences {
+  private val mSharedPreferences: SharedPreferences
+  val defaultSharedPreferences: SharedPreferences
+  var keyValueFilter = mutableMapOf<String, String>()
 
-  static SharedPreferences getAtKey(Context context, String key) {
-    return context.getSharedPreferences(key, Context.MODE_PRIVATE);
+  @VisibleForTesting
+  internal constructor(
+    sharedPreferences: SharedPreferences,
+    defaultSharedPreferences: SharedPreferences
+  ) {
+    mSharedPreferences = sharedPreferences
+    this.defaultSharedPreferences = defaultSharedPreferences
   }
 
-  public static String getStringAtKey(Context context, String key, String subKey,
-      String defaultValue) {
-    try {
-      return getAtKey(context, key).getString(subKey, defaultValue);
-    } catch (Exception e) {
-      return defaultValue;
-    }
-  }
-
-  public static Boolean getBoolAtKey(Context context, String key, String subKey,
-      boolean defaultValue) {
-    try {
-      return getAtKey(context, key).getBoolean(subKey, defaultValue);
-    } catch (Exception e) {
-      return defaultValue;
-    }
-  }
-
-  @VisibleForTesting Preferences(SharedPreferences sharedPreferences,
-      SharedPreferences defaultSharedPreferences) {
-    mSharedPreferences = sharedPreferences;
-    this.defaultSharedPreferences = defaultSharedPreferences;
-  }
-
-  public Preferences(Context context) {
-    mSharedPreferences = getAtKey(context, SHARED_PREFERENCE_NAME);
-    defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-  }
-
-  public SharedPreferences getDefaultSharedPreferences() {
-    return defaultSharedPreferences;
+  constructor(context: Context) {
+    mSharedPreferences = getAtKey(context, SHARED_PREFERENCE_NAME)
+    defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
   }
 
   /**
    * This method allows you pass a string key and a boolean value so it can be saved in
-   * {@link SharedPreferences}.
+   * [SharedPreferences].
    *
    * @param key The key identifier for the value to be saved.
    * @param value The value to be saved.
    */
-  public void setPreference(String key, Boolean value) {
+  fun setPreference(
+    key: String?,
+    value: Boolean?
+  ) {
     try {
-      SharedPreferences.Editor editor = mSharedPreferences.edit();
-      editor.putBoolean(key, value);
-      editor.apply();
-    } catch (Exception e) {
-      sLogger.warn("Unable to update preference");
+      val editor = mSharedPreferences.edit()
+      editor.putBoolean(key, value!!)
+      editor.apply()
+    } catch (e: Exception) {
+      sLogger.warn("Unable to update preference")
     }
   }
 
   /**
    * This method allows you pass a string key and a string value so it can be saved in
-   * {@link SharedPreferences}.
+   * [SharedPreferences].
    *
    * @param key The key identifier for the value to be saved.
    * @param value The value to be saved.
    */
-  public void setPreference(String key, String value) {
+  fun setPreference(
+    key: String?,
+    value: String?
+  ) {
     try {
-      SharedPreferences.Editor editor = mSharedPreferences.edit();
-      editor.putString(key, value);
-      editor.apply();
-    } catch (Exception e) {
-      sLogger.warn("Unable to set preference");
+      val editor = mSharedPreferences.edit()
+      editor.putString(key, value)
+      editor.apply()
+    } catch (e: Exception) {
+      sLogger.warn("Unable to set preference")
     }
   }
 
@@ -100,13 +79,16 @@ public class Preferences {
    * @return The string value associated with the provided key or the default value if not
    * key/value pair is found.
    */
-  public String getPref(String key, String defaultValue) {
+  fun getPref(
+    key: String?,
+    defaultValue: String
+  ): String {
     try {
-      return mSharedPreferences.getString(key, defaultValue);
-    } catch (Exception e) {
-      sLogger.warn("Error getting pref");
+      return mSharedPreferences.getString(key, defaultValue) ?: defaultValue
+    } catch (e: Exception) {
+      sLogger.warn("Error getting pref")
     }
-    return defaultValue;
+    return defaultValue
   }
 
   /**
@@ -119,22 +101,62 @@ public class Preferences {
    * @return The boolean value associated with the provided key or the default value if no
    * key/value pair is found.
    */
-  public Boolean getPref(String key, Boolean defaultValue) {
+  fun getPref(
+    key: String?,
+    defaultValue: Boolean
+  ): Boolean {
     try {
-      return mSharedPreferences.getBoolean(key, defaultValue);
-    } catch (Exception e) {
-      sLogger.warn("Error getting pref");
+      return mSharedPreferences.getBoolean(key, defaultValue)
+    } catch (e: Exception) {
+      sLogger.warn("Error getting pref")
     }
-    return defaultValue;
+    return defaultValue
   }
 
-  void remove(String key) {
+  fun remove(key: String?) {
     try {
-      SharedPreferences.Editor editor = mSharedPreferences.edit();
-      editor.remove(key);
-      editor.apply();
-    } catch (Exception e) {
-      sLogger.warn("Error removing pref");
+      val editor = mSharedPreferences.edit()
+      editor.remove(key)
+      editor.apply()
+    } catch (e: Exception) {
+      sLogger.warn("Error removing pref")
+    }
+  }
+
+  companion object {
+    private const val SHARED_PREFERENCE_NAME = "AppMonetBidder"
+    private val sLogger = Logger("Bdr")
+    fun getAtKey(
+      context: Context,
+      key: String?
+    ): SharedPreferences {
+      return context.getSharedPreferences(key, Context.MODE_PRIVATE)
+    }
+
+    fun getStringAtKey(
+      context: Context,
+      key: String?,
+      subKey: String?,
+      defaultValue: String
+    ): String {
+      return try {
+        getAtKey(context, key).getString(subKey, defaultValue) ?: defaultValue
+      } catch (e: Exception) {
+        defaultValue
+      }
+    }
+
+    fun getBoolAtKey(
+      context: Context,
+      key: String?,
+      subKey: String?,
+      defaultValue: Boolean
+    ): Boolean {
+      return try {
+        getAtKey(context, key).getBoolean(subKey, defaultValue)
+      } catch (e: Exception) {
+        defaultValue
+      }
     }
   }
 }

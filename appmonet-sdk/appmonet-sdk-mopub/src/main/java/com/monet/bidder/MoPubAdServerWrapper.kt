@@ -6,10 +6,6 @@ import com.monet.bidder.AdServerWrapper.Type.NATIVE
 import com.monet.bidder.auction.AuctionRequest
 
 internal class MoPubAdServerWrapper : AdServerWrapper {
-  override fun newAdRequest(auctionRequest: AuctionRequest): AdServerAdRequest? {
-    return null
-  }
-
   override fun newAdRequest(
     auctionRequest: AuctionRequest,
     type: Type

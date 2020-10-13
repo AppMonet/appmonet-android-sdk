@@ -77,7 +77,9 @@ class MonetDfpActivity : TrustedInterstitialActivity() {
 
   private fun createInteractiveView(): View? {
     return try {
-      InterstitialView(this, sdkManager, intent.getStringExtra(UUID))
+      sdkManager?.let {
+        InterstitialView(this, it, intent.getStringExtra(UUID))
+      }
     } catch (e: JSONException) {
       null
     }
@@ -85,14 +87,16 @@ class MonetDfpActivity : TrustedInterstitialActivity() {
 
   private fun createSingleAdView(): View? {
     return try {
-      InterstitialView(this, sdkManager, intent.getStringExtra(UUID))
+      sdkManager?.let {
+        InterstitialView(this, it, intent.getStringExtra(UUID))
+      }
     } catch (e: JSONException) {
       null
     }
   }
 
   companion object {
-    private val logger = MonetLogger("MonetDfpActivity")
+    private val logger = Logger("MonetDfpActivity")
     private const val BID_ID = "bidId"
     private const val APPMONET_BROADCAST = "appmonet-broadcast"
     private const val INTERNAL_ERROR = "internal_error"

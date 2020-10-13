@@ -124,7 +124,7 @@ internal class DFPAdViewRequest : AdServerAdRequest {
         // do nothing
       }
       if (request.requestData != null) {
-        if(request.requestData?.contentURL!=null) {
+        if (!request.requestData!!.contentURL.isNullOrEmpty()) {
           builder.setContentUrl(request.requestData!!.contentURL)
         }
         builder.setLocation(request.requestData!!.location)

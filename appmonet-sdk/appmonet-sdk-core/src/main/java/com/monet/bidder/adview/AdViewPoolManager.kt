@@ -203,8 +203,8 @@ class AdViewPoolManager : Subscriber, AdViewPoolManagerCallback {
     return remove(adViewManagerCollection[uuid], destroy, true) // the master can always release
   }
 
-  override fun onBroadcast(subscriberMessages: MonetPubSubMessage) {
-    when (subscriberMessages.topic) {
+  override fun onBroadcast(subscriberMessages: MonetPubSubMessage?) {
+    when (subscriberMessages?.topic) {
       Constants.PubSub.Topics.BIDS_CLEANED_UP_TOPIC -> syncWithBidManager(
           subscriberMessages.payload as Map<String, List<String>>
       )

@@ -1,215 +1,168 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.graphics.Color;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
-import android.text.TextUtils;
-import android.view.InputDevice;
-import android.view.MotionEvent;
-import android.view.ViewGroup;
-import android.webkit.CookieManager;
-import android.webkit.ValueCallback;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-
-import com.monet.bidder.auction.MonetJsInterface;
-import com.monet.bidder.threading.InternalRunnable;
-
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.Color
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
+import android.os.Handler
+import android.os.Looper
+import android.text.TextUtils
+import android.view.InputDevice
+import android.view.MotionEvent
+import android.view.ViewGroup
+import android.webkit.CookieManager
+import android.webkit.ValueCallback
+import android.webkit.WebSettings
+import android.webkit.WebSettings.PluginState.ON
+import android.webkit.WebSettings.RenderPriority.HIGH
+import android.webkit.WebView
+import com.monet.bidder.Constants.JSMethods
+import com.monet.bidder.auction.MonetJsInterface
+import com.monet.bidder.threading.InternalRunnable
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Created by jose on 8/28/17.
  */
-
-public class MonetWebView extends WebView implements AppMonetWebView {
-  protected static final String WV_TYPE_UA = "ua";
-  private static final String WV_TYPE_CK = "ck";
-  private static final Logger sLogger = new Logger("MWV");
-  protected MonetJsInterface mJsInterface;
-  public boolean isDestroyed;
-  protected Handler handler;
-  public final AtomicBoolean isLoaded = new AtomicBoolean(false);
-
-  protected MonetWebView(Context context) {
-    super(context);
-    isDestroyed = false;
-    handler = new Handler();
-    initialize();
+open class MonetWebView protected constructor(context: Context?) : WebView(context),
+    AppMonetWebView {
+  private val innerHandler = Handler()
+  var mJsInterface: MonetJsInterface? = null
+  override fun getHandler(): Handler {
+    return innerHandler
   }
 
-  @Override
-  public void destroy() {
+  override fun destroy() {
     try {
-      destroyWebView();
-    } catch (Exception e) {
-      sLogger.warn("failed to properly destroy webView!");
+      destroyWebView()
+    } catch (e: Exception) {
+      sLogger.warn("failed to properly destroy webView!")
     }
-
-    isDestroyed = true;
-    super.destroy();
+    isDestroyed = true
+    super.destroy()
   }
 
-  @NotNull
-  @Override
-  public AtomicBoolean isLoaded() {
-    return isLoaded;
-  }
-
-  @Override
-  public void start() {
+  override fun start() {
     //to be implemented by extension
   }
 
-  @Override
-  public void trackEvent(String eventName, String detail, String key, float value,
-      long currentTime) {
+  override fun trackEvent(
+    eventName: String,
+    detail: String,
+    key: String,
+    value: Float,
+    currentTime: Long
+  ) {
+    var currentTime = currentTime
     if (currentTime <= 0) {
-      currentTime = System.currentTimeMillis();
+      currentTime = System.currentTimeMillis()
     }
-    executeJs("trackRequest", eventName, detail, String.valueOf(value),
-        String.valueOf(currentTime));
+    executeJs("trackRequest", eventName, detail, value.toString(), currentTime.toString())
   }
 
-  @SuppressLint({ "JavascriptInterface", "AddJavascriptInterface" })
-  protected void setJsInterface(MonetJsInterface jsInterface) {
-    mJsInterface = jsInterface;
+  @SuppressLint("JavascriptInterface", "AddJavascriptInterface")
+  protected fun setJsInterface(jsInterface: MonetJsInterface?) {
+    mJsInterface = jsInterface
     if (mJsInterface != null) {
-      addJavascriptInterface(mJsInterface, Constants.JS_BRIDGE_VARIABLE);
+      addJavascriptInterface(mJsInterface, Constants.JS_BRIDGE_VARIABLE)
     }
   }
 
-  private int motionEventType(String type) {
-    if (type == null || type.isEmpty()) {
-      return -1;
-    }
-
-    switch (type.toLowerCase()) {
-      case "down":
-        return MotionEvent.ACTION_DOWN;
-      case "up":
-        return MotionEvent.ACTION_UP;
-      case "hover_enter":
-        return MotionEvent.ACTION_HOVER_ENTER;
-      case "hover_exit":
-        return MotionEvent.ACTION_HOVER_EXIT;
-      case "scroll":
-        return MotionEvent.ACTION_SCROLL;
-      case "move":
-        return MotionEvent.ACTION_MOVE;
-      case "outside":
-        return MotionEvent.ACTION_OUTSIDE;
-      default:
-        return -1;
+  private fun motionEventType(type: String?): Int {
+    return if (type == null || type.isEmpty()) {
+      -1
+    } else when (type.toLowerCase()) {
+      "down" -> MotionEvent.ACTION_DOWN
+      "up" -> MotionEvent.ACTION_UP
+      "hover_enter" -> MotionEvent.ACTION_HOVER_ENTER
+      "hover_exit" -> MotionEvent.ACTION_HOVER_EXIT
+      "scroll" -> MotionEvent.ACTION_SCROLL
+      "move" -> MotionEvent.ACTION_MOVE
+      "outside" -> MotionEvent.ACTION_OUTSIDE
+      else -> -1
     }
   }
 
-  String triggerEvents(String json) {
-    int metaState = 0;
+  fun triggerEvents(json: String?): String? {
+    val metaState = 0
     try {
-      JSONObject source = new JSONObject(json);
+      val source = JSONObject(json)
       if (source == null || !source.has("events")) {
-        return "invalid";
+        return "invalid"
       }
-
-      JSONArray events = source.getJSONArray("events");
+      val events = source.getJSONArray("events")
       if (events == null || events.length() == 0) {
-        return "error";
+        return "error"
       }
-
       if (triggerJsonEvents(metaState, 0, events)) {
-        return "success";
+        return "success"
       }
-    } catch (JSONException e) {
-      return e.getMessage();
+    } catch (e: JSONException) {
+      return e.message
     }
-
-    return "invalid";
+    return "invalid"
   }
 
-  boolean triggerJsonEvents(final int metaState, final int index, final JSONArray events) {
+  fun triggerJsonEvents(
+    metaState: Int,
+    index: Int,
+    events: JSONArray
+  ): Boolean {
     try {
-      JSONObject event = events.getJSONObject(index);
-      if (event == null) {
-        return true;
-      }
-
-      float xf = (float) event.getDouble("x");
-      float yf = (float) event.getDouble("y");
-      String type = event.getString("t");
-      triggerEvent(xf, yf, type, metaState);
-
+      val event = events.getJSONObject(index) ?: return true
+      val xf = event.getDouble("x").toFloat()
+      val yf = event.getDouble("y").toFloat()
+      val type = event.getString("t")
+      triggerEvent(xf, yf, type, metaState)
       if (event.has("d")) {
-        postDelayed(new Runnable() {
-          @Override
-          public void run() {
-            triggerJsonEvents(metaState, index + 1, events);
-          }
-        }, event.getInt("d"));
+        postDelayed({ triggerJsonEvents(metaState, index + 1, events) }, event.getInt("d").toLong())
       } else {
-        triggerJsonEvents(metaState, index + 1, events);
+        triggerJsonEvents(metaState, index + 1, events)
       }
-    } catch (JSONException e) {
-      return false;
+    } catch (e: JSONException) {
+      return false
     }
-
-    return true;
+    return true
   }
 
-  void triggerEvent(float x, float y, String type, int metaState) {
-    long downTime = System.currentTimeMillis();
-    long eventTime = System.currentTimeMillis();
-
-    int eventType = motionEventType(type);
+  fun triggerEvent(
+    x: Float,
+    y: Float,
+    type: String?,
+    metaState: Int
+  ) {
+    val downTime = System.currentTimeMillis()
+    val eventTime = System.currentTimeMillis()
+    val eventType = motionEventType(type)
     if (eventType == -1) {
-      return;
+      return
     }
-
-    MotionEvent event = MotionEvent.obtain(
+    val event = MotionEvent.obtain(
         downTime, eventTime,
         eventType,
-        x, y, metaState);
-
-    event.setSource(InputDevice.SOURCE_TOUCH_NAVIGATION);
-    dispatchTouchEvent(event);
+        x, y, metaState
+    )
+    event.source = InputDevice.SOURCE_TOUCH_NAVIGATION
+    dispatchTouchEvent(event)
   }
 
-  //  boolean loadActivityScheme(Context context, Uri uri) {
-  //    String scheme = uri.getScheme();
-  //    if (scheme == null || !(scheme.equals("market") || scheme.equals("tel") || scheme.equals("sms"))) {
-  //      return false;
-  //    }
-  //    try {
-  //      Intent intent = new Intent(Intent.ACTION_VIEW);
-  //      intent.setData(uri);
-  //      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-  //      context.startActivity(intent);
-  //    } catch (Exception e) {
-  //      sLogger.warn("failed to load uri: ", e.getLocalizedMessage());
-  //      return false;
-  //    }
-  //    return true;
-  //  }
-
-  protected void loadHtml(String html, String baseUrl) {
+  protected fun loadHtml(
+    html: String?,
+    baseUrl: String?
+  ) {
     if (baseUrl == null || html == null) {
-      sLogger.warn("url or html is null");
-      return;
+      sLogger.warn("url or html is null")
+      return
     }
-
     if (isDestroyed) {
-      sLogger.warn("attempt to load HTML in destroyed state");
-      return;
+      sLogger.warn("attempt to load HTML in destroyed state")
+      return
     }
-
     try {
       loadDataWithBaseURL(
           baseUrl,
@@ -217,19 +170,24 @@ public class MonetWebView extends WebView implements AppMonetWebView {
           "text/html",
           "UTF-8",
           null
-      );
-    } catch (Exception e) {
+      )
+    } catch (e: Exception) {
     }
   }
 
-  @Override
-  public void executeJs(String method, String... args) {
-    executeJs(0, method, null, args);
+  override fun executeJs(
+    method: String,
+    vararg args: String
+  ) {
+    executeJs(0, method, null, *args)
   }
 
-  @Override
-  public void executeJs(int timeout, String method, String... args) {
-    executeJs(timeout, method, null, args);
+  override fun executeJs(
+    timeout: Int,
+    method: String,
+    vararg args: String
+  ) {
+    executeJs(timeout, method, null, *args)
   }
 
   /**
@@ -240,15 +198,17 @@ public class MonetWebView extends WebView implements AppMonetWebView {
    * @param args string arguments to pass to javascript method
    * @return the result of javascript execution
    */
-
-  @Override
-  public void executeJs(int timeout, String method, ValueCallback<String> callback,
-      String... args) {
+  override fun executeJs(
+    timeout: Int,
+    method: String,
+    callback: ValueCallback<String?>?,
+    vararg args: String
+  ) {
     if (isDestroyed) {
-      callback.onReceiveValue(null);
+      callback!!.onReceiveValue(null)
     }
-    sLogger.debug("executing js with timeout - " + timeout);
-    executeJsAsync(callback, method, timeout, args);
+    sLogger.debug("executing js with timeout - $timeout")
+    executeJsAsync(callback, method, timeout, *args)
   }
 
   /**
@@ -256,9 +216,11 @@ public class MonetWebView extends WebView implements AppMonetWebView {
    * asynchronously.
    * Note that this requires the method being called to implement the follow signature (javascript,
    * types in Flowtype):
-   * <p>
+   *
+   *
    * monet[{FUNCTION_NAME}] = (args: Array<string>, (string) => null) => null
-   * <p>
+  </string> *
+   *
    * We pass that function a callback as the last argument, which itself calls a bridge method
    * 'trigger', sending a message
    * identified by UUID back through to the webView.
@@ -267,30 +229,31 @@ public class MonetWebView extends WebView implements AppMonetWebView {
    * @param method The javascript method to invoke.
    * @param args The arguments to be passed to the javascript method.
    */
-  @Override
-  public void executeJsAsync(final ValueCallback<String> callback, String method,
-      int timeout, String... args) {
-    final String cbName = "cb__" + UUID.randomUUID().toString();
-    String argStr = TextUtils.join(",", args);
-
-    if (argStr.equals("")) {
-      argStr = "null";
+  override fun executeJsAsync(
+    callback: ValueCallback<String?>?,
+    method: String,
+    timeout: Int,
+    vararg args: String
+  ) {
+    val cbName = "cb__" + UUID.randomUUID().toString()
+    var argStr = TextUtils.join(",", args)
+    if (argStr == "") {
+      argStr = "null"
     }
-
-    String jsCallback =
-        String.format(Constants.JSMethods.JS_ASYNC_CALLBACK, Constants.JS_BRIDGE_VARIABLE, cbName);
-
-    String jsCall =
-        String.format(Constants.JSMethods.JS_CALL_TEMPLATE, Constants.JSMethods.INTERFACE_NAME,
-            method, argStr, jsCallback);
+    val jsCallback =
+      String.format(JSMethods.JS_ASYNC_CALLBACK, Constants.JS_BRIDGE_VARIABLE, cbName)
+    val jsCall = String.format(
+        JSMethods.JS_CALL_TEMPLATE, JSMethods.INTERFACE_NAME,
+        method, argStr, jsCallback
+    )
 
     //if callback is null then we don't care about the response from javascript.
     if (mJsInterface != null && callback != null && timeout > 0) {
-      mJsInterface.listenOnce(cbName, timeout, handler, callback);
+      mJsInterface!!.listenOnce(cbName, timeout, handler, callback)
     }
     // exec immediately if there is a problem
     if (!executeJsCode(jsCall)) {
-      mJsInterface.trigger(cbName, "{\"error\": true }");
+      mJsInterface!!.trigger(cbName, "{\"error\": true }")
     }
   }
 
@@ -300,38 +263,33 @@ public class MonetWebView extends WebView implements AppMonetWebView {
    *
    * @param javascript a string of javascript code to be evaluated in the webView
    */
-  @Override
-  public boolean executeJsCode(final String javascript) {
+  override fun executeJsCode(javascript: String?): Boolean {
     // make sure we're on *this* thread
-    Runnable jsExecute = new Runnable() {
-      @Override
-      public void run() {
-        String basicJsExec = "javascript:(function() { " + javascript + "}());";
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
+    val jsExecute = Runnable {
+      val basicJsExec = "javascript:(function() { $javascript}());"
+      if (VERSION.SDK_INT > VERSION_CODES.KITKAT) {
+        try {
+          evaluateJavascript(javascript) { }
+        } catch (e: Exception) {
+          // fall back to trying to call the URL
           try {
-            evaluateJavascript(javascript, new ValueCallback<String>() {
-              @Override
-              public void onReceiveValue(String value) {
-              }
-            });
-          } catch (Exception e) {
-            // fall back to trying to call the URL
-            try {
-              loadUrl(basicJsExec);
-            } catch (Exception err) {
-            }
-          }
-        } else {
-          try {
-            loadUrl(basicJsExec);
-          } catch (Exception e) {
+            loadUrl(basicJsExec)
+          } catch (err: Exception) {
           }
         }
+      } else {
+        try {
+          loadUrl(basicJsExec)
+        } catch (e: Exception) {
+        }
       }
-    };
-
-    return runOnUiThread(jsExecute);
+    }
+    return runOnUiThread(jsExecute)
   }
+
+  override var isDestroyed: Boolean = false
+
+  override var isLoaded: AtomicBoolean = AtomicBoolean(false)
 
   /**
    * Safely run the runnable on the UI thread (the webView's thread)
@@ -339,38 +297,33 @@ public class MonetWebView extends WebView implements AppMonetWebView {
    * @param runnable code to execute on ui thread (webView thread)
    * @return if it was able to execute succesfully
    */
-  boolean runOnUiThread(final Runnable runnable, final boolean allowDestroyed) {
+  fun runOnUiThread(
+    runnable: Runnable?,
+    allowDestroyed: Boolean
+  ): Boolean {
     if (isDestroyed) {
-      return false;
+      return false
     }
-
     try {
-      handler.post(new InternalRunnable() {
-        @Override
-        public void runInternal() {
+      handler.post(object : InternalRunnable() {
+        override fun runInternal() {
           if (isDestroyed && !allowDestroyed) {
-            sLogger.warn("attempt to execute webView runnable on destroyed wv");
-            return;
+            sLogger.warn("attempt to execute webView runnable on destroyed wv")
+            return
           }
-
-          if (runnable != null) {
-            runnable.run();
-          }
+          runnable?.run()
         }
 
-        @Override
-        public void catchException(Exception e) {
-        }
-      });
-    } catch (Exception e) {
-      return false;
+        override fun catchException(e: Exception?) {}
+      })
+    } catch (e: Exception) {
+      return false
     }
-
-    return true;
+    return true
   }
 
-  protected boolean runOnUiThread(Runnable runnable) {
-    return runOnUiThread(runnable, false);
+  protected fun runOnUiThread(runnable: Runnable?): Boolean {
+    return runOnUiThread(runnable, false)
   }
 
   /**
@@ -378,108 +331,103 @@ public class MonetWebView extends WebView implements AppMonetWebView {
    *
    * @return are we on the UI thread? (webView thread)
    */
-  protected boolean onUIThread() {
-    return Looper.getMainLooper().getThread() == Thread.currentThread();
+  protected fun onUIThread(): Boolean {
+    return Looper.getMainLooper().thread === Thread.currentThread()
   }
 
   /**
    * Clean up the webView as well as possible
    */
-  private void destroyWebView() {
+  private fun destroyWebView() {
     // make sure we do this
-    if (getParent() != null && getParent() instanceof ViewGroup) {
-      ((ViewGroup) getParent()).removeView(this);
+    if (parent != null && parent is ViewGroup) {
+      (parent as ViewGroup).removeView(this)
     }
-
     try {
-      setTag(null);
-    } catch (Exception e) {
-      sLogger.error("failed to clean up webView");
+      tag = null
+    } catch (e: Exception) {
+      sLogger.error("failed to clean up webView")
     }
-
-    removeAllViews();
+    removeAllViews()
   }
 
-  protected void uiInitialize() {
-    WebSettings settings = getSettings();
-    setHorizontalScrollBarEnabled(false);
-    setVerticalScrollBarEnabled(false);
-    settings.setSupportZoom(false);
-    settings.setSupportMultipleWindows(true);
-    settings.setLoadWithOverviewMode(true);
-    setBackgroundColor(Color.TRANSPARENT);
-    setDefaultLayerType(LAYER_TYPE_HARDWARE);
-
+  protected fun uiInitialize() {
+    val settings = settings
+    isHorizontalScrollBarEnabled = false
+    isVerticalScrollBarEnabled = false
+    settings.setSupportZoom(false)
+    settings.setSupportMultipleWindows(true)
+    settings.loadWithOverviewMode = true
+    setBackgroundColor(Color.TRANSPARENT)
+    setDefaultLayerType(LAYER_TYPE_HARDWARE)
     try {
-      settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-      settings.setPluginState(WebSettings.PluginState.ON);
-    } catch (Exception e) {
+      settings.setRenderPriority(HIGH)
+      settings.pluginState = ON
+    } catch (e: Exception) {
       // don't do anything
     }
   }
 
-  @SuppressLint("SetJavaScriptEnabled")
-  private void initialize() {
-    WebSettings settings = getSettings();
-    settings.setJavaScriptEnabled(true);
-    settings.setAllowFileAccess(false);
+  @SuppressLint("SetJavaScriptEnabled") private fun initialize() {
+    val settings = settings
+    settings.javaScriptEnabled = true
+    settings.allowFileAccess = false
 
     //        if (Looper.getMainLooper().equals(Looper.myLooper())) {
     //            uiInitialize();
     //        }
-
-    settings.setGeolocationEnabled(true);
-
-    setCaching(true);
-    allowCookies();
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+    settings.setGeolocationEnabled(true)
+    setCaching(true)
+    allowCookies()
+    if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
+      settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
     }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-      settings.setAllowFileAccessFromFileURLs(false);
-      settings.setAllowUniversalAccessFromFileURLs(false);
+    if (VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN_MR2) {
+      settings.allowFileAccessFromFileURLs = false
+      settings.allowUniversalAccessFromFileURLs = false
     }
   }
 
-  protected void setCaching(boolean enabled) {
-    WebSettings settings = getSettings();
-    settings.setDomStorageEnabled(enabled);
-    settings.setDatabaseEnabled(enabled);
-    settings.setAppCachePath(getContext().getCacheDir().getAbsolutePath());
-    settings.setAppCacheEnabled(enabled);
-    settings.setCacheMode(enabled ? WebSettings.LOAD_DEFAULT : WebSettings.LOAD_NO_CACHE);
-    settings.setSavePassword(enabled);
-    settings.setSaveFormData(enabled);
+  protected fun setCaching(enabled: Boolean) {
+    val settings = settings
+    settings.domStorageEnabled = enabled
+    settings.databaseEnabled = enabled
+    settings.setAppCachePath(context.cacheDir.absolutePath)
+    settings.setAppCacheEnabled(enabled)
+    settings.cacheMode =
+      if (enabled) WebSettings.LOAD_DEFAULT else WebSettings.LOAD_NO_CACHE
+    settings.savePassword = enabled
+    settings.saveFormData = enabled
   }
 
-  private void setDefaultLayerType(int layerType) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      setLayerType(layerType, null);
-      return;
+  private fun setDefaultLayerType(layerType: Int) {
+    if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
+      setLayerType(layerType, null)
+      return
     }
-
-    setLayerType(LAYER_TYPE_SOFTWARE, null);
+    setLayerType(LAYER_TYPE_SOFTWARE, null)
   }
 
-  private void allowCookies() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      CookieManager.getInstance().setAcceptCookie(true);
+  private fun allowCookies() {
+    if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
+      CookieManager.getInstance().setAcceptCookie(true)
     }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
+    if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
+      CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
     }
   }
 
-  @Override
-  public boolean isDestroyed() {
-    return isDestroyed;
+  override fun loadView(url: String) {
+    this.loadUrl(url)
   }
 
-  @Override
-  public void loadView(String url) {
-    this.loadUrl(url);
+  companion object {
+    protected const val WV_TYPE_UA = "ua"
+    private const val WV_TYPE_CK = "ck"
+    private val sLogger = Logger("MWV")
+  }
+
+  init {
+    initialize()
   }
 }

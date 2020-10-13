@@ -118,8 +118,8 @@ class CookieManager private constructor() {
     }
   }
 
-  fun load(context: Context?) {
-    val preferences = Preferences(context) ?: return
+  fun load(context: Context) {
+    val preferences = Preferences(context)
     val encoded = preferences.getPref(COOKIE_PREF_KEY, "")
     val cookies = deserialize(encoded) ?: return
     for (cookie in cookies) {
@@ -127,8 +127,8 @@ class CookieManager private constructor() {
     }
   }
 
-  fun save(context: Context?) {
-    val preferences = Preferences(context) ?: return
+  fun save(context: Context) {
+    val preferences = Preferences(context)
     preferences.setPreference(COOKIE_PREF_KEY, serialize(this))
   }
 

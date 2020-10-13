@@ -1,172 +1,158 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import androidx.annotation.Nullable;
-import androidx.browser.customtabs.CustomTabColorSchemeParams;
-import androidx.browser.trusted.TrustedWebActivityDisplayMode;
-import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
-import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import com.google.androidbrowserhelper.trusted.ChromeUpdatePrompt;
-import com.google.androidbrowserhelper.trusted.LauncherActivityMetadata;
-import com.google.androidbrowserhelper.trusted.TwaLauncher;
-import com.google.androidbrowserhelper.trusted.TwaSharedPreferencesManager;
-import com.monet.R;
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
+import android.os.Bundle
+import android.view.WindowManager.LayoutParams
+import androidx.browser.customtabs.CustomTabColorSchemeParams.Builder
+import androidx.browser.trusted.TrustedWebActivityDisplayMode
+import androidx.browser.trusted.TrustedWebActivityDisplayMode.ImmersiveMode
+import androidx.browser.trusted.TrustedWebActivityIntentBuilder
+import androidx.core.content.ContextCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.androidbrowserhelper.trusted.ChromeUpdatePrompt
+import com.google.androidbrowserhelper.trusted.LauncherActivityMetadata
+import com.google.androidbrowserhelper.trusted.TwaLauncher
+import com.google.androidbrowserhelper.trusted.TwaLauncher.FallbackStrategy
+import com.google.androidbrowserhelper.trusted.TwaSharedPreferencesManager
+import com.monet.R.style
+import com.monet.bidder.Constants.APPMONET_BROADCAST
+import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
 
-import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
-import static com.monet.bidder.Constants.APPMONET_BROADCAST;
-import static com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE;
-
-public class TrustedInterstitialActivity extends Activity {
-  protected static final String URL = "url";
-  protected static final String UUID = "uuid";
-  private static final String BROWSER_WAS_LAUNCHED_KEY =
-      "android.support.customtabs.trusted.BROWSER_WAS_LAUNCHED_KEY";
-  private static final String FALLBACK_TYPE_WEBVIEW = "webview";
-  private static boolean sChromeVersionChecked;
-  private LauncherActivityMetadata mMetadata;
-  private boolean mBrowserWasLaunched;
-
-  protected String uuid;
-  protected String url;
-
-  @Nullable
-  private TwaLauncher mTwaLauncher;
-
-  protected void onCreate(@Nullable Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    uuid = getIntent().getStringExtra(UUID);
-    url = getIntent().getStringExtra(URL);
-
-    if (isTrustedActivity()) {
-      setTheme(R.style.TrustedInterstitialActivityTheme);
-      if (this.restartInNewTask()) {
-        this.finish();
+open class TrustedInterstitialActivity : Activity() {
+  private var mMetadata: LauncherActivityMetadata? = null
+  private var mBrowserWasLaunched = false
+  @JvmField protected var uuid: String? = null
+  protected var url: String? = null
+  private var mTwaLauncher: TwaLauncher? = null
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    uuid = intent.getStringExtra(UUID)
+    url = intent.getStringExtra(URL)
+    if (isTrustedActivity) {
+      setTheme(style.TrustedInterstitialActivityTheme)
+      if (restartInNewTask()) {
+        finish()
       } else if (savedInstanceState != null && savedInstanceState.getBoolean(
-          BROWSER_WAS_LAUNCHED_KEY)) {
-        this.finish();
+              BROWSER_WAS_LAUNCHED_KEY
+          )
+      ) {
+        finish()
       } else {
-        this.mMetadata = LauncherActivityMetadata.parse(this);
-
-        CustomTabColorSchemeParams darkModeColorScheme =
-            (new CustomTabColorSchemeParams.Builder()).setToolbarColor(
-                this.getColorCompat(this.mMetadata.statusBarColorDarkId))
-                .setNavigationBarColor(this.getColorCompat(this.mMetadata.navigationBarColorDarkId))
-                .build();
-        TrustedWebActivityIntentBuilder twaBuilder =
-            (new TrustedWebActivityIntentBuilder(this.getLaunchingUrl()))
-                .setToolbarColor(this.getColorCompat(this.mMetadata.statusBarColorId))
-                .setNavigationBarColor(this.getColorCompat(this.mMetadata.navigationBarColorId))
-                .setColorScheme(0).setColorSchemeParams(2, darkModeColorScheme)
-                .setDisplayMode(this.getDisplayMode());
-        if (this.mMetadata.additionalTrustedOrigins != null) {
-          twaBuilder.setAdditionalTrustedOrigins(this.mMetadata.additionalTrustedOrigins);
+        mMetadata = LauncherActivityMetadata.parse(this)
+        val darkModeColorScheme = Builder().setToolbarColor(
+            getColorCompat(mMetadata!!.statusBarColorDarkId)
+        )
+            .setNavigationBarColor(getColorCompat(mMetadata!!.navigationBarColorDarkId))
+            .build()
+        val twaBuilder = TrustedWebActivityIntentBuilder(launchingUrl)
+            .setToolbarColor(getColorCompat(mMetadata!!.statusBarColorId))
+            .setNavigationBarColor(getColorCompat(mMetadata!!.navigationBarColorId))
+            .setColorScheme(0).setColorSchemeParams(2, darkModeColorScheme)
+            .setDisplayMode(displayMode)
+        mMetadata!!.additionalTrustedOrigins?.let {
+          twaBuilder.setAdditionalTrustedOrigins(it)
         }
-
-        this.mTwaLauncher = new TwaLauncher(this);
-        this.mTwaLauncher.launch(twaBuilder, null, new Runnable() {
-          @Override
-          public void run() {
-            mBrowserWasLaunched = true;
-          }
-        }, this.getFallbackStrategy());
+        mTwaLauncher = TwaLauncher(this)
+        mTwaLauncher!!.launch(
+            twaBuilder, null, Runnable { mBrowserWasLaunched = true }, fallbackStrategy
+        )
         if (!sChromeVersionChecked) {
-          ChromeUpdatePrompt.promptIfNeeded(this, this.mTwaLauncher.getProviderPackage());
-          sChromeVersionChecked = true;
+          ChromeUpdatePrompt.promptIfNeeded(this, mTwaLauncher!!.providerPackage)
+          sChromeVersionChecked = true
         }
-        (new TwaSharedPreferencesManager(this)).writeLastLaunchedProviderPackageName(
-            this.mTwaLauncher.getProviderPackage());
+        TwaSharedPreferencesManager(this).writeLastLaunchedProviderPackageName(
+            mTwaLauncher!!.providerPackage
+        )
       }
     }
   }
 
-  @Override
-  protected void onNewIntent(Intent intent) {
-    super.onNewIntent(intent);
-    if (isTrustedActivity()) {
-      this.finish();
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    if (isTrustedActivity) {
+      finish()
     }
   }
 
-  private int getColorCompat(int splashScreenBackgroundColorId) {
-    return ContextCompat.getColor(this, splashScreenBackgroundColorId);
+  private fun getColorCompat(splashScreenBackgroundColorId: Int): Int {
+    return ContextCompat.getColor(this, splashScreenBackgroundColorId)
   }
 
-  @Override
-  protected void onRestart() {
-    super.onRestart();
-    if (this.mBrowserWasLaunched) {
-      this.finish();
+  override fun onRestart() {
+    super.onRestart()
+    if (mBrowserWasLaunched) {
+      finish()
     }
   }
 
-  @Override
-  protected void onDestroy() {
-    super.onDestroy();
-    if (isTrustedActivity()) {
-      if (this.mTwaLauncher != null) {
-        this.mTwaLauncher.destroy();
+  override fun onDestroy() {
+    super.onDestroy()
+    if (isTrustedActivity) {
+      if (mTwaLauncher != null) {
+        mTwaLauncher!!.destroy()
       }
       LocalBroadcastManager.getInstance(this).sendBroadcast(
-          new Intent(APPMONET_BROADCAST)
-              .putExtra(APPMONET_BROADCAST_MESSAGE,
-                  "interstitial_dismissed"));
+          Intent(APPMONET_BROADCAST)
+              .putExtra(
+                  APPMONET_BROADCAST_MESSAGE,
+                  "interstitial_dismissed"
+              )
+      )
     }
   }
 
-  @Override
-  public void onBackPressed() {
+  override fun onBackPressed() {
     //do nothing
   }
 
-  @Override
-  protected void onSaveInstanceState(Bundle outState) {
-    super.onSaveInstanceState(outState);
-    if (isTrustedActivity()) {
-      outState.putBoolean("BROWSER_WAS_LAUNCHED_KEY", this.mBrowserWasLaunched);
+  override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+    if (isTrustedActivity) {
+      outState.putBoolean("BROWSER_WAS_LAUNCHED_KEY", mBrowserWasLaunched)
     }
   }
 
-  protected Uri getLaunchingUrl() {
-    return Uri.parse(url);
-  }
+  protected val launchingUrl: Uri
+    get() = Uri.parse(url)
+  protected val fallbackStrategy: FallbackStrategy
+    get() = if (FALLBACK_TYPE_WEBVIEW.equals(
+            mMetadata!!.fallbackStrategyType, ignoreCase = true
+        )
+    ) TwaLauncher.WEBVIEW_FALLBACK_STRATEGY else TwaLauncher.CCT_FALLBACK_STRATEGY
+  protected val displayMode: TrustedWebActivityDisplayMode
+    get() = ImmersiveMode(true, LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT)
 
-  protected TwaLauncher.FallbackStrategy getFallbackStrategy() {
-    return FALLBACK_TYPE_WEBVIEW.equalsIgnoreCase(this.mMetadata.fallbackStrategyType)
-        ? TwaLauncher.WEBVIEW_FALLBACK_STRATEGY : TwaLauncher.CCT_FALLBACK_STRATEGY;
-  }
-
-  protected TrustedWebActivityDisplayMode getDisplayMode() {
-    return new TrustedWebActivityDisplayMode
-        .ImmersiveMode(true, LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT);
-  }
-
-  private boolean restartInNewTask() {
-    boolean hasNewTask = (getIntent().getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != 0;
-    boolean hasNewDocument = false;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      hasNewDocument = (getIntent().getFlags() & Intent.FLAG_ACTIVITY_NEW_DOCUMENT) != 0;
+  private fun restartInNewTask(): Boolean {
+    val hasNewTask = intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0
+    var hasNewDocument = false
+    if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
+      hasNewDocument = intent.flags and Intent.FLAG_ACTIVITY_NEW_DOCUMENT != 0
     }
-    if (hasNewTask && !hasNewDocument) return false;
-
-    Intent newIntent = new Intent(getIntent());
-
-    int flags = getIntent().getFlags();
-    flags |= Intent.FLAG_ACTIVITY_NEW_TASK;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      flags &= ~Intent.FLAG_ACTIVITY_NEW_DOCUMENT;
+    if (hasNewTask && !hasNewDocument) return false
+    val newIntent = Intent(intent)
+    var flags = intent.flags
+    flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
+    if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
+      flags = flags and Intent.FLAG_ACTIVITY_NEW_DOCUMENT.inv()
     }
-    newIntent.setFlags(flags);
-
-    startActivity(newIntent);
-    return true;
+    newIntent.flags = flags
+    startActivity(newIntent)
+    return true
   }
 
-  private boolean isTrustedActivity() {
-    return uuid == null;
+  private val isTrustedActivity: Boolean
+    get() = uuid == null
+
+  companion object {
+    const val URL = "url"
+    const val UUID = "uuid"
+    private const val BROWSER_WAS_LAUNCHED_KEY =
+      "android.support.customtabs.trusted.BROWSER_WAS_LAUNCHED_KEY"
+    private const val FALLBACK_TYPE_WEBVIEW = "webview"
+    private var sChromeVersionChecked = false
   }
 }

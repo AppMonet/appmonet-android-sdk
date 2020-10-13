@@ -171,6 +171,6 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
     get() = mAdView
 
   companion object {
-    private val logger = MonetLogger("CustomEventBanner")
+    private val logger = Logger("CustomEventBanner")
   }
 }

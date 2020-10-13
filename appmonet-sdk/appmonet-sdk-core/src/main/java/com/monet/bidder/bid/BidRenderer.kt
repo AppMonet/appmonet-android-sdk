@@ -1,67 +1,60 @@
-package com.monet.bidder.bid;
+package com.monet.bidder.bid
 
-import android.content.Context;
-import androidx.annotation.NonNull;
+import android.content.Context
+import com.monet.bidder.AdServerBannerListener
+import com.monet.bidder.AdSize
+import com.monet.bidder.AppMonetViewLayout
+import com.monet.bidder.BaseManager
+import com.monet.bidder.Constants.TEST_MODE_WARNING
+import com.monet.bidder.Logger
+import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 
-import com.monet.bidder.AdServerBannerListener;
-import com.monet.bidder.AdSize;
-import com.monet.bidder.AppMonetViewLayout;
-import com.monet.bidder.BaseManager;
-import com.monet.bidder.Logger;
-import com.monet.bidder.adview.AdViewManager;
-
-import static com.monet.bidder.BaseManager.isTestMode;
-import static com.monet.bidder.Constants.TEST_MODE_WARNING;
-
-public class BidRenderer {
-  private static final Logger sLogger = new Logger("Renderer");
-
-  private BidRenderer() {
-  }
-
-  public static AppMonetViewLayout renderBid(@NonNull Context context,
-      @NonNull BaseManager sdkManager,
-      @NonNull BidResponse bidResponse, AdSize adSize, @NonNull AdServerBannerListener listener) {
-    sLogger.info("Rendering bid:", bidResponse.toString());
-    if (!sdkManager.getAuctionManager().getBidManager().isValid(bidResponse)) {
-      sdkManager.getAuctionManager().trackEvent("bidRenderer",
-          "invalid_bid", bidResponse.getId(), 0f, System.currentTimeMillis());
-      return null;
+object BidRenderer {
+  private val sLogger = Logger("Renderer")
+  @JvmStatic fun renderBid(
+    context: Context,
+    sdkManager: BaseManager,
+    bidResponse: BidResponse,
+    adSize: AdSize?,
+    listener: AdServerBannerListener
+  ): AppMonetViewLayout? {
+    sLogger.info("Rendering bid:", bidResponse.toString())
+    if (!sdkManager.auctionManager.bidManager.isValid(bidResponse)) {
+      sdkManager.auctionManager.trackEvent(
+          "bidRenderer",
+          "invalid_bid", bidResponse.id, 0f, System.currentTimeMillis()
+      )
+      return null
     }
-
-    AdViewManager adViewManager = sdkManager.getAuctionManager().getAdViewPoolManager().request(bidResponse);
-
+    val adViewManager = sdkManager.auctionManager.adViewPoolManager.request(bidResponse)
     if (adViewManager == null) {
-      sLogger.warn("fail to attach adView. Unable to serve");
-      sdkManager.getAuctionManager().trackEvent("bidRenderer",
-          "null_view", bidResponse.getId(), 0f, System.currentTimeMillis());
-      return null;
+      sLogger.warn("fail to attach adView. Unable to serve")
+      sdkManager.auctionManager.trackEvent(
+          "bidRenderer",
+          "null_view", bidResponse.id, 0f, System.currentTimeMillis()
+      )
+      return null
     }
-
-    if (!adViewManager.isLoaded()) {
+    if (!adViewManager.isLoaded) {
       // load sdk.js
-      sLogger.debug("Initializing AdView for injection");
-      adViewManager.load();
+      sLogger.debug("Initializing AdView for injection")
+      adViewManager.load()
     }
-    sdkManager.getAuctionManager().getBidManager().markUsed(bidResponse);
-
-    adViewManager.setBid(bidResponse);
-    adViewManager.setBidForTracking(bidResponse);
-    adViewManager.setState(AdViewManager.AdViewState.AD_RENDERED, listener, context);
+    sdkManager.auctionManager.bidManager.markUsed(bidResponse)
+    adViewManager.bid = bidResponse
+    adViewManager.bidForTracking = bidResponse
+    adViewManager.setState(AD_RENDERED, listener, context)
 
     // this is always done after the state change
-    sLogger.debug("injecting ad into view");
-    adViewManager.inject(bidResponse);
-    adViewManager.setShouldAdRefresh(false);
-    if (adSize != null
-        && adSize.getWidth() != 0
-        && adSize.getHeight() != 0
-        && bidResponse.getFlexSize()) {
-      adViewManager.resize(adSize);
+    sLogger.debug("injecting ad into view")
+    adViewManager.inject(bidResponse)
+    adViewManager.shouldAdRefresh = false
+    if (adSize != null && adSize.width != 0 && adSize.height != 0 && bidResponse.flexSize) {
+      adViewManager.resize(adSize)
     }
-    if (isTestMode) {
-      sLogger.warn(TEST_MODE_WARNING);
+    if (BaseManager.isTestMode) {
+      sLogger.warn(TEST_MODE_WARNING)
     }
-    return (AppMonetViewLayout) adViewManager.adView.getParent();
+    return adViewManager.adView.parent as AppMonetViewLayout
   }
 }

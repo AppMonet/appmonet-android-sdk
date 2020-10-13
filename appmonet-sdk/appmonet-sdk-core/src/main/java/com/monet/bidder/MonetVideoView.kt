@@ -1,82 +1,78 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.widget.VideoView;
+import android.content.Context
+import android.media.MediaPlayer
+import android.media.MediaPlayer.OnCompletionListener
+import android.media.MediaPlayer.OnPreparedListener
+import android.net.Uri
+import android.widget.VideoView
+import java.util.UUID
 
-import java.util.UUID;
+class MonetVideoView(context: Context?) : VideoView(context),
+    OnCompletionListener,
+    OnPreparedListener {
+  var isBuffered = false
+  var focused = false
+  var videoUrl: String? = null
+  var videoId: String? = null
+  private var listener: VideoListener? = null
+  private var analyticsTracker: InterstitialAnalyticsTracker? = null
+  private var impressionId: String? = null
+  fun setVideoListener(listener: VideoListener?) {
+    this.listener = listener
+  }
 
-public class MonetVideoView extends VideoView implements MediaPlayer.OnCompletionListener,
-        MediaPlayer.OnPreparedListener {
-    boolean isBuffered;
-    boolean isFocused;
-    String videoUrl;
-    String videoId;
-    private VideoListener listener;
-    private InterstitialAnalyticsTracker analyticsTracker;
-    private String impressionId;
+  fun setAnalyticsTracker(analyticsTracker: InterstitialAnalyticsTracker?) {
+    this.analyticsTracker = analyticsTracker
+  }
 
-    public MonetVideoView(Context context) {
-        super(context);
-        setOnPreparedListener(this);
-        setOnCompletionListener(this);
+  override fun onCompletion(mp: MediaPlayer) {
+    analyticsTracker!!.trackVideoCompleted(videoId!!, impressionId!!)
+    listener!!.onVideoCompleted()
+  }
+
+  override fun onPrepared(mp: MediaPlayer) {
+    isBuffered = true
+    playVideo()
+  }
+
+  fun loadVideo() {
+    setVideoURI(Uri.parse(videoUrl))
+  }
+
+  fun playVideo() {
+    if (!isPlaying && isBuffered && focused) {
+      impressionId = UUID.randomUUID().toString()
+      start()
+      analyticsTracker!!.trackVideoEventStart(videoId!!, impressionId!!)
+      listener!!.onVideoPlaying()
     }
+  }
 
-    void setVideoListener(VideoListener listener) {
-        this.listener = listener;
-    }
+  fun resetVideo() {
+    analyticsTracker!!.trackVideoEventStop(videoId!!, impressionId!!)
+    focused = false
+    pause()
+    seekTo(0)
+    listener!!.onResetVideo()
+  }
 
-    void setAnalyticsTracker(InterstitialAnalyticsTracker analyticsTracker) {
-        this.analyticsTracker = analyticsTracker;
-    }
+  fun trackVideoAttached() {
+    analyticsTracker!!.trackVideoAttached(videoId!!, impressionId!!)
+  }
 
-    @Override
-    public void onCompletion(MediaPlayer mp) {
-        analyticsTracker.trackVideoCompleted(videoId, impressionId);
-        listener.onVideoCompleted();
-    }
+  fun trackVideoDetached() {
+    analyticsTracker!!.trackVideoDetached(videoId!!, impressionId!!)
+  }
 
-    @Override
-    public void onPrepared(MediaPlayer mp) {
-        isBuffered = true;
-        playVideo();
-    }
+  interface VideoListener {
+    fun onVideoPlaying()
+    fun onVideoCompleted()
+    fun onResetVideo()
+  }
 
-    void loadVideo() {
-        setVideoURI(Uri.parse(videoUrl));
-    }
-
-    void playVideo() {
-        if (!isPlaying() && isBuffered && isFocused) {
-            impressionId = UUID.randomUUID().toString();
-            start();
-            analyticsTracker.trackVideoEventStart(videoId, impressionId);
-            listener.onVideoPlaying();
-        }
-    }
-
-    void resetVideo() {
-        analyticsTracker.trackVideoEventStop(videoId, impressionId);
-        isFocused = false;
-        pause();
-        seekTo(0);
-        listener.onResetVideo();
-    }
-
-    void trackVideoAttached() {
-        analyticsTracker.trackVideoAttached(videoId, impressionId);
-    }
-
-    void trackVideoDetached() {
-        analyticsTracker.trackVideoDetached(videoId, impressionId);
-    }
-
-    interface VideoListener {
-        void onVideoPlaying();
-
-        void onVideoCompleted();
-
-        void onResetVideo();
-    }
+  init {
+    setOnPreparedListener(this)
+    setOnCompletionListener(this)
+  }
 }

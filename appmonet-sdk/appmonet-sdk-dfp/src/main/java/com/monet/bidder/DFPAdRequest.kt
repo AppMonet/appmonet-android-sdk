@@ -150,9 +150,7 @@ internal class DFPAdRequest : AdServerAdRequest {
         }
       }
       if (request.requestData != null) {
-        if (request.requestData!!.contentURL != null
-            && !request.requestData!!.contentURL.isEmpty()
-        ) {
+        if (!request.requestData!!.contentURL.isNullOrEmpty()) {
           builder.setContentUrl(request.requestData!!.contentURL)
         }
         builder.setLocation(request.requestData!!.location)

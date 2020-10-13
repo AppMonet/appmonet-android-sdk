@@ -1,6 +1,14 @@
 package com.monet.bidder
 
 import com.monet.bidder.FloatingPosition.*
+import com.monet.bidder.FloatingPosition.Companion.BOTTOM
+import com.monet.bidder.FloatingPosition.Companion.DP
+import com.monet.bidder.FloatingPosition.Companion.END
+import com.monet.bidder.FloatingPosition.Companion.HEIGHT
+import com.monet.bidder.FloatingPosition.Companion.PERCENT
+import com.monet.bidder.FloatingPosition.Companion.START
+import com.monet.bidder.FloatingPosition.Companion.TOP
+import com.monet.bidder.FloatingPosition.Companion.WIDTH
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -8,7 +16,7 @@ import org.robolectric.RobolectricTestRunner
 
 
 @RunWith(RobolectricTestRunner::class)
-class RenderUtilsTest {
+class FloatingAdRenderUtilTest {
 
     @Test
     fun `top percent is calculated correctly`() {
@@ -19,7 +27,7 @@ class RenderUtilsTest {
                 Pair(HEIGHT, Value(50, DP))
         )
 //        val magicPosition = FloatingPosition("", position)
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(150, adViewPositioning.y)
 
@@ -32,7 +40,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(-150, adViewPositioning.y)
 
@@ -46,7 +54,7 @@ class RenderUtilsTest {
                 Pair(HEIGHT, Value(50, DP))
         )
         val magicPosition = com.monet.bidder.FloatingPosition("", position)
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(125, adViewPositioning.x)
 
@@ -59,7 +67,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(-132, adViewPositioning.x)
     }
@@ -71,7 +79,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(50, adViewPositioning.y)
     }
@@ -83,7 +91,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(-50, adViewPositioning.y)
     }
@@ -95,7 +103,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(50, adViewPositioning.x)
     }
@@ -107,7 +115,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(-120, adViewPositioning.x)
     }
@@ -119,7 +127,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(100, PERCENT)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(-50, adViewPositioning.x)
     }
@@ -130,7 +138,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(320, adViewPositioning.width)
     }
@@ -141,7 +149,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(320, DP)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(50, adViewPositioning.height)
     }
@@ -152,7 +160,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(80, PERCENT)),
                 Pair(HEIGHT, Value(50, DP))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(200, adViewPositioning.width)
     }
@@ -163,7 +171,7 @@ class RenderUtilsTest {
                 Pair(WIDTH, Value(0, PERCENT)),
                 Pair(HEIGHT, Value(60, PERCENT))
         )
-        val adViewPositioning = RenderingUtils.calculateAdViewPositioning(300,
+        val adViewPositioning = FloatingAdRenderUtil.calculateAdViewPositioning(300,
                 250, 0, 0, position)
         Assert.assertEquals(180, adViewPositioning.height)
     }

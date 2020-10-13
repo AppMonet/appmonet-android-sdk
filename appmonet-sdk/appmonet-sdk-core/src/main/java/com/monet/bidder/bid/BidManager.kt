@@ -87,8 +87,8 @@ class BidManager : Subscriber {
     setupIntervalExecution()
   }
 
-  override fun onBroadcast(subscriberMessages: MonetPubSubMessage) {
-    if (subscriberMessages.topic == Topics.AD_VIEW_REMOVED_TOPIC) {
+  override fun onBroadcast(subscriberMessages: MonetPubSubMessage?) {
+    if (subscriberMessages?.topic == Topics.AD_VIEW_REMOVED_TOPIC) {
       try {
         sLogger.debug("forcing bid clean / destroyed adView")
         cleanBids()

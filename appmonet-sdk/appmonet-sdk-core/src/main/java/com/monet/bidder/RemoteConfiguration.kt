@@ -1,73 +1,81 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
-import android.net.Uri;
-import androidx.annotation.VisibleForTesting;
-import android.util.Base64;
+import android.content.Context
+import android.net.Uri
+import android.util.Base64
+import androidx.annotation.VisibleForTesting
+import com.monet.bidder.DownloadManager.DownloadStrategy.CACHE_IF_AVAILABLE
+import com.monet.bidder.DownloadManager.DownloadStrategy.NETWORK
+import org.json.JSONObject
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.zip.DataFormatException
+import java.util.zip.Inflater
 
-import org.json.JSONObject;
+class RemoteConfiguration {
+  private var downloadManager: DownloadManager
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
-
-public class RemoteConfiguration {
-  private final static Logger sLogger = new Logger("RemoteConfiguration");
-  private DownloadManager downloadManager;
-
-  public RemoteConfiguration(Context context, String applicationId) {
-    Uri configurationUri = Uri.parse(Constants.AUCTION_MANAGER_CONFIG_URL)
+  constructor(
+    context: Context?,
+    applicationId: String?
+  ) {
+    val configurationUri = Uri.parse(Constants.AUCTION_MANAGER_CONFIG_URL)
         .buildUpon()
         .appendPath("hb")
         .appendPath("c1")
         .appendPath(applicationId)
-        .build();
-    this.downloadManager = new DownloadManager(context, configurationUri);
-    this.downloadManager.timeout = 8000; // 8s timeout
+        .build()
+    downloadManager = DownloadManager(context!!, configurationUri)
+    downloadManager.timeout = 8000 // 8s timeout
   }
 
   @VisibleForTesting
-  RemoteConfiguration(DownloadManager downloadManager) {
-    this.downloadManager = downloadManager;
+  internal constructor(downloadManager: DownloadManager) {
+    this.downloadManager = downloadManager
   }
 
-  public synchronized String getRemoteConfiguration(boolean forceServer) {
-    String response = null;
+  @Synchronized fun getRemoteConfiguration(forceServer: Boolean): String? {
+    var response: String? = null
     try {
-      downloadManager.downloadStrategy = (forceServer) ? DownloadManager.DownloadStrategy.NETWORK
-          : DownloadManager.DownloadStrategy.CACHE_IF_AVAILABLE;
-      HttpRequest request = downloadManager.get();
-      String httpResponse = request.body();
-      request.disconnect();
-      byte[] decodedResponse = Base64.decode(httpResponse, Base64.DEFAULT);
-      byte[] output = decompress(decodedResponse);
-      String decompressedResponse = new String(output, 0, output.length, "UTF-8");
-      JSONObject body = new JSONObject(decompressedResponse);
-      JSONObject main = new JSONObject();
-      main.put("remoteAddr", request.header("X-Remote-Addr"));
-      main.put("country", request.header("X-Client-Country"));
-      main.put("isCached", request.header("X-Android-Response-Source").equals("CONDITIONAL_CACHE 304"));
-      main.put("body", body);
-      response = main.toString();
-    } catch (Exception e) {
-      sLogger.debug("error getting remote configuration");
-      sLogger.debug(e.getMessage());
+      downloadManager.downloadStrategy = if (forceServer) NETWORK else CACHE_IF_AVAILABLE
+      val request = downloadManager.get()
+      val httpResponse = request.body()
+      request.disconnect()
+      val decodedResponse = Base64.decode(httpResponse, Base64.DEFAULT)
+      val output = decompress(decodedResponse)
+      val decompressedResponse = String(output, 0, output.size, UTF_8)
+      val body = JSONObject(decompressedResponse)
+      val main = JSONObject()
+      main.put("remoteAddr", request.header("X-Remote-Addr"))
+      main.put("country", request.header("X-Client-Country"))
+      main.put("isCached", request.header("X-Android-Response-Source") == "CONDITIONAL_CACHE 304")
+      main.put("body", body)
+      response = main.toString()
+    } catch (e: Exception) {
+      sLogger.debug("error getting remote configuration")
+      sLogger.debug(e.message)
     }
-    return response;
+    return response
   }
 
-  private byte[] decompress(byte[] data) throws IOException, DataFormatException {
-    Inflater inflater = new Inflater();
-    inflater.setInput(data);
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-    byte[] buffer = new byte[1024];
+  @Throws(
+      IOException::class, DataFormatException::class
+  ) private fun decompress(data: ByteArray): ByteArray {
+    val inflater = Inflater()
+    inflater.setInput(data)
+    val outputStream = ByteArrayOutputStream(data.size)
+    val buffer = ByteArray(1024)
     while (!inflater.finished()) {
-      int count = inflater.inflate(buffer);
-      outputStream.write(buffer, 0, count);
+      val count = inflater.inflate(buffer)
+      outputStream.write(buffer, 0, count)
     }
-    outputStream.close();
-    inflater.end();
-    return outputStream.toByteArray();
+    outputStream.close()
+    inflater.end()
+    return outputStream.toByteArray()
+  }
+
+  companion object {
+    private val sLogger = Logger("RemoteConfiguration")
   }
 }

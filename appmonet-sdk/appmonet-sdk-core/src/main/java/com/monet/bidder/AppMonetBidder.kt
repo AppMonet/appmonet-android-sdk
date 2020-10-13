@@ -319,14 +319,14 @@ class AppMonetBidder(
       val realTimeout = resolveTimeout(config, timeout)
       auctionManagerCallback.executeJs(
           realTimeout, JSMethods.FETCH_BIDS_BLOCKING,
-          ValueCallback<String> { s: String? ->
+          ValueCallback {
             val bid = bidManager.getLocalBid(adView.adUnitId)
             if (bid != null) {
               sLogger.debug("attaching bids to request")
             }
             callback.onReceiveValue(attachBid(adView, adRequest, bid))
           },
-          WebViewUtils.quote(adUnitId), Integer.toString(timeout),
+          WebViewUtils.quote(adUnitId), timeout.toString(),
           data.toJson(), "'addBids'"
       )
     }

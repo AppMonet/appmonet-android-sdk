@@ -1,147 +1,155 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.annotation.SuppressLint;
-import android.app.ActionBar;
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import androidx.annotation.Nullable;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import com.monet.bidder.adview.AdViewManager;
-import java.lang.ref.WeakReference;
-import org.json.JSONException;
-
-import static com.monet.bidder.Constants.APPMONET_BROADCAST;
-import static com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE;
-import static com.monet.bidder.Constants.Interstitial.AD_CONTENT_INTERSTITIAL;
-import static com.monet.bidder.Constants.Interstitial.AD_UUID_INTERSTITIAL;
-import static com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL;
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.RelativeLayout
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.monet.bidder.Constants.APPMONET_BROADCAST
+import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
+import com.monet.bidder.Constants.Interstitial.AD_CONTENT_INTERSTITIAL
+import com.monet.bidder.Constants.Interstitial.AD_UUID_INTERSTITIAL
+import com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL
+import com.monet.bidder.Icons.CLOSE
+import com.monet.bidder.Icons.Companion.asIntPixels
+import com.monet.bidder.adview.AdViewManager
+import org.json.JSONException
+import java.lang.ref.WeakReference
 
 @SuppressLint("ViewConstructor")
-public class InterstitialView extends RelativeLayout {
-  private final BaseManager sdkManager;
-  private Preferences preferences;
-  private InterstitialAnalyticsTracker analyticsTracker;
-  private WeakReference<Context> activityReference;
-  private InterstitialAdapter adapter;
-
-  void setupSingleAd(Context context, String uuid) throws JSONException {
-    this.activityReference = new WeakReference<>(context);
-    AdViewManager adViewManager = sdkManager.getAuctionManager().getAdViewPoolManager().getAdViewByUuid(uuid);
-    createSingleAdView(uuid, activityReference.get());
-    setupView((adViewManager == null
-        || adViewManager.getBid() == null
-        || adViewManager.getBid().getInterstitial() == null)
-        || adViewManager.getBid().getInterstitial().getClose());
+class InterstitialView(
+  context: Context,
+  private val sdkManager: BaseManager,
+  uuid: String?
+) : RelativeLayout(context) {
+  private val preferences: Preferences
+  private val analyticsTracker: InterstitialAnalyticsTracker? = null
+  private var activityReference: WeakReference<Context>? = null
+  private val adapter: InterstitialAdapter? = null
+  @Throws(JSONException::class) fun setupSingleAd(
+    context: Context,
+    uuid: String
+  ) {
+    activityReference = WeakReference(context)
+    val adViewManager = sdkManager.auctionManager.adViewPoolManager.getAdViewByUuid(uuid)
+    createSingleAdView(uuid, activityReference!!.get())
+    setupView(
+        adViewManager == null || adViewManager.bid == null || adViewManager.bid!!.interstitial == null
+            || adViewManager.bid!!.interstitial!!.close
+    )
   }
 
-  public InterstitialView(Context context, BaseManager sdkManager, String uuid)
-      throws JSONException {
-    super(context);
-    this.sdkManager = sdkManager;
-    preferences = sdkManager.getPreferences();
-    setupSingleAd(context, preferences.getPref(AD_UUID_INTERSTITIAL, ""));
+  private fun createSingleAdView(
+    uuid: String,
+    activity: Any?
+  ) {
+    val adViewManager = sdkManager.auctionManager.adViewPoolManager.getAdViewByUuid(uuid)
+    val adViewParams = getAdViewParameters(adViewManager)
+    adViewManager!!.adView.layoutParams = FrameLayout.LayoutParams(
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+    )
+    addView(adViewManager.adView.parent as View, adViewParams)
   }
 
-  private void createSingleAdView(String uuid, Object activity) {
-    AdViewManager adViewManager = sdkManager.getAuctionManager().getAdViewPoolManager().getAdViewByUuid(uuid);
-    LayoutParams adViewParams = getAdViewParameters(adViewManager);
-    adViewManager.adView.setLayoutParams(
-        new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT));
-    addView((View) adViewManager.adView.getParent(), adViewParams);
-  }
-
-  private void setupView(boolean showClose) {
-    if (activityReference.get() instanceof Activity) {
-      final Activity activity = (Activity) activityReference.get();
+  private fun setupView(showClose: Boolean) {
+    if (activityReference!!.get() is Activity) {
+      val activity = activityReference!!.get() as Activity?
       if (activity != null) {
-        activity.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        ActionBar actionBar = activity.getActionBar();
-        if (actionBar != null) {
-          actionBar.hide();
-        }
-        setBackgroundColor(Color.parseColor("#000000"));
+        activity.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        activity.window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        val actionBar = activity.actionBar
+        actionBar?.hide()
+        setBackgroundColor(Color.parseColor("#000000"))
         if (showClose) {
-          ImageView closeButton = createCloseButton(activity);
-          addView(closeButton);
+          val closeButton = createCloseButton(activity)
+          addView(closeButton)
         }
       }
     } else {
-      LocalBroadcastManager.getInstance(activityReference.get())
-          .sendBroadcast(new Intent(APPMONET_BROADCAST)
-              .putExtra("message", "internal_error"));
+      LocalBroadcastManager.getInstance(activityReference!!.get()!!)
+          .sendBroadcast(
+              Intent(APPMONET_BROADCAST)
+                  .putExtra("message", "internal_error")
+          )
     }
   }
 
-  private LayoutParams getAdViewParameters(@Nullable AdViewManager adViewManager) {
-    if (adViewManager != null
-        && adViewManager.adView.getParent() != null
-        && adViewManager.adView.getParent().getParent() != null) {
-      ((ViewGroup) adViewManager.adView.getParent().getParent()).removeView(adViewManager.adView);
+  private fun getAdViewParameters(adViewManager: AdViewManager?): LayoutParams {
+    if (adViewManager != null && adViewManager.adView.parent != null && adViewManager.adView.parent.parent != null) {
+      (adViewManager.adView.parent.parent as ViewGroup).removeView(adViewManager.adView)
     }
-
-    return new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-        ViewGroup.LayoutParams.MATCH_PARENT);
+    return LayoutParams(
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+    )
   }
 
-  private ImageView createCloseButton(final Activity activity) {
-    Drawable drawable = Icons.CLOSE.createDrawable(activity);
-
-    Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+  private fun createCloseButton(activity: Activity): ImageView {
+    val drawable = CLOSE.createDrawable(activity)
+    val bitmap = (drawable as BitmapDrawable?)!!.bitmap
     // Scale it to 50 x 50
-    Drawable d = new BitmapDrawable(getResources(),
-        Bitmap.createScaledBitmap(bitmap, Icons.asIntPixels(30F, activity),
-            Icons.asIntPixels(30F, activity), true));
-    ImageView closeButton = new ImageView(activity);
-    closeButton.setImageDrawable(d);
-    closeButton.setOnClickListener(
-        v -> LocalBroadcastManager.getInstance(getContext()).sendBroadcast(
-            new Intent(APPMONET_BROADCAST)
-                .putExtra(APPMONET_BROADCAST_MESSAGE,
-                    "interstitial_dismissed")));
-    LayoutParams closeButtonParams =
-        new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT);
-    closeButtonParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-    closeButton.setPadding(20, 20, 20, 20);
-
-    closeButton.setLayoutParams(closeButtonParams);
-    closeButton.bringToFront();
-    return closeButton;
-  }
-
-  @Override
-  protected void onAttachedToWindow() {
-    super.onAttachedToWindow();
-    if (analyticsTracker != null) {
-      analyticsTracker.interstitialViewAttached();
+    val d: Drawable = BitmapDrawable(
+        resources,
+        Bitmap.createScaledBitmap(
+            bitmap, asIntPixels(30f, activity),
+            asIntPixels(30f, activity), true
+        )
+    )
+    val closeButton = ImageView(activity)
+    closeButton.setImageDrawable(d)
+    closeButton.setOnClickListener { v: View? ->
+      LocalBroadcastManager.getInstance(
+          context
+      ).sendBroadcast(
+          Intent(APPMONET_BROADCAST)
+              .putExtra(
+                  APPMONET_BROADCAST_MESSAGE,
+                  "interstitial_dismissed"
+              )
+      )
     }
+    val closeButtonParams = LayoutParams(
+        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+    )
+    closeButtonParams.addRule(ALIGN_PARENT_RIGHT)
+    closeButton.setPadding(20, 20, 20, 20)
+    closeButton.layoutParams = closeButtonParams
+    closeButton.bringToFront()
+    return closeButton
   }
 
-  @Override
-  protected void onDetachedFromWindow() {
-    super.onDetachedFromWindow();
-    preferences.remove(AD_CONTENT_INTERSTITIAL);
-    preferences.remove(BID_ID_INTERSTITIAL);
-    preferences.remove(AD_UUID_INTERSTITIAL);
+  override fun onAttachedToWindow() {
+    super.onAttachedToWindow()
+    analyticsTracker?.interstitialViewAttached()
+  }
 
+  override fun onDetachedFromWindow() {
+    super.onDetachedFromWindow()
+    preferences.remove(AD_CONTENT_INTERSTITIAL)
+    preferences.remove(BID_ID_INTERSTITIAL)
+    preferences.remove(AD_UUID_INTERSTITIAL)
     if (adapter != null && analyticsTracker != null) {
-      adapter.cleanup();
-      analyticsTracker.interstitialViewDetached();
-      analyticsTracker.send();
+      adapter.cleanup()
+      analyticsTracker.interstitialViewDetached()
+      analyticsTracker.send()
     }
+  }
+
+  init {
+    preferences = sdkManager.preferences
+    setupSingleAd(context, preferences.getPref(AD_UUID_INTERSTITIAL, ""))
   }
 }

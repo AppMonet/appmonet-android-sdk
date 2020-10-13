@@ -328,7 +328,7 @@ object RenderingUtils {
   }
 
   fun getCenterLayoutParams(
-    context: Context?,
+    context: Context,
     adSize: AdSize
   ): LayoutParams {
     return LayoutParams(

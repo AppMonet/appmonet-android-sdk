@@ -176,7 +176,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
   override fun executeJs(
     timeout: Int,
     method: String,
-    callback: ValueCallback<String>?,
+    callback: ValueCallback<String?>?,
     vararg args: String
   ) {
     auctionManagerReadyCallbacks.onReady { webView ->
@@ -282,7 +282,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
 
   override fun onInit() {
     auctionWebViewCreatedCallbacks.onReady { webView ->
-      webView.isLoaded().set(true)
+      webView.isLoaded.set(true)
       webView.executeJs(SET_LOG_LEVEL, quote(Logger.levelString()))
       webView.executeJs(START, "''", quote(appMonetContext.applicationId))
       addBidsManager.executeReady()
@@ -384,7 +384,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     adSize: AdSize?,
     adType: AdType,
     floorCpm: Double,
-    callback: ValueCallback<String>
+    callback: ValueCallback<String?>
   ) {
     auctionManagerReadyCallbacks.onReady { webView ->
       val params = arrayOf(
@@ -570,14 +570,16 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
         context: Context?,
         intent: Intent?
       ) {
-        if (auctionWebView.isLoaded().get()) {
+        if (auctionWebView.isLoaded.get()) {
           context?.unregisterReceiver(this)
         }
         if (isInitialStickyBroadcast) {
           return
         }
-        if (!auctionWebView.isLoaded().get() && HttpUtil.hasNetworkConnection(context)) {
-          auctionWebView.start()
+        context?.let {
+          if (!auctionWebView.isLoaded.get() && HttpUtil.hasNetworkConnection(context)) {
+            auctionWebView.start()
+          }
         }
       }
     }

@@ -1,7 +1,6 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-public interface  TimedCallback{
-  void execute(int remainingTime);
-
-  void timeout();
+interface TimedCallback {
+  fun execute(remainingTime: Int)
+  fun timeout()
 }

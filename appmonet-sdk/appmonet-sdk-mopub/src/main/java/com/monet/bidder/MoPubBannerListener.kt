@@ -64,25 +64,22 @@ internal class MoPubBannerListener(
       try {
         sdkManager.uiThread.run(object : InternalRunnable() {
           override fun runInternal() {
-            sdkManager.currentActivity?.get()?.let { activity ->
-              val viewLayout = view as AppMonetViewLayout?
-              val currentView = viewListener.currentView
-              if (viewLayout?.isAdRefreshed == true) {
-                currentView?.swapViews(viewLayout, this@MoPubBannerListener)
-                return
-              }
-              if (sdkManager.currentActivity == null && FLOATING_AD_TYPE == mBid.adType) {
-                onAdError(NO_FILL)
-                return
-              }
-              val factory = AdViewLoadedFactory()
-              moPubAdViewContainer = factory.getAdView(activity, sdkManager, view, mBid, adUnitId)
-              mListener?.onAdLoaded()
-              MoPubLog.log(adUnitId, LOAD_SUCCESS, CustomEventBanner.ADAPTER_NAME)
+            val viewLayout = view as AppMonetViewLayout?
+            val currentView = viewListener.currentView
+            if (viewLayout?.isAdRefreshed == true) {
+              currentView?.swapViews(viewLayout, this@MoPubBannerListener)
               return
             }
-            sLogger.warn("activity is null")
-            onAdError(INTERNAL_ERROR)
+            if (sdkManager.currentActivity == null && FLOATING_AD_TYPE == mBid.adType) {
+              onAdError(NO_FILL)
+              return
+            }
+            val factory = AdViewLoadedFactory()
+            moPubAdViewContainer = factory.getAdView(
+                sdkManager.currentActivity?.get(), sdkManager, view, mBid, adUnitId
+            )
+            mListener?.onAdLoaded()
+            MoPubLog.log(adUnitId, LOAD_SUCCESS, CustomEventBanner.ADAPTER_NAME)
           }
 
           override fun catchException(e: Exception?) {

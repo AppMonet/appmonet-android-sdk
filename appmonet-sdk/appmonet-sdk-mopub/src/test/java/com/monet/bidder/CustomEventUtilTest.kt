@@ -10,11 +10,11 @@ import org.robolectric.RobolectricTestRunner
 class CustomEventUtilTest {
   @Test
   fun `Given getAdUnit is called and localExtras contains ADUNIT_KEYWORD_KEY key then return the value`() {
-    val serverExtras = mutableMapOf<String, String?>()
-    val localExtras = mutableMapOf<String, Any?>()
+    val serverExtras = mutableMapOf<String, String>()
+    val localExtras = mutableMapOf<String, Any>()
     val adSize = AdSize(0, 0)
     localExtras[ADUNIT_KEYWORD_KEY] = "adUnit"
-    val adUnit = CustomEventUtil.getAdUnitId(serverExtras, localExtras.toMap(), adSize)
+    val adUnit = CustomEventUtil.getAdUnitId(serverExtras, localExtras, adSize)
     assertEquals(adUnit, "adUnit")
   }
 

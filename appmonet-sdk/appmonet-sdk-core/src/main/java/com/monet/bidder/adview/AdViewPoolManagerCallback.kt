@@ -3,7 +3,7 @@ package com.monet.bidder.adview
 import com.monet.bidder.bid.BidResponse
 import com.monet.bidder.SdkConfigurations
 
-internal interface AdViewPoolManagerCallback {
+interface AdViewPoolManagerCallback {
     fun adViewCreated(uuid: String, adViewContext: AdViewContext)
     fun adViewLoaded(uuid: String)
     fun adViewResponse(vararg args: String)

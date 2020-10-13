@@ -67,7 +67,7 @@ class MonetActivity : TrustedInterstitialActivity() {
   }
 
   companion object {
-    private val logger = MonetLogger("MonetActivity")
+    private val logger = Logger("MonetActivity")
     private const val BID_ID = "bidId"
     private const val APPMONET_BROADCAST = "appmonet-broadcast"
     private const val INTERNAL_ERROR = "internal_error"

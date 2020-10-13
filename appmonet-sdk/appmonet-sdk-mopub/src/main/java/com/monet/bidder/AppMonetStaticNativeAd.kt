@@ -181,14 +181,14 @@ class AppMonetStaticNativeAd(
   }
 
   fun swapViews(
-    view: AppMonetViewLayout?,
-    listener: AdServerBannerListener?
+    view: AppMonetViewLayout,
+    listener: AdServerBannerListener
   ) {
     (media as AppMonetViewLayout?)!!.swapViews(view, listener)
   }
 
   companion object {
-    private val logger = MonetLogger("AppMonetStaticNativeAd")
+    private val logger = Logger("AppMonetStaticNativeAd")
   }
 
 }

@@ -1,102 +1,97 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import android.content.Context;
-import android.graphics.Color;
-import android.os.Build;
-import android.util.DisplayMetrics;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import android.content.Context
+import android.graphics.Color
+import android.util.DisplayMetrics
+import android.view.View
+import android.view.ViewGroup.LayoutParams
+import android.widget.ImageView
+import android.widget.ImageView.ScaleType.FIT_CENTER
+import android.widget.RelativeLayout
+import android.widget.TextView
 
 /**
  * Created by jose on 4/6/18.
  */
-
-class InterstitialContentView extends RelativeLayout {
-  final MonetVideoView videoView;
-  final RelativeLayout contentLayout;
-  int contentTitleHeight;
-  ImageView imageView;
-  View dimView;
-  TextView contentTitle;
-
-  InterstitialContentView(Context context) {
-    super(context);
-    videoView = createVideoView(context);
-    imageView = createThumbnail(context);
-    dimView = createDimView(context);
-    contentLayout = new RelativeLayout(context);
-    contentTitle = new TextView(context);
-    LayoutParams params = new LayoutParams(MATCH_PARENT, MATCH_PARENT);
-    contentTitle.setId(View.generateViewId());
-
-    params.addRule(BELOW, contentTitle.getId());
-
-    contentTitleHeight = convertDpToPx(30);
-    LayoutParams titleParams = new LayoutParams(MATCH_PARENT, contentTitleHeight);
-
-    contentTitle.setLayoutParams(titleParams);
-    contentTitle.setTextColor(Color.WHITE);
-
-    contentLayout.addView(imageView, setViewParams());
-    contentLayout.addView(videoView, setViewParams());
-    titleParams.addRule(ALIGN_PARENT_TOP);
-
-    addView(contentTitle, titleParams);
-    addView(contentLayout, params);
-    addView(dimView, setViewParams());
+internal class InterstitialContentView(context: Context) : RelativeLayout(context) {
+  val videoView: MonetVideoView
+  val contentLayout: RelativeLayout
+  var contentTitleHeight: Int
+  var imageView: ImageView
+  var dimView: View
+  var contentTitle: TextView
+  fun setDarkView() {
+    dimView.visibility = VISIBLE
+    dimView.bringToFront()
   }
 
-  void setDarkView() {
-    dimView.setVisibility(View.VISIBLE);
-    dimView.bringToFront();
+  fun removeDarkView() {
+    dimView.visibility = GONE
   }
 
-  void removeDarkView() {
-    dimView.setVisibility(View.GONE);
-  }
-
-  void setTitleContent(String title) {
-    if (title.equals("null")) {
-      contentTitleHeight = 0;
-      removeView(contentTitle);
+  fun setTitleContent(title: String) {
+    if (title == "null") {
+      contentTitleHeight = 0
+      removeView(contentTitle)
     } else {
-      contentTitle.setText(title);
+      contentTitle.text = title
     }
   }
 
-  private ImageView createThumbnail(Context context) {
-    ImageView view = new ImageView(context);
-    view.setAdjustViewBounds(true);
-    view.setVisibility(View.GONE);
-    view.setScaleType(ImageView.ScaleType.FIT_CENTER);
-    return view;
+  private fun createThumbnail(context: Context): ImageView {
+    val view = ImageView(context)
+    view.adjustViewBounds = true
+    view.visibility = GONE
+    view.scaleType = FIT_CENTER
+    return view
   }
 
-  private MonetVideoView createVideoView(Context context) {
-    return new MonetVideoView(context);
+  private fun createVideoView(context: Context): MonetVideoView {
+    return MonetVideoView(context)
   }
 
-  private View createDimView(Context context) {
-    View view = new View(context);
-    view.setBackgroundColor(Color.parseColor("#D8000000"));
-    view.setVisibility(View.VISIBLE);
-    return view;
+  private fun createDimView(context: Context): View {
+    val view = View(context)
+    view.setBackgroundColor(Color.parseColor("#D8000000"))
+    view.visibility = VISIBLE
+    return view
   }
 
-  private LayoutParams setViewParams() {
-    return new LayoutParams(MATCH_PARENT, MATCH_PARENT);
+  private fun setViewParams(): LayoutParams {
+    return LayoutParams(
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+    )
   }
 
-  private int convertDpToPx(int dp) {
+  private fun convertDpToPx(dp: Int): Int {
     return Math.round(
-        dp * (getResources().getDisplayMetrics().xdpi / DisplayMetrics.DENSITY_DEFAULT));
+        dp * (resources.displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT)
+    )
+  }
+
+  init {
+    videoView = createVideoView(context)
+    imageView = createThumbnail(context)
+    dimView = createDimView(context)
+    contentLayout = RelativeLayout(context)
+    contentTitle = TextView(context)
+    val params = LayoutParams(
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+    )
+    contentTitle.id = generateViewId()
+    params.addRule(BELOW, contentTitle.id)
+    contentTitleHeight = convertDpToPx(30)
+    val titleParams =
+      LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, contentTitleHeight)
+    contentTitle.layoutParams = titleParams
+    contentTitle.setTextColor(Color.WHITE)
+    contentLayout.addView(imageView, setViewParams())
+    contentLayout.addView(videoView, setViewParams())
+    titleParams.addRule(ALIGN_PARENT_TOP)
+    addView(contentTitle, titleParams)
+    addView(contentLayout, params)
+    addView(dimView, setViewParams())
   }
 }
-

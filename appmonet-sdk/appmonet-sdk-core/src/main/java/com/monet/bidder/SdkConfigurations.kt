@@ -1,27 +1,17 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import androidx.annotation.NonNull;
-import com.monet.bidder.auction.MonetJsInterface;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import static com.monet.bidder.Constants.Configurations.AD_UNIT_TIMEOUTS;
+import com.monet.bidder.Constants.Configurations.AD_UNIT_TIMEOUTS
+import org.json.JSONException
+import org.json.JSONObject
 
 /**
- * SdkConfigurations holds a {@link JSONObject} which has the dynamic configuration options
- * retrieved by {@link MonetJsInterface}. This class encapsulates the required {@link JSONException}
+ * SdkConfigurations holds a [JSONObject] which has the dynamic configuration options
+ * retrieved by [MonetJsInterface]. This class encapsulates the required [JSONException]
  * handling and returns default values.
  */
-public class SdkConfigurations {
-  private final static Logger sLogger = new Logger("SdkConfigurations");
-  private final JSONObject mConfigurations;
-
-  public SdkConfigurations(JSONObject configurations) {
-    mConfigurations = configurations;
-  }
-
-  public boolean hasKey(String key) {
-    return mConfigurations != null && mConfigurations.has(key);
+class SdkConfigurations(private val mConfigurations: JSONObject?) {
+  fun hasKey(key: String?): Boolean {
+    return mConfigurations != null && mConfigurations.has(key)
   }
 
   /**
@@ -30,14 +20,14 @@ public class SdkConfigurations {
    * @param key to be used to retrieve desired value.
    * @return integer value associated with the provided key.
    */
-  public int getInt(String key) {
-    int value = 0;
+  fun getInt(key: String?): Int {
+    var value = 0
     try {
-      value = mConfigurations.getInt(key);
-    } catch (JSONException e) {
-      sLogger.error("Error retrieving integer from JSONObject.");
+      value = mConfigurations!!.getInt(key)
+    } catch (e: JSONException) {
+      sLogger.error("Error retrieving integer from JSONObject.")
     }
-    return value;
+    return value
   }
 
   /**
@@ -46,9 +36,8 @@ public class SdkConfigurations {
    * @param key to be used to retrieve desired value.
    * @return string value associated with the provided key.
    */
-  @NonNull
-  public String getString(String key) {
-    return mConfigurations.optString(key, "");
+  fun getString(key: String?): String {
+    return mConfigurations!!.optString(key, "")
   }
 
   /**
@@ -57,24 +46,26 @@ public class SdkConfigurations {
    * @param key to be used to retrieve desired value.
    * @return double value associated with the provided key.
    */
-  double getDouble(String key) {
-    double value = 0.0;
+  fun getDouble(key: String): Double {
+    var value = 0.0
     try {
-      value = mConfigurations.getDouble(key);
-    } catch (JSONException e) {
-      sLogger.error("Error retrieving double from JSONObject. @ " + key);
+      value = mConfigurations!!.getDouble(key)
+    } catch (e: JSONException) {
+      sLogger.error(
+          "Error retrieving double from JSONObject. @ $key"
+      )
     }
-    return value;
+    return value
   }
 
-  JSONObject getJSONObject(String key) {
-    JSONObject value = null;
+  fun getJSONObject(key: String): JSONObject? {
+    var value: JSONObject? = null
     try {
-      value = mConfigurations.getJSONObject(key);
-    } catch (JSONException e) {
-      sLogger.debug("key not found: " + key);
+      value = mConfigurations!!.getJSONObject(key)
+    } catch (e: JSONException) {
+      sLogger.debug("key not found: $key")
     }
-    return value;
+    return value
   }
 
   /**
@@ -83,23 +74,27 @@ public class SdkConfigurations {
    * @param key to be used to retrieve desired value.
    * @return boolean value associated with the provided key.
    */
-  public boolean getBoolean(String key) {
-    boolean value = false;
-    try {
-      value = mConfigurations.getBoolean(key);
-    } catch (JSONException e) {
-      sLogger.error("Error retrieving boolean from JSONObject; trying as 1/0 int");
-      return getInt(key) == 1;
+  fun getBoolean(key: String?): Boolean {
+    var value = false
+    value = try {
+      mConfigurations!!.getBoolean(key)
+    } catch (e: JSONException) {
+      sLogger.error("Error retrieving boolean from JSONObject; trying as 1/0 int")
+      return getInt(key) == 1
     }
-    return value;
+    return value
   }
 
-  int getAdUnitTimeout(String adUnitId) {
-    JSONObject obj = getJSONObject(AD_UNIT_TIMEOUTS);
-    try {
-      return obj.getInt(adUnitId);
-    } catch (Exception e) {
-      return 0;
+  fun getAdUnitTimeout(adUnitId: String?): Int {
+    val obj = getJSONObject(AD_UNIT_TIMEOUTS)
+    return try {
+      obj!!.getInt(adUnitId)
+    } catch (e: Exception) {
+      0
     }
+  }
+
+  companion object {
+    private val sLogger = Logger("SdkConfigurations")
   }
 }

@@ -176,7 +176,7 @@ abstract class BaseManager(
     adSize: AdSize?,
     adType: AdType?,
     floorCpm: Double,
-    callback: ValueCallback<String>
+    callback: ValueCallback<String?>
   ) {
     auctionManager.indicateRequestAsync(adUnitId!!, timeout, adSize, adType!!, floorCpm, callback)
   }

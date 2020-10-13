@@ -147,7 +147,7 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
   override fun showInterstitial() {
     sdkManager!!.preferences.setPreference(AD_CONTENT_INTERSTITIAL, bidResponse!!.adm)
     sdkManager!!.preferences.setPreference(BID_ID_INTERSTITIAL, bidResponse!!.id)
-    val uuid = if (mAdView != null) mAdView!!.adViewUUID else null
+    val uuid = if (mAdView != null) mAdView!!.uuid else null
     sdkManager!!.preferences.setPreference(AD_UUID_INTERSTITIAL, uuid)
     MonetDfpActivity.start(mContext!!, sdkManager!!, uuid, bidResponse!!.adm)
   }
@@ -166,6 +166,6 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
   override fun onResume() {}
 
   companion object {
-    private val logger = MonetLogger("MonetDfpCustomEventInterstitial")
+    private val logger = Logger("MonetDfpCustomEventInterstitial")
   }
 }

@@ -1,113 +1,98 @@
-package com.monet.bidder;
+package com.monet.bidder
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import java.util.ArrayList;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
+import java.util.ArrayList
 
-class InterstitialData {
-  InterstitialMetadata metadata;
-  ArrayList<InterstitialContent> content;
+internal class InterstitialData(rawData: String?) {
+  var metadata: InterstitialMetadata
+  var content   = arrayListOf<InterstitialContent>()
 
-  InterstitialData(String rawData) throws JSONException {
-    JSONObject jsonObject = new JSONObject(rawData);
-    metadata = new InterstitialMetadata(jsonObject.getJSONObject("meta"));
-    retrieveInterstitialContent(jsonObject.getJSONArray("content"));
-  }
-
-  private void retrieveInterstitialContent(JSONArray jsonArray) throws JSONException {
-    content = new ArrayList<>(jsonArray.length());
-    for (int i = 0; i < jsonArray.length(); i++) {
-      content.add(new InterstitialContent(jsonArray.getJSONObject(i)));
+  @Throws(
+      JSONException::class
+  ) private fun retrieveInterstitialContent(jsonArray: JSONArray) {
+    content = ArrayList(jsonArray.length())
+    for (i in 0 until jsonArray.length()) {
+      content.add(InterstitialContent(jsonArray.getJSONObject(i)))
     }
   }
 
-  static class InterstitialMetadata {
-    private JSONObject meta;
-
-    InterstitialMetadata(JSONObject meta) {
-      this.meta = meta;
+  internal class InterstitialMetadata(private val meta: JSONObject) {
+    fun title(): String {
+      return meta.optString("title")
     }
 
-    String title() {
-      return meta.optString("title");
+    fun navColor(): String {
+      return meta.optString("nav_color")
     }
 
-    String navColor() {
-      return meta.optString("nav_color");
+    fun initialOffset(): String {
+      return meta.optString("initial_offset")
     }
 
-    String initialOffset() {
-      return meta.optString("initial_offset");
-    }
-
-    String initialDuration() {
-      return meta.optString("initial_duration");
+    fun initialDuration(): String {
+      return meta.optString("initial_duration")
     }
   }
 
-  static class InterstitialContent {
-    private final JSONObject content;
-    @Nullable private final Media media;
-
-    InterstitialContent(JSONObject content) throws JSONException {
-      this.content = content;
-      JSONObject jsonMedia = content.optJSONObject("media");
-      this.media = jsonMedia != null ? new Media(jsonMedia) : null;
+  internal class InterstitialContent(private val content: JSONObject) {
+    private val media: Media?
+    fun type(): String {
+      return content.optString("type")
     }
 
-    String type() {
-      return content.optString("type");
+    fun id(): String {
+      return content.optString("id")
     }
 
-    String id() {
-      return content.optString("id");
+    fun title(): String {
+      return content.optString("title")
     }
 
-    String title() {
-      return content.optString("title");
+    fun media(): Media? {
+      return media
     }
 
-    Media media() {
-      return media;
-    }
-
-    static class Media {
-      private final JSONObject jsonMedia;
-
-      Media(@NonNull JSONObject media) {
-        this.jsonMedia = media;
+    internal class Media(private val jsonMedia: JSONObject) {
+      fun mime(): String {
+        return jsonMedia.optString("mime")
       }
 
-      String mime() {
-        return jsonMedia.optString("mime");
+      fun source(): String {
+        return jsonMedia.optString("src")
       }
 
-      String source() {
-        return jsonMedia.optString("src");
+      fun thumbnail(): String {
+        return jsonMedia.optString("thumbnail")
       }
 
-      String thumbnail() {
-        return jsonMedia.optString("thumbnail");
+      fun quality(): String {
+        return jsonMedia.optString("quality")
       }
 
-      String quality() {
-        return jsonMedia.optString("quality");
+      fun duration(): String {
+        return jsonMedia.optString("duration")
       }
 
-      String duration() {
-        return jsonMedia.optString("duration");
+      fun width(): String {
+        return jsonMedia.optString("width")
       }
 
-      String width() {
-        return jsonMedia.optString("width");
-      }
-
-      String height() {
-        return jsonMedia.optString("height");
+      fun height(): String {
+        return jsonMedia.optString("height")
       }
     }
+
+    init {
+      val jsonMedia = content.optJSONObject("media")
+      media = if (jsonMedia != null) Media(jsonMedia) else null
+    }
+  }
+
+  init {
+    val jsonObject = JSONObject(rawData)
+    metadata = InterstitialMetadata(jsonObject.getJSONObject("meta"))
+    retrieveInterstitialContent(jsonObject.getJSONArray("content"))
   }
 }

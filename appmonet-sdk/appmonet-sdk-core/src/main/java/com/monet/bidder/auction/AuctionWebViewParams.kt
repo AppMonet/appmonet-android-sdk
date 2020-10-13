@@ -2,7 +2,7 @@ package com.monet.bidder.auction
 
 import com.monet.bidder.*
 
-internal class AuctionWebViewParams constructor(defaultAuctionUrl: String,
+class AuctionWebViewParams constructor(defaultAuctionUrl: String,
                                                 preferences: Preferences,
                                                 val appMonetContext: AppMonetContext) {
     private val sLogger = Logger("AuctionWebViewParams")
