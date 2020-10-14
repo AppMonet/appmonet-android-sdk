@@ -25,6 +25,7 @@ android {
     minSdkVersion 19
     targetSdkVersion 29
     buildConfigField "String", "STAGING_SERVER_HOST", "\"${getStagingUrl()}\""
+    buildConfigField "String", "VERSION_NAME", "\"${version}\""
   }
 
   sourceSets {

@@ -47,7 +47,7 @@ object Constants {
   const val INTERSTITIAL_ACTIVITY_CLOSE = "interstitital-activity-close"
   const val INTERSTITIAL_HEIGHT = 480
   const val INTERSTITIAL_WIDTH = 320
-  internal const val AD_SIZE = "ad_size"
+  const val AD_SIZE = "ad_size"
   const val MONET_BID = "monet_bid"
 
   internal object JSAppStates {

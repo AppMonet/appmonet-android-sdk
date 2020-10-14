@@ -618,7 +618,7 @@ class BidManager : Subscriber {
   }
 
   private fun setupIntervalExecution() {
-    if (intervalFuture != null) intervalFuture!!.cancel(true)
+    intervalFuture?.cancel(true)
     intervalFuture =
       backgroundThread.scheduleAtFixedRate(object : InternalRunnable() {
         override fun runInternal() {

@@ -1,3 +1,4 @@
+include ':appmonet-sdk-core'
 include ':sample-app'
 include ':appmonet-sdk:appmonet-sdk-dfp'
 include ':appmonet-sdk:appmonet-sdk-mopub'
