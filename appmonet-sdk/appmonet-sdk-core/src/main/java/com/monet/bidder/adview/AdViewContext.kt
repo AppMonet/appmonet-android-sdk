@@ -1,6 +1,6 @@
 package com.monet.bidder.adview
 
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import org.json.JSONException
 import org.json.JSONObject
 

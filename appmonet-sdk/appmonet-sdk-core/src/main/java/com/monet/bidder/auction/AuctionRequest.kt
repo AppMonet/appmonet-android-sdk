@@ -5,10 +5,10 @@ import com.monet.bidder.AdServerAdRequest
 import com.monet.bidder.AdServerAdView
 import com.monet.bidder.Constants
 import com.monet.bidder.RequestData
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 
 data class AuctionRequest internal constructor(
-  val networkExtras: Bundle = Bundle(),
+  val networkExtras: MutableMap<String,Any> = mutableMapOf(),
   val targeting: Bundle = Bundle(),
   val admobExtras: Bundle = Bundle(),
   var requestData: RequestData? = null,
@@ -21,7 +21,7 @@ data class AuctionRequest internal constructor(
       adServerAdRequest: AdServerAdRequest
     ): AuctionRequest {
       val auctionRequest = AuctionRequest().apply {
-        networkExtras.putString(Constants.Dfp.ADUNIT_KEYWORD_KEY, adServerAdView.adUnitId);
+        networkExtras[Constants.Dfp.ADUNIT_KEYWORD_KEY] = adServerAdView.adUnitId;
         requestData = RequestData(adServerAdRequest, adServerAdView)
         adUnitId = adServerAdView.adUnitId
       }

@@ -9,13 +9,15 @@ import android.content.pm.PackageManager
 import android.content.pm.PackageManager.NameNotFoundException
 import android.content.res.Configuration
 import android.util.Log
-import android.webkit.ValueCallback
+import com.monet.AdType
+import com.monet.Callback
+import com.monet.DeviceData
 import com.monet.bidder.Constants.Configurations
 import com.monet.bidder.Constants.JSAppStates
 import com.monet.bidder.auction.AuctionManager
 import com.monet.bidder.exceptions.AppMonetInitException
-import com.monet.bidder.threading.BackgroundThread
 import com.monet.bidder.threading.UIThread
+import com.monet.threading.BackgroundThread
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
@@ -25,7 +27,7 @@ import java.lang.ref.WeakReference
  * within their own implementation how to hold the instance of all the objects created in this
  * class.
  */
-abstract class BaseManager(
+open class BaseManager(
   context: Context,
   applicationId: String?,
   val adServerWrapper: AdServerWrapper
@@ -99,7 +101,7 @@ abstract class BaseManager(
     return try {
       val configurations = preferences
           .getPref(Configurations.AM_SDK_CONFIGURATIONS, "")
-      if (configurations == null || configurations.isEmpty()) {
+      if (configurations.isEmpty()) {
         return false
       }
       mSdkConfigurations = SdkConfigurations(JSONObject(configurations))
@@ -136,7 +138,9 @@ abstract class BaseManager(
   }
 
   private fun loadRemoteConfiguration() {
-    backgroundThread.submit(Runnable { remoteConfiguration.getRemoteConfiguration(true) })
+    backgroundThread.execute {
+      remoteConfiguration.getRemoteConfiguration(true)
+    }
   }
 
   fun disableBidManager() {
@@ -176,7 +180,7 @@ abstract class BaseManager(
     adSize: AdSize?,
     adType: AdType?,
     floorCpm: Double,
-    callback: ValueCallback<String?>
+    callback: Callback<String?>
   ) {
     auctionManager.indicateRequestAsync(adUnitId!!, timeout, adSize, adType!!, floorCpm, callback)
   }
@@ -268,8 +272,8 @@ abstract class BaseManager(
 
   companion object {
     private val sLogger = Logger("SdkManager")
-    @JvmField var isTestMode = false
-    @JvmField var initRetry = 0
+    var isTestMode: Boolean = false
+    var initRetry = 0
   }
 
   init {

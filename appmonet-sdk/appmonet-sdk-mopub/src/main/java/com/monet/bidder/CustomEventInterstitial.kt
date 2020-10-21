@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.monet.bidder.AdType.INTERSTITIAL
+import com.monet.AdType.INTERSTITIAL
 import com.monet.bidder.Constants.APPMONET_BROADCAST
 import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
 import com.monet.bidder.Constants.BIDS_KEY
@@ -21,8 +21,10 @@ import com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL
 import com.monet.bidder.CustomEventUtil.getAdUnitId
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.bid.BidRenderer
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Mapper.from
+import com.monet.BidResponse
+import com.monet.BidResponse.Mapper.from
+import com.monet.BidResponse.Mapper.fromBidKey
+import com.monet.bidder.callbacks.Callback
 import com.mopub.common.LifecycleListener
 import com.mopub.common.logging.MoPubLog
 import com.mopub.common.logging.MoPubLog.AdLogEvent.SHOW_SUCCESS
@@ -148,7 +150,7 @@ class CustomEventInterstitial : BaseAd() {
     val configurations = sdkManager!!.sdkConfigurations
     var headerBiddingBid: BidResponse? = null
     if (extras.containsKey(BIDS_KEY) && extras[BIDS_KEY] != null) {
-      headerBiddingBid = from(JSONObject(extras[BIDS_KEY]))
+      headerBiddingBid =extras[BIDS_KEY]?.let { from(it) }
     }
     val floorCpm = getServerExtraCpm(extras, configurations.getDouble(DEFAULT_MEDIATION_FLOOR))
     if (headerBiddingBid == null) {

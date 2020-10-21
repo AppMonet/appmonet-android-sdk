@@ -7,15 +7,15 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import com.monet.bidder.AdType.BANNER
+import com.monet.AdType.BANNER
 import com.monet.bidder.MediationManager.NoBidsFoundException
 import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.adview.AdViewPoolManagerCallback
 import com.monet.bidder.auction.AuctionManagerCallback
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Constant.FLOATING_AD_TYPE
+import com.monet.BidResponse
+import com.monet.BidResponse.Constant.FLOATING_AD_TYPE
 import java.lang.ref.WeakReference
 
 @SuppressLint("ViewConstructor")

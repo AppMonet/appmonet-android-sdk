@@ -2,7 +2,7 @@ package com.monet.bidder
 
 import android.content.ActivityNotFoundException
 import android.content.Context
-import android.webkit.ValueCallback
+import com.monet.ValueCallback
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdRequest.Builder
 import com.google.android.gms.ads.AdView
@@ -10,6 +10,7 @@ import com.google.android.gms.ads.InterstitialAd
 import com.google.android.gms.ads.doubleclick.PublisherAdRequest
 import com.google.android.gms.ads.doubleclick.PublisherAdView
 import com.google.android.gms.ads.doubleclick.PublisherInterstitialAd
+import com.monet.Callback
 import com.monet.bidder.Constants.MISSING_INIT_ERROR_MESSAGE
 
 /**
@@ -35,15 +36,14 @@ internal class SdkManager constructor(
         isPublisherAdView = false
         val dfpAdView = DFPAdView(adView)
         dfpAdView.adUnitId = appMonetAdUnitId!!
-        auctionManager.addBids(dfpAdView, DFPAdViewRequest(adRequest!!), remainingTime,
-            ValueCallback { value ->
-              if (value == null) {
-                onDone.onReceiveValue(adRequest)
-                return@ValueCallback
-              }
-              onDone.onReceiveValue((value as DFPAdViewRequest).dfpRequest)
-            }
-        )
+        auctionManager.addBids(dfpAdView, DFPAdViewRequest(adRequest!!), remainingTime
+        ) { value ->
+          if (value == null) {
+            onDone.onReceiveValue(adRequest)
+            return@addBids
+          }
+          onDone.onReceiveValue((value as DFPAdViewRequest).dfpRequest)
+        }
       }
 
       override fun timeout() {
@@ -137,17 +137,16 @@ internal class SdkManager constructor(
         val dfpInterstitialAdView = DFPInterstitialAdView(interstitialAd)
         dfpInterstitialAdView.adUnitId = appMonetAdUnitId!!
         auctionManager.addBids(dfpInterstitialAdView, DFPAdViewRequest(adRequest!!),
-            remainingTime,
-            ValueCallback { value ->
-              if (value == null) {
-                sLogger.debug("value is null")
-                onDone.onReceiveValue(adRequest)
-                return@ValueCallback
-              }
-              sLogger.debug("value is valid")
-              onDone.onReceiveValue((value as DFPAdViewRequest).dfpRequest)
-            }
-        )
+            remainingTime
+        ) { value ->
+          if (value == null) {
+            sLogger.debug("value is null")
+            onDone.onReceiveValue(adRequest)
+            return@addBids
+          }
+          sLogger.debug("value is valid")
+          onDone.onReceiveValue((value as DFPAdViewRequest).dfpRequest)
+        }
       }
 
       override fun timeout() {
@@ -224,15 +223,16 @@ internal class SdkManager constructor(
   ): AddBidsParams {
     return AddBidsParams(adServerAdView,
         DFPAdRequest(getPublisherAdRequest(adRequest)),
-        timeout, ValueCallback { adServerAdRequest: AdServerAdRequest? ->
+        timeout
+    ) { adServerAdRequest: AdServerAdRequest? ->
       if (adServerAdRequest == null) {
         sLogger.debug("value null")
         onDone.onReceiveValue(adRequest)
-        return@ValueCallback
+        return@AddBidsParams
       }
       sLogger.debug("value is valid")
       onDone.onReceiveValue((adServerAdRequest as DFPAdRequest).dfpRequest)
-    })
+    }
   }
 
   private fun onBidManagerReadyCallback(addBidsParams: AddBidsParams) {

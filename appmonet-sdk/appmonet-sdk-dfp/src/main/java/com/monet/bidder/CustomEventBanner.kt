@@ -10,12 +10,11 @@ import com.google.android.gms.ads.mediation.MediationAdapter
 import com.google.android.gms.ads.mediation.customevent.CustomEventBanner
 import com.google.android.gms.ads.mediation.customevent.CustomEventBannerListener
 import com.monet.bidder.AdRequestFactory.fromMediationRequest
-import com.monet.bidder.AdType.BANNER
+import com.monet.AdType.BANNER
 import com.monet.bidder.MediationManager.NoBidsFoundException
 import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.bid.BidRenderer
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Mapper.from
+import com.monet.BidResponse
 
 class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListener {
   private var mAdView: AppMonetViewLayout? = null
@@ -52,7 +51,7 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
     adUnitId: String,
     adRequest: MediationAdRequest
   ) {
-    if (!bid.queueNext) {
+    if (!bid.nextQueue) {
       logger.debug("automatic refresh is disabled. Skipping queue next (clearing bids)")
       sdkManager!!.auctionManager.cancelRequest(
           adUnitId, fromMediationRequest(sdkManager!!.isPublisherAdView, adRequest), null

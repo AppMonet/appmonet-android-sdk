@@ -4,7 +4,7 @@ internal class FloatingPosition(
   private val position: String,
   private val positionValues: Map<String, Value>
 ) {
-  internal class Value(
+  class Value(
     val value: Int,
     val unit: String
   )

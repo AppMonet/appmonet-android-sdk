@@ -1,9 +1,10 @@
 package com.monet.bidder.auction
 
-import android.webkit.ValueCallback
+import com.monet.Callback
+import com.monet.DeviceData
 import com.monet.bidder.*
 import com.monet.bidder.adview.AdViewManager
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 
 /**
  * Interface to be implemented for controlling and retrieving aspects of an auction.
@@ -63,7 +64,7 @@ interface AuctionManagerCallback {
   fun executeJs(
     timeout: Int,
     method: String,
-    callback: ValueCallback<String?>?,
+    callback: Callback<String?>?,
     vararg args: String
   )
 
@@ -162,7 +163,7 @@ interface AuctionManagerCallback {
     width: Int,
     height: Int,
     adUnitId: String,
-    onLoad: ValueCallback<AdViewManager>
+    onLoad: Callback<AdViewManager>
   )
 
   /**

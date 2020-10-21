@@ -3,7 +3,6 @@ package com.monet.bidder.adview
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -23,7 +22,7 @@ import android.webkit.WebView.WebViewTransport
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
-import androidx.core.content.ContextCompat
+import com.monet.BidResponse
 import com.monet.bidder.AdServerBannerListener
 import com.monet.bidder.AdServerWrapper
 import com.monet.bidder.AdSize
@@ -43,12 +42,11 @@ import com.monet.bidder.WebViewUtils.buildResponse
 import com.monet.bidder.WebViewUtils.looseUrlMatch
 import com.monet.bidder.WebViewUtils.quote
 import com.monet.bidder.auction.AuctionManagerCallback
-import com.monet.bidder.bid.BidResponse
 import com.monet.bidder.bid.Pixel
 import com.monet.bidder.callbacks.ReadyCallbackManager
-import com.monet.bidder.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
 import com.monet.bidder.threading.UIThread
+import com.monet.threading.BackgroundThread
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.HashMap
@@ -261,13 +259,9 @@ class AdViewManager : AdViewManagerCallback {
 
   override fun destroy() {
     adView.destroy()
-    backgroundThread.execute(object : InternalRunnable() {
-      override fun runInternal() {
-        adViewPoolManagerCallback.remove(this@AdViewManager.uuid, false)
-      }
-
-      override fun catchException(e: java.lang.Exception?) {}
-    })
+    backgroundThread.execute {
+      adViewPoolManagerCallback.remove(this@AdViewManager.uuid, false)
+    }
   }
 
   override fun enableThirdPartyCookies(enabled: Boolean) {
@@ -1062,7 +1056,7 @@ class AdViewManager : AdViewManagerCallback {
     if (redirectUrl.isNotEmpty()) {
       val userData = JSONObject().apply {
         putOpt("D", auctionManagerCallback.advertisingId)
-        putOpt("b", auctionManagerCallback.getDeviceData().packageInfo?.packageName ?: "")
+        putOpt("b", auctionManagerCallback.getDeviceData().appInfo.bundle)
         putOpt("aid", appMonetContext.applicationId)
         putOpt("ts", System.currentTimeMillis())
       }.toString()

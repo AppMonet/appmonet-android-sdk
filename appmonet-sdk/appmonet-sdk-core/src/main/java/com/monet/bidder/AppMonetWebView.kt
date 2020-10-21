@@ -1,6 +1,6 @@
 package com.monet.bidder
 
-import android.webkit.ValueCallback
+import com.monet.Callback
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface AppMonetWebView {
@@ -18,12 +18,12 @@ interface AppMonetWebView {
   fun executeJs(
       timeout: Int,
       method: String,
-      callback: ValueCallback<String?>?,
+      callback: Callback<String?>?,
       vararg args: String
   )
 
   fun executeJsAsync(
-      callback: ValueCallback<String?>?,
+      callback: Callback<String?>?,
       method: String,
       timeout: Int,
       vararg args: String

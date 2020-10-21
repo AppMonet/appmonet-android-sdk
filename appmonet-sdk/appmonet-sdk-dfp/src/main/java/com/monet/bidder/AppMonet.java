@@ -2,7 +2,7 @@ package com.monet.bidder;
 
 import android.app.Application;
 import android.content.Context;
-import android.webkit.ValueCallback;
+import com.monet.ValueCallback;
 
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;

@@ -1,4 +1,4 @@
-include ':appmonet-sdk-core'
+include ':appmonet-sdk-core-kmm'
 include ':sample-app'
 include ':appmonet-sdk:appmonet-sdk-dfp'
 include ':appmonet-sdk:appmonet-sdk-mopub'
@@ -9,3 +9,4 @@ if(file('appmonet-sdk/appmonet-sdk-bidder/src').exists()){
   include ':appmonet-sdk:appmonet-sdk-bidder'
 }
 rootProject.name = 'appmonet-android-sdk'
+

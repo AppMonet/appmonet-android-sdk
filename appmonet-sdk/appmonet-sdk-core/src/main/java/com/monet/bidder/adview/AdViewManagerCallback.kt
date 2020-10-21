@@ -4,7 +4,7 @@ import android.net.Uri
 import android.os.Message
 import android.view.MotionEvent
 import android.webkit.*
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 
 interface AdViewManagerCallback {
     val adViewEnvironment: String

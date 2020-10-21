@@ -8,7 +8,7 @@ import com.monet.bidder.adview.AdViewManager.AdViewState.AD_LOADING
 import com.monet.bidder.adview.AdViewManager.AdViewState.NOT_FOUND
 import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.auction.AuctionManagerCallback
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import com.monet.bidder.threading.BackgroundThread
 import com.monet.bidder.threading.UIThread
 import io.mockk.every

@@ -7,9 +7,10 @@ import com.monet.bidder.Constants.Dfp.ADUNIT_KEYWORD_KEY
 import com.monet.bidder.MoPubRequestUtil.getKeywords
 import com.monet.bidder.MoPubRequestUtil.mergeKeywords
 import com.monet.bidder.auction.AuctionRequest
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Mapper.from
-import com.monet.bidder.bid.BidResponse.Mapper.toJson
+import com.monet.BidResponse
+import com.monet.BidResponse.Mapper.from
+import com.monet.BidResponse.Mapper.fromBidKey
+import com.monet.BidResponse.Mapper.toJsonString
 import com.mopub.nativeads.MoPubNative
 import com.mopub.nativeads.RequestParameters
 import com.mopub.nativeads.RequestParameters.Builder
@@ -35,9 +36,9 @@ internal class MopubNativeAdRequest : AdServerAdRequest {
     mLocalExtras = mutableMapOf()
     this.moPubNative = moPubNative
     this.adUnitId = adUnitId
-    if (mLocalExtras.containsKey(BIDS_KEY)) {
+    mLocalExtras[BIDS_KEY]?.let {
       try {
-        mBid = from(JSONObject(mLocalExtras[BIDS_KEY] as String? ?: ""))
+        mBid = from(it as String)
       } catch (e: JSONException) {
         //do nothing
       }
@@ -85,7 +86,7 @@ internal class MopubNativeAdRequest : AdServerAdRequest {
   fun applyToView(mopubNativeAdView: MopubNativeAdView) {
     // apply the targeting to the view, as keywords
     val nativeAd = mopubNativeAdView.mopubNative
-    mLocalExtras[BIDS_KEY] = toJson(mBid).toString()
+    mLocalExtras[BIDS_KEY] = toJsonString(mBid)
     mLocalExtras[ADUNIT_KEYWORD_KEY] = adUnitId
     nativeAd.setLocalExtras(mLocalExtras)
     var keywords = getKeywords(mLocalExtras)

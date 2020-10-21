@@ -15,7 +15,7 @@ import com.monet.bidder.FloatingAdRenderUtil.getScreenPositioning
 import com.monet.bidder.Icons.CLOSE_FLOATING_ADS
 import com.monet.bidder.adview.AdView
 import com.monet.bidder.adview.AdViewPositioning
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import kotlin.math.min
 
 @SuppressLint("ViewConstructor")

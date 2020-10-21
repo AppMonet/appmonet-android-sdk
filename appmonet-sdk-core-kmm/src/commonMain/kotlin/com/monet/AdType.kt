@@ -1,4 +1,4 @@
-package com.monet.bidder
+package com.monet
 
 /**
  * Created by jose on 8/29/17.

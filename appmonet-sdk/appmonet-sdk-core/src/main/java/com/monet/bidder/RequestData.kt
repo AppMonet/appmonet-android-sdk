@@ -20,45 +20,52 @@ class RequestData(
   var adUnitId: String = adView.adUnitId
   var additional: Map<String?, String?> = buildAdditional(adRequest)
 
+
   private fun serializeBundleObject(value: Any?): String? {
     if (value == null) {
       return null
     }
-    if (value is String) {
-      return value
-    } else if (value is Int) {
-      return try {
-        Integer.toString((value as Int?)!!)
-      } catch (e: Exception) {
-        null
+    when (value) {
+      is String -> {
+        return value
       }
-    } else if (value is Double) {
-      return try {
-        java.lang.Double.toString((value as Double?)!!)
-      } catch (e: Exception) {
-        null
-      }
-    } else if (value is Float) {
-      return try {
-        java.lang.Float.toString((value as Float?)!!)
-      } catch (e: Exception) {
-        null
-      }
-    } else if (value is List<*>) {
-      val items: MutableList<String?> = ArrayList()
-      return try {
-        for (listItem in value as List<Any>) {
-          val serialized = serializeBundleObject(listItem)
-          if (serialized != null) {
-            items.add(serialized)
-          }
+      is Int -> {
+        return try {
+          ((value as Int?)!!).toString()
+        } catch (e: Exception) {
+          null
         }
-        TextUtils.join(",", items)
-      } catch (e: Exception) {
-        null
       }
+      is Double -> {
+        return try {
+          java.lang.Double.toString((value as Double?)!!)
+        } catch (e: Exception) {
+          null
+        }
+      }
+      is Float -> {
+        return try {
+          java.lang.Float.toString((value as Float?)!!)
+        } catch (e: Exception) {
+          null
+        }
+      }
+      is List<*> -> {
+        val items: MutableList<String?> = ArrayList()
+        return try {
+          for (listItem in value) {
+            val serialized = serializeBundleObject(listItem)
+            if (serialized != null) {
+              items.add(serialized)
+            }
+          }
+          TextUtils.join(",", items)
+        } catch (e: Exception) {
+          null
+        }
+      }
+      else -> return null
     }
-    return null
   }
 
   private fun buildAdditional(adRequest: AdServerAdRequest?): Map<String?, String?> {
@@ -102,7 +109,6 @@ class RequestData(
     private const val PPID_KEY = "ppid"
     private const val KVP_KEY = "kvp"
     private const val URL_KEY = "url"
-    private const val SIZES_KEY = "sizes"
     private const val ADUNIT_KEY = "adunit_id"
   }
 }

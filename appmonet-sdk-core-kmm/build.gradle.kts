@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
+
 plugins {
   kotlin("multiplatform")
   kotlin("plugin.serialization") version "1.4.10"
@@ -8,6 +9,7 @@ plugins {
   id("com.android.library")
   id("kotlin-android-extensions")
 }
+
 
 repositories {
   gradlePluginPortal()
@@ -20,7 +22,10 @@ repositories {
 }
 kotlin {
   android()
-  ios {
+//  iosArm64 { binaries.framework("AppMonet_Core") }
+//  iosX64 {
+//    binaries.framework("AppMonet_Core")
+    ios {
     binaries {
       framework {
         baseName = "AppMonet_Core"
@@ -31,6 +36,7 @@ kotlin {
     val commonMain by getting {
       dependencies {
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
+        implementation ("co.touchlab:stately-common:1.1.0")
       }
     }
     val commonTest by getting {
@@ -52,6 +58,44 @@ kotlin {
     }
     val iosMain by getting
     val iosTest by getting
+//    getByName("iosArm64Main") { dependsOn(iosMain) }
+//    getByName("iosArm64Test") { dependsOn(iosTest) }
+//    getByName("iosX64Main") { dependsOn(iosMain) }
+//    getByName("iosX64Test") { dependsOn(iosTest) }
+  }
+
+  tasks {
+//    register("universalFrameworkDebug", org.jetbrains.kotlin.gradle.tasks.FatFrameworkTask::class) {
+//      baseName = "AppMonet_Core"
+//      from(
+//          iosArm64().binaries.getFramework("AppMonet_Core", "Debug"),
+//          iosX64().binaries.getFramework("AppMonet_Core", "Debug")
+//      )
+//      destinationDir = buildDir.resolve("bin/universal/debug")
+//      group = "Universal framework"
+//      description = "Builds a universal (fat) debug framework"
+//      dependsOn("linkAppMonet_CoreDebugFrameworkIosArm64")
+//      dependsOn("linkAppMonet_CoreDebugFrameworkIosX64")
+//    }
+//    register(
+//        "universalFrameworkRelease", org.jetbrains.kotlin.gradle.tasks.FatFrameworkTask::class
+//    ) {
+//      baseName = "AppMonet_Core"
+//      from(
+//          iosArm64().binaries.getFramework("AppMonet_Core", "Release"),
+//          iosX64().binaries.getFramework("AppMonet_Core", "Release")
+//      )
+//      destinationDir = buildDir.resolve("bin/universal/release")
+//      group = "Universal framework"
+//      description = "Builds a universal (fat) release framework"
+//      dependsOn("linkAppMonet_CoreReleaseFrameworkIosArm64")
+//      dependsOn("linkAppMonet_CoreReleaseFrameworkIosX64")
+//    }
+//
+//    register("universalFramework") {
+//      dependsOn("universalFrameworkDebug")
+//      dependsOn("universalFrameworkRelease")
+//    }
   }
 }
 buildkonfig {

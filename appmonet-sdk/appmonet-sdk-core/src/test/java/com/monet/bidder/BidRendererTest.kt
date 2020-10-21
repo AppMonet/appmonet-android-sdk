@@ -8,7 +8,7 @@ import com.monet.bidder.auction.AuctionManager
 import com.monet.bidder.auction.AuctionWebView
 import com.monet.bidder.bid.BidManager
 import com.monet.bidder.bid.BidRenderer
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

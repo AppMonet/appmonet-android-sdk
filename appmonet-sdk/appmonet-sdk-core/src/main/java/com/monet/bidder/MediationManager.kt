@@ -1,8 +1,9 @@
 package com.monet.bidder
 
-import android.webkit.ValueCallback
+import com.monet.AdType
 import com.monet.bidder.bid.BidManager
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
+import com.monet.bidder.callbacks.Callback
 import com.monet.bidder.threading.InternalRunnable
 import java.util.Locale
 
@@ -44,29 +45,30 @@ class MediationManager(
         callback.onError()
         return
       }
-      sdkManager.indicateRequestAsync(adUnitId, finalTimeout, adSize, adType, floorCpm,
-          ValueCallback { value: String? ->
-            sdkManager.uiThread.run(object : InternalRunnable() {
-              override fun runInternal() {
-                try {
-                  callback.onSuccess(
-                      getBidReadyForMediation(
-                          getBidForMediation(adUnitId, floorCpm),
-                          adUnitId, adSize, adType, floorCpm, false
-                      )
+      sdkManager.indicateRequestAsync(
+          adUnitId, finalTimeout, adSize, adType, floorCpm
+      ) {
+        sdkManager.uiThread.run(object : InternalRunnable() {
+          override fun runInternal() {
+            try {
+              callback.onSuccess(
+                  getBidReadyForMediation(
+                      getBidForMediation(adUnitId, floorCpm),
+                      adUnitId, adSize, adType, floorCpm, false
                   )
-                } catch (ex: NoBidsFoundException) {
-                  callback.onError()
-                } catch (ex: NullBidException) {
-                  callback.onError()
-                }
-              }
+              )
+            } catch (ex: NoBidsFoundException) {
+              callback.onError()
+            } catch (ex: NullBidException) {
+              callback.onError()
+            }
+          }
 
-              override fun catchException(e1: Exception?) {
-                callback.onError()
-              }
-            })
-          })
+          override fun catchException(e1: Exception?) {
+            callback.onError()
+          }
+        })
+      }
     } catch (e: NullBidException) {
       val timeout = sdkManager.auctionManager.getSdkConfigurations().getAdUnitTimeout(adUnitId)
       val finalTimeout = if (timeout <= 0 && defaultTimeout != null) defaultTimeout else timeout
@@ -75,29 +77,30 @@ class MediationManager(
         callback.onError()
         return
       }
-      sdkManager.indicateRequestAsync(adUnitId, finalTimeout, adSize, adType, floorCpm,
-          ValueCallback { value: String? ->
-            sdkManager.uiThread.run(object : InternalRunnable() {
-              override fun runInternal() {
-                try {
-                  callback.onSuccess(
-                      getBidReadyForMediation(
-                          getBidForMediation(adUnitId, floorCpm),
-                          adUnitId, adSize, adType, floorCpm, false
-                      )
+      sdkManager.indicateRequestAsync(
+          adUnitId, finalTimeout, adSize, adType, floorCpm
+      ) {
+        sdkManager.uiThread.run(object : InternalRunnable() {
+          override fun runInternal() {
+            try {
+              callback.onSuccess(
+                  getBidReadyForMediation(
+                      getBidForMediation(adUnitId, floorCpm),
+                      adUnitId, adSize, adType, floorCpm, false
                   )
-                } catch (ex: NoBidsFoundException) {
-                  callback.onError()
-                } catch (ex: NullBidException) {
-                  callback.onError()
-                }
-              }
+              )
+            } catch (ex: NoBidsFoundException) {
+              callback.onError()
+            } catch (ex: NullBidException) {
+              callback.onError()
+            }
+          }
 
-              override fun catchException(e1: Exception?) {
-                callback.onError()
-              }
-            })
-          })
+          override fun catchException(e1: Exception?) {
+            callback.onError()
+          }
+        })
+      }
     }
   }
 

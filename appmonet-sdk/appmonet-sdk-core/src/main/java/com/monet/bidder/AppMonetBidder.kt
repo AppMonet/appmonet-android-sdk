@@ -2,9 +2,8 @@ package com.monet.bidder
 
 import android.content.Context
 import android.os.Bundle
-import android.os.Handler
 import android.text.TextUtils
-import android.webkit.ValueCallback
+import com.monet.Callback
 import com.monet.bidder.AdServerWrapper.Type
 import com.monet.bidder.Constants.Configurations
 import com.monet.bidder.Constants.JSMethods
@@ -13,12 +12,11 @@ import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.bidder.auction.AuctionRequest
 import com.monet.bidder.auction.AuctionRequest.Companion.from
 import com.monet.bidder.bid.BidManager
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Constant.BID_BUNDLE_KEY
-import com.monet.bidder.threading.BackgroundThread
+import com.monet.BidResponse
+import com.monet.BidResponse.Constant.BID_BUNDLE_KEY
+import com.monet.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
-import java.util.ArrayList
-import java.util.HashMap
+import com.monet.bidder.threading.UIThread
 
 /**
  * Created by jose on 8/28/17.
@@ -28,11 +26,11 @@ class AppMonetBidder(
   private val bidManager: BidManager,
   private val adServerWrapper: AdServerWrapper,
   private val auctionManagerCallback: AuctionManagerCallback,
-  private val backgroundThread: BackgroundThread
+  private val backgroundThread: BackgroundThread,
+  private  val uiThread: UIThread
 ) {
   private val adViews: MutableMap<String, AdServerAdView?> = mutableMapOf()
   private val extantExtras: MutableMap<String, AuctionRequest> = mutableMapOf()
-  private val mainHandler: Handler = Handler(context.mainLooper)
 
   /**
    * Add header bids to the given PublisherAdRequest. This sets customTargeting
@@ -75,12 +73,12 @@ class AppMonetBidder(
     adView: AdServerAdView,
     adRequest: AdServerAdRequest,
     timeout: Int,
-    onDone: ValueCallback<AdServerAdRequest>
+    onDone: Callback<AdServerAdRequest>
   ) {
     try {
       addBidsToPublisherAdRequest(adView, adRequest, timeout, onDone)
     } catch (e: Exception) {
-      onDone.onReceiveValue(adRequest)
+      onDone(adRequest)
     }
   }
 
@@ -89,7 +87,7 @@ class AppMonetBidder(
     adRequest: AdServerAdRequest,
     adUnitId: String?,
     timeout: Int,
-    onDone: ValueCallback<AdServerAdRequest>
+    onDone: Callback<AdServerAdRequest>
   ) {
     adView.adUnitId = adUnitId!!
     addBids(adView, adRequest, timeout, onDone)
@@ -119,42 +117,37 @@ class AppMonetBidder(
     adView: AdServerAdView,
     otherRequest: AdServerAdRequest,
     timeout: Int,
-    onDone: ValueCallback<AdServerAdRequest>
+    onDone: Callback<AdServerAdRequest>
   ) {
     registerView(adView, otherRequest)
     if (BaseManager.isTestMode) {
       sLogger.warn(TEST_MODE_WARNING)
     }
-    backgroundThread.execute(object : InternalRunnable() {
-      override fun runInternal() {
-        attachBidAsync(adView, otherRequest, timeout,
-            ValueCallback { value: AuctionRequest? ->
-              mainHandler.post(object : InternalRunnable() {
-                override fun runInternal() {
-                  auctionManagerCallback.trackRequest(adView.adUnitId, "addBidsAsync")
-                  if (value == null) {
-                    sLogger.info("no bid returned from js")
-                    addBidsNoFill(adView.adUnitId)
-                    onDone.onReceiveValue(otherRequest)
-                    return
-                  }
-                  val newRequest = buildRequest(value, adView.type)
-                  sLogger.debug("passing bid to main thread")
-                  addBidsNoFill(adView.adUnitId)
-                  onDone.onReceiveValue(newRequest)
-                }
+    backgroundThread.execute {
+      attachBidAsync(
+          adView, otherRequest, timeout
+      ) { value: AuctionRequest? ->
+        uiThread.run(object : InternalRunnable() {
+          override fun runInternal() {
+            auctionManagerCallback.trackRequest(adView.adUnitId, "addBidsAsync")
+            if (value == null) {
+              sLogger.info("no bid returned from js")
+              addBidsNoFill(adView.adUnitId)
+              onDone(otherRequest)
+              return
+            }
+            val newRequest = buildRequest(value, adView.type)
+            sLogger.debug("passing bid to main thread")
+            addBidsNoFill(adView.adUnitId)
+            onDone(newRequest)
+          }
 
-                override fun catchException(e: Exception?) {
-                  onDone.onReceiveValue(otherRequest)
-                }
-              })
-            })
+          override fun catchException(e: Exception?) {
+            onDone(otherRequest)
+          }
+        })
       }
-
-      override fun catchException(e: Exception?) {
-        onDone.onReceiveValue(otherRequest)
-      }
-    })
+    }
   }
 
   fun cancelRequest(
@@ -247,7 +240,7 @@ class AppMonetBidder(
     }
     val auctionRequest = from(adView, adRequest)
     val kwStrings = mutableListOf<String>()
-    kwStrings.add(bidResponse.keyWords)
+    kwStrings.add(bidResponse.keywords)
     attachBidToNetworkExtras(auctionRequest.networkExtras, bidResponse)
     auctionRequest.bid = bidResponse
     val kwTargeting = keywordStringToBundle(TextUtils.join(",", kwStrings))
@@ -285,26 +278,26 @@ class AppMonetBidder(
    * @param bid the BidResponse to be passed into the adserver.
    */
   private fun attachBidToNetworkExtras(
-    bundle: Bundle?,
+    bundle: MutableMap<String, Any>?,
     bid: BidResponse?
   ) {
     if (bid == null || bundle == null) {
       return
     }
-    bundle.putSerializable(BID_BUNDLE_KEY, bid)
+    bundle[BID_BUNDLE_KEY] = bid
   }
 
   private fun attachBidAsync(
     adView: AdServerAdView,
     adRequest: AdServerAdRequest,
     timeout: Int,
-    callback: ValueCallback<AuctionRequest?>
+    callback: Callback<AuctionRequest?>
   ) {
     val adUnitId = adView.adUnitId
     val data = RequestData(adRequest, adView)
     if (!bidManager.needsNewBids(adView, adRequest)) {
       sLogger.debug("keeping current bids")
-      callback.onReceiveValue(attachBid(adView, adRequest, adRequest.bid))
+      callback(attachBid(adView, adRequest, adRequest.bid))
       return
     }
     val config = auctionManagerCallback.getSdkConfigurations()
@@ -313,18 +306,18 @@ class AppMonetBidder(
     ) {
       sLogger.debug("Skipping fetch wait (latency reduction)")
       val bid = bidManager.getLocalBid(adView.adUnitId)
-      callback.onReceiveValue(attachBid(adView, adRequest, bid))
+      callback(attachBid(adView, adRequest, bid))
     } else {
       // get the timeout
       val realTimeout = resolveTimeout(config, timeout)
       auctionManagerCallback.executeJs(
           realTimeout, JSMethods.FETCH_BIDS_BLOCKING,
-          ValueCallback {
+          {
             val bid = bidManager.getLocalBid(adView.adUnitId)
             if (bid != null) {
               sLogger.debug("attaching bids to request")
             }
-            callback.onReceiveValue(attachBid(adView, adRequest, bid))
+            callback(attachBid(adView, adRequest, bid))
           },
           WebViewUtils.quote(adUnitId), timeout.toString(),
           data.toJson(), "'addBids'"

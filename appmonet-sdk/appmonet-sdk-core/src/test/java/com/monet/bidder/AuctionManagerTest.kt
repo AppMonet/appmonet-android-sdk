@@ -1,12 +1,13 @@
 package com.monet.bidder
 
 import android.webkit.ValueCallback
+import com.monet.Callback
 import com.monet.bidder.adview.AdViewContext
 import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.auction.AuctionManager
 import com.monet.bidder.bid.BidManager
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import com.monet.bidder.callbacks.ReadyCallbackManager
 import com.monet.bidder.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
@@ -388,7 +389,7 @@ class AuctionManagerTest {
     }
     val adViewManager = mockk<AdViewManager>(relaxed = true)
     every { adViewManager.isLoaded } answers { false }
-    val callbackCaptor = mockk<ValueCallback<AdViewManager>>(relaxed = true)
+    val callbackCaptor = mockk<Callback<AdViewManager>>(relaxed = true)
     every {
       auctionManagerComponent.adViewPoolManager.request(
           any<AdViewContext>()

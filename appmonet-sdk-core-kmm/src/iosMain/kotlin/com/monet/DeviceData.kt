@@ -5,6 +5,7 @@ import kotlinx.cinterop.cValuesOf
 import kotlinx.cinterop.useContents
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import platform.AdSupport.ASIdentifierManager
 import platform.CoreFoundation.CFAllocatorGetDefault
 import platform.CoreFoundation.CFRelease
 import platform.CoreFoundation.kCFBundleVersionKey
@@ -35,19 +36,18 @@ import platform.posix.free
 import platform.posix.size_t
 
 class DeviceData : CommonDeviceData {
+  var advertisingId: String? = null
   override val appInfo: AppInfo
     get() {
       val mainBundle = NSBundle.mainBundle
-      val format = Json { allowStructuredMapKeys = true }
       return AppInfo(
           mainBundle.bundleIdentifier ?: "",
           mainBundle.infoDictionary?.get("CFBundleShortVersionString")?.let { it as String } ?: "",
           mainBundle.infoDictionary?.get(kCFBundleVersionKey)?.let { it as String } ?: "",
           mainBundle.objectForInfoDictionaryKey("CFBundleName")?.let { it as String } ?: "",
-          mutableMapOf(
-              Pair("minSdkVersion", __IPHONE_OS_VERSION_MIN_REQUIRED.toString()),
-              Pair("skadnetwork", format.encodeToString(getSkAdNetwork())),
-              Pair("idfv", UIDevice.currentDevice.identifierForVendor?.UUIDString ?: ""),
+          Extras(
+              __IPHONE_OS_VERSION_MIN_REQUIRED.toString(), getSkAdNetwork(),
+              UIDevice.currentDevice.identifierForVendor?.UUIDString
           )
       )
     }
@@ -163,6 +163,13 @@ class DeviceData : CommonDeviceData {
       )
     }
 
+  override fun getAdClientInfo(callback: Callback<AdInfo>) {
+    val adManager = ASIdentifierManager.sharedManager()
+    advertisingId = adManager.advertisingIdentifier.UUIDString
+    val adInfo = AdInfo(advertisingId!!, adManager.isAdvertisingTrackingEnabled())
+    callback(adInfo)
+  }
+
   private fun getNetworkType(telephonyInfo: CTTelephonyNetworkInfo): String {
     val technologyString = telephonyInfo.currentRadioAccessTechnology;
     return when {
@@ -188,7 +195,7 @@ class DeviceData : CommonDeviceData {
     if (infoDict == nil) {
       return skAdNetworkItems;
     }
-    val adNetworkItems = infoDict?.get("SKAdNetworkItems") as Array<*>;
+    val adNetworkItems = infoDict?.get("SKAdNetworkItems") as List<*>
     if (adNetworkItems == nil) {
       return skAdNetworkItems;
     }

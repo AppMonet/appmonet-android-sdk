@@ -1,4 +1,4 @@
-package com.monet.threading
+package com.monet
 
 import android.Manifest.permission
 import android.annotation.SuppressLint
@@ -14,28 +14,52 @@ import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
+import android.os.Debug
 import android.telephony.TelephonyManager
 import android.text.TextUtils
 import androidx.core.content.ContextCompat
-import com.monet.AppInfo
-import com.monet.CommonDeviceData
 import com.monet.CommonDeviceData.Companion.UNKNOWN
-import com.monet.HardwareData
-import com.monet.LocationData
-import com.monet.MemInfo
-import com.monet.NetworkInfo
-import com.monet.OSData
-import com.monet.ScreenData
+import kotlinx.serialization.Serializable
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
-import java.util.Locale
+
+@Serializable
+data class VMStats(
+  val totalMemory: Long = 0L,
+  val maxMemory: Long = 0L,
+  val freeMemory: Long = 0L,
+  val nativeHeapAlloc: Long = 0L,
+  val nativeHeapFree: Long = 0L,
+  val miFree: Long = 0L,
+  val miTotal: Long = 0L,
+  val miLow: Boolean = false,
+  val miThreshold: Long = 0L,
+)
 
 class DeviceData(
-  private val context: Context
+  val context: Context
 ) : CommonDeviceData {
   companion object {
 //    private val sLogger = Logger("Device")
   }
+
+  val vMStats: VMStats
+    get() {
+      try {
+
+        val runtime = Runtime.getRuntime()
+        val memoryInfo = memoryInfo
+        return VMStats(
+            runtime.totalMemory(), runtime.maxMemory(), runtime.freeMemory(),
+            Debug.getNativeHeapAllocatedSize(), Debug.getNativeHeapFreeSize(),
+            memoryInfo.miFree, memoryInfo.memorySize, memoryInfo.lowMemory, memoryInfo.miThreshold
+        )
+      } catch (e: Exception) {
+        // do nothing
+      }
+      return VMStats()
+    }
 
   override val appInfo: AppInfo
     get() {
@@ -170,7 +194,7 @@ class DeviceData(
         else -> ""
       }
     }
-  
+
   override val osData: OSData = OSData("Android", VERSION.RELEASE, Build.DISPLAY)
 
   override val screenData: ScreenData
@@ -197,6 +221,11 @@ class DeviceData(
       }
       return ScreenData()
     }
+
+  override fun getAdClientInfo(callback: Callback<AdInfo>) {
+    val adClientInfoBackgroundExecutor = AdClientBackgroundExecutor(context, callback)
+    adClientInfoBackgroundExecutor.execute()
+  }
 
   private val applicationName: String
     get() {

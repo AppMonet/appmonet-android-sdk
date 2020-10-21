@@ -4,8 +4,8 @@ import android.content.*
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.os.Process
 import android.text.TextUtils
-import android.webkit.ValueCallback
 import androidx.annotation.VisibleForTesting
+import com.monet.AdType
 import com.monet.bidder.*
 import com.monet.bidder.Constants.JSMethods.ADVERTISING_ID_KEY
 import com.monet.bidder.Constants.JSMethods.FETCH_BIDS_BLOCKING
@@ -26,13 +26,15 @@ import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.bid.BidManager
 import com.monet.bidder.callbacks.ReadyCallbackManager
-import com.monet.bidder.threading.BackgroundThread
+import com.monet.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
 import com.monet.bidder.threading.UIThread
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.*
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
+import com.monet.DeviceData
+import com.monet.Callback
 
 class AuctionManager : Subscriber, AuctionManagerCallback {
   override val mediationManager: MediationManager
@@ -87,7 +89,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     this.addBidsManager = AddBidsManager(auctionManagerReadyCallbacks)
     this.appMonetContext = appMonetContext
     appMonetBidder = AppMonetBidder(
-        context, bidManager, adServerWrapper, this, backgroundThread
+        context, bidManager, adServerWrapper, this, backgroundThread, uiThread
     )
     setPreferencesListener(preferences)
     val runnable: Runnable = object : InternalRunnable() {
@@ -176,7 +178,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
   override fun executeJs(
     timeout: Int,
     method: String,
-    callback: ValueCallback<String?>?,
+    callback: Callback<String?>?,
     vararg args: String
   ) {
     auctionManagerReadyCallbacks.onReady { webView ->
@@ -186,7 +188,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
 
   override fun getAdvertisingInfo() {
     auctionManagerReadyCallbacks.onReady { webView ->
-      deviceData.getAdClientInfo(ValueCallback { adInfo ->
+      deviceData.getAdClientInfo { adInfo ->
         val json = JSONObject()
         try {
           advertisingId = adInfo.advertisingId
@@ -196,7 +198,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
           sLogger.error("error creating advertising ID JSON")
         }
         webView.loadView(WebViewUtils.javascriptExecute("advertisingId", json.toString()))
-      })
+      }
     }
   }
 
@@ -258,7 +260,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     width: Int,
     height: Int,
     adUnitId: String,
-    onLoad: ValueCallback<AdViewManager>
+    onLoad: Callback<AdViewManager>
   ) {
     val context = AdViewContext(url, ua, width, height, adUnitId)
     uiThread.run(object : InternalRunnable() {
@@ -267,7 +269,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
         if (!adViewManager.isLoaded) {
           adViewManager.load()
         }
-        onLoad.onReceiveValue(adViewManager)
+        onLoad(adViewManager)
       }
 
       override fun catchException(e: Exception?) {
@@ -352,7 +354,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     adServerAdView: AdServerAdView,
     baseRequest: AdServerAdRequest,
     remainingTime: Int,
-    valueCallback: ValueCallback<AdServerAdRequest>
+    valueCallback: Callback<AdServerAdRequest>
   ) {
     appMonetBidder.addBids(adServerAdView, baseRequest, remainingTime, valueCallback)
   }
@@ -384,7 +386,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     adSize: AdSize?,
     adType: AdType,
     floorCpm: Double,
-    callback: ValueCallback<String?>
+    callback: Callback<String?>
   ) {
     auctionManagerReadyCallbacks.onReady { webView ->
       val params = arrayOf(
@@ -489,16 +491,12 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
   }
 
   private fun start(context: Context) {
-    backgroundThread.execute(object : InternalRunnable() {
-      override fun runInternal() {
-        auctionWebViewCreatedCallbacks.onReady { webView ->
-          webView.start()
-          setupNetworkConnectivityListener(context)
-        }
+    backgroundThread.execute {
+      auctionWebViewCreatedCallbacks.onReady { webView ->
+        webView.start()
+        setupNetworkConnectivityListener(context)
       }
-
-      override fun catchException(e: Exception?) {}
-    })
+    }
   }
 
   /**

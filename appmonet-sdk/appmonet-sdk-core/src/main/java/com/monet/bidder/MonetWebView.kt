@@ -12,11 +12,12 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.CookieManager
-import android.webkit.ValueCallback
+import com.monet.ValueCallback
 import android.webkit.WebSettings
 import android.webkit.WebSettings.PluginState.ON
 import android.webkit.WebSettings.RenderPriority.HIGH
 import android.webkit.WebView
+import com.monet.Callback
 import com.monet.bidder.Constants.JSMethods
 import com.monet.bidder.auction.MonetJsInterface
 import com.monet.bidder.threading.InternalRunnable
@@ -201,11 +202,11 @@ open class MonetWebView protected constructor(context: Context?) : WebView(conte
   override fun executeJs(
     timeout: Int,
     method: String,
-    callback: ValueCallback<String?>?,
+    callback: Callback<String?>?,
     vararg args: String
   ) {
     if (isDestroyed) {
-      callback!!.onReceiveValue(null)
+      callback?.let { it(null) }
     }
     sLogger.debug("executing js with timeout - $timeout")
     executeJsAsync(callback, method, timeout, *args)
@@ -230,7 +231,7 @@ open class MonetWebView protected constructor(context: Context?) : WebView(conte
    * @param args The arguments to be passed to the javascript method.
    */
   override fun executeJsAsync(
-    callback: ValueCallback<String?>?,
+    callback: Callback<String?>?,
     method: String,
     timeout: Int,
     vararg args: String

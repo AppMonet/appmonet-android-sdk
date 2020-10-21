@@ -3,7 +3,7 @@ package com.monet.bidder
 import android.app.Activity
 import android.view.View
 import com.monet.bidder.FloatingAdView.Params
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 
 internal class AdViewLoadedFactory {
   fun getAdView(

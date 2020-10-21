@@ -10,7 +10,7 @@ import java.util.HashMap
  * The `AppMonetFloatingAdConfiguration` class contains the builder methods to configure
  * the floating ad behavior.
  */
-internal class AppMonetFloatingAdConfiguration private constructor(builder: Builder) {
+class AppMonetFloatingAdConfiguration private constructor(builder: Builder) {
   val maxAdDuration: Int
   val adUnitId: String
 
@@ -22,7 +22,7 @@ internal class AppMonetFloatingAdConfiguration private constructor(builder: Buil
     DP
   }
 
-  var positionSettings: MutableMap<String, Value> = mutableMapOf()
+  internal var positionSettings: MutableMap<String, Value> = mutableMapOf()
   @Throws(JSONException::class) fun toJson(): JSONObject {
     val magicPosition = JSONObject()
     for ((key, value) in positionSettings) {

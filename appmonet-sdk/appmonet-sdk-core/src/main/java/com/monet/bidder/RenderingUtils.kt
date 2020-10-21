@@ -1,6 +1,5 @@
 package com.monet.bidder
 
-import android.R.id
 import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Context
@@ -15,19 +14,19 @@ import android.text.TextUtils
 import android.util.Base64
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.webkit.URLUtil
 import android.widget.FrameLayout
 import android.widget.FrameLayout.LayoutParams
 import android.widget.ImageView
 import android.widget.RelativeLayout
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import java.lang.reflect.Field
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
+import com.monet.DeviceData
 
 object RenderingUtils {
   private val sVastTrackingPattern = Pattern.compile("monet://vast/(?:v2/)?([^/]+)/?([^/]+)?")
@@ -314,8 +313,10 @@ object RenderingUtils {
    * @return a String representing the URL to host the auction at
    */
   fun getDefaultAuctionURL(deviceData: DeviceData): String {
-    val app = deviceData.appInfo ?: return Constants.DEFAULT_AUCTION_URL
-    val parts = TextUtils.split(app.packageName, "\\.")
+    val appInfo = deviceData.appInfo
+    val packageName =
+      if (appInfo.bundle.isEmpty()) Constants.DEFAULT_AUCTION_URL else appInfo.bundle
+    val parts = TextUtils.split(packageName, "\\.")
     var len = parts.size
     val buffer = StringBuilder()
     while (--len >= 0) {

@@ -3,7 +3,7 @@ package com.monet.bidder
 import android.app.Activity
 import android.content.Context
 import android.view.View
-import com.monet.bidder.AdType.BANNER
+import com.monet.AdType.BANNER
 import com.monet.bidder.Constants.BIDS_KEY
 import com.monet.bidder.Constants.Configurations.DEFAULT_MEDIATION_FLOOR
 import com.monet.bidder.CustomEventUtil.getAdUnitId
@@ -12,8 +12,9 @@ import com.monet.bidder.MediationManager.NoBidsFoundException
 import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.bid.BidRenderer
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Mapper.from
+import com.monet.BidResponse
+import com.monet.BidResponse.Mapper.from
+import com.monet.BidResponse.Mapper.fromBidKey
 import com.mopub.common.LifecycleListener
 import com.mopub.common.logging.MoPubLog
 import com.mopub.common.logging.MoPubLog.AdapterLogEvent.LOAD_FAILED
@@ -94,7 +95,7 @@ open class CustomEventBanner : BaseAd(), AppMonetViewListener {
     //    // thanks to localExtras we don't need to serialize/deserialize
     var headerBiddingBid: BidResponse? = null
     if (extras.containsKey(BIDS_KEY) && extras[BIDS_KEY] != null) {
-      headerBiddingBid = from(JSONObject(extras[BIDS_KEY]))
+      headerBiddingBid = extras[BIDS_KEY]?.let { from(it) }
     }
     val floorCpm = getServerExtraCpm(
         extras, configurations.getDouble(DEFAULT_MEDIATION_FLOOR)

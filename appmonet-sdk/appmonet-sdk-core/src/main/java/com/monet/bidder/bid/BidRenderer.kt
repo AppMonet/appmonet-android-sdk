@@ -8,7 +8,7 @@ import com.monet.bidder.BaseManager
 import com.monet.bidder.Constants.TEST_MODE_WARNING
 import com.monet.bidder.Logger
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
-
+import com.monet.BidResponse
 object BidRenderer {
   private val sLogger = Logger("Renderer")
   @JvmStatic fun renderBid(

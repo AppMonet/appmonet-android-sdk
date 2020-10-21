@@ -1,30 +1,26 @@
 package com.monet.app
 
 import android.content.Intent
-import android.opengl.Visibility
 import android.os.Bundle
 import android.view.View
+import android.webkit.WebView
 import com.monet.bidder.AppMonet
 import com.mopub.mobileads.MoPubErrorCode
 import com.mopub.mobileads.MoPubInterstitial
 import com.mopub.mobileads.MoPubView
-import kotlinx.android.synthetic.main.activity_main.loadInterstitial
-import kotlinx.android.synthetic.main.activity_main.loadMrect
-import kotlinx.android.synthetic.main.activity_main.nativeContainer
-import kotlinx.android.synthetic.main.activity_main.navigateToNativeScreen
-import kotlinx.android.synthetic.main.activity_main.showInterstitial
-import kotlinx.android.synthetic.mopub.adview_layout.moPubView
+import com.monet.ValueCallback
 
 class MainActivity : BaseActivity() {
   private lateinit var interstitial: MoPubInterstitial
   override fun onCreate(savedInstanceState: Bundle?) {
+    WebView.setWebContentsDebuggingEnabled(true)
     super.onCreate(savedInstanceState)
-    nativeContainer.visibility = View.VISIBLE
+    binding.nativeContainer.visibility = View.VISIBLE
   }
 
   override fun setupMrect() {
-    moPubView.setAdUnitId("b03e6dccfe9e4abab02470a39c88d5dc")
-    moPubView.bannerAdListener = object : MoPubView.BannerAdListener {
+    adLayoutBinding.moPubView.setAdUnitId("b03e6dccfe9e4abab02470a39c88d5dc")
+    adLayoutBinding.moPubView.bannerAdListener = object : MoPubView.BannerAdListener {
       override fun onBannerExpanded(banner: MoPubView?) {
       }
 
@@ -82,22 +78,23 @@ class MainActivity : BaseActivity() {
    * Listener on mrect button that will trigger AppMonet's addBids method.
    */
   override fun setupMrectLoadClickListener() {
-    loadMrect.setOnClickListener {
-      AppMonet.addBids(moPubView, 1500) { view ->
-        view.loadAd()
+    binding.loadMrect.setOnClickListener {
+      ValueCallback<MoPubView> { }
+      AppMonet.addBids(adLayoutBinding.moPubView, 1500) { value ->
+        value.loadAd()
       }
     }
   }
 
   override fun setupInterstitialLoadClickListener() {
-    loadInterstitial.setOnClickListener {
+    binding.loadInterstitial.setOnClickListener {
       setupInterstitial()
       interstitial.load()
     }
   }
 
   override fun setupInterstitialShowClickListener() {
-    showInterstitial.setOnClickListener {
+    binding.showInterstitial.setOnClickListener {
       if (interstitial.isReady) {
         interstitial.show()
       } else {
@@ -107,7 +104,7 @@ class MainActivity : BaseActivity() {
   }
 
   override fun setupNativeClickListener() {
-    navigateToNativeScreen.setOnClickListener {
+    binding.navigateToNativeScreen.setOnClickListener {
       val intent = Intent(this@MainActivity, NativeSampleActivity::class.java)
       startActivity(intent)
     }

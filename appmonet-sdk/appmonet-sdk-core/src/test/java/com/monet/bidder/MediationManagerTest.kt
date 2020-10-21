@@ -3,7 +3,8 @@ package com.monet.bidder
 import android.webkit.ValueCallback
 import com.monet.bidder.auction.AuctionManager
 import com.monet.bidder.bid.BidManager
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
+import com.monet.bidder.callbacks.Callback
 import com.monet.bidder.threading.InternalRunnable
 import com.monet.bidder.threading.UIThread
 import io.mockk.every

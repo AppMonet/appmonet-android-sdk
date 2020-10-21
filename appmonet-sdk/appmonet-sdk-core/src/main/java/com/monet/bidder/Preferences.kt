@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import androidx.annotation.VisibleForTesting
 import java.util.HashMap
+import com.monet.DeviceData
 
 /**
  * This class serves as a wrapper for [SharedPreferences] for a much easier way of accessing
@@ -134,26 +135,26 @@ class Preferences {
     }
 
     fun getStringAtKey(
-      context: Context,
+      deviceData: DeviceData,
       key: String?,
       subKey: String?,
       defaultValue: String
     ): String {
       return try {
-        getAtKey(context, key).getString(subKey, defaultValue) ?: defaultValue
+        getAtKey(deviceData.context, key).getString(subKey, defaultValue) ?: defaultValue
       } catch (e: Exception) {
         defaultValue
       }
     }
 
     fun getBoolAtKey(
-      context: Context,
+      deviceData: DeviceData,
       key: String?,
       subKey: String?,
       defaultValue: Boolean
     ): Boolean {
       return try {
-        getAtKey(context, key).getBoolean(subKey, defaultValue)
+        getAtKey(deviceData.context, key).getBoolean(subKey, defaultValue)
       } catch (e: Exception) {
         defaultValue
       }

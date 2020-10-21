@@ -6,8 +6,8 @@ import com.monet.bidder.AdServerBannerListener.ErrorCode.BAD_REQUEST
 import com.monet.bidder.AdServerBannerListener.ErrorCode.INTERNAL_ERROR
 import com.monet.bidder.AdServerBannerListener.ErrorCode.NO_FILL
 import com.monet.bidder.AdServerBannerListener.ErrorCode.TIMEOUT
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Constant.FLOATING_AD_TYPE
+import com.monet.BidResponse
+import com.monet.BidResponse.Constant.FLOATING_AD_TYPE
 import com.monet.bidder.threading.InternalRunnable
 import com.mopub.common.logging.MoPubLog
 import com.mopub.common.logging.MoPubLog.AdLogEvent.CLICKED

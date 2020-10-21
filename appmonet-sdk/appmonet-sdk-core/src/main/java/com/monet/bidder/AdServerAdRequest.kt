@@ -3,7 +3,7 @@ package com.monet.bidder
 import android.location.Location
 import android.os.Bundle
 import com.monet.bidder.auction.AuctionRequest
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import java.util.Date
 
 abstract class AdServerAdRequest {

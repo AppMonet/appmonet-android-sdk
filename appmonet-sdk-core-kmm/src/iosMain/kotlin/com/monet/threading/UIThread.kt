@@ -6,7 +6,7 @@ import platform.darwin.dispatch_get_main_queue
 actual class UIThread {
   actual fun run(runnable: ThreadRunnable) {
     dispatch_async(dispatch_get_main_queue()) {
-      runnable.runInternal()
+      runnable()
     }
   }
 
@@ -15,7 +15,7 @@ actual class UIThread {
     delay: Long
   ) {
     dispatch_async(dispatch_get_main_queue()) {
-      runnable.runInternal()
+      runnable()
     }
   }
 }

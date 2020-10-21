@@ -1,6 +1,6 @@
 package com.monet.bidder.adview
 
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import com.monet.bidder.SdkConfigurations
 
 interface AdViewPoolManagerCallback {

@@ -2,6 +2,7 @@ package com.monet.bidder.bid
 
 import android.annotation.SuppressLint
 import androidx.annotation.VisibleForTesting
+import com.monet.BidResponse
 import com.monet.bidder.AdServerAdRequest
 import com.monet.bidder.AdServerAdView
 import com.monet.bidder.Constants.JSMethods
@@ -14,16 +15,13 @@ import com.monet.bidder.Subscriber
 import com.monet.bidder.WebViewUtils.quote
 import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.auction.AuctionManagerCallback
-import com.monet.bidder.threading.BackgroundThread
-import com.monet.bidder.threading.InternalRunnable
+import com.monet.threading.BackgroundThread
+import com.monet.threading.ScheduledFutureCall
 import org.json.JSONObject
 import java.util.ArrayList
 import java.util.Comparator
-import java.util.Locale
 import java.util.PriorityQueue
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
  * Created by jose on 8/28/17.
@@ -34,7 +32,7 @@ class BidManager : Subscriber {
   private val bidIdsByAdView: MutableMap<String, MutableList<String?>?>
   private val seenBids: MutableMap<String, String?>
   private val bidsById: MutableMap<String, BidResponse?>
-  private var intervalFuture: ScheduledFuture<*>? = null
+  private var intervalFuture: ScheduledFutureCall? = null
   private val auctionManagerCallback: AuctionManagerCallback
   private val usedBids: MutableMap<String, String?>
   private val pubSubService: PubSubService;
@@ -195,7 +193,7 @@ class BidManager : Subscriber {
    */
   fun disableIntervalCleaner() {
     if (intervalFuture != null) {
-      intervalFuture!!.cancel(false)
+      intervalFuture?.cancel()
       intervalFuture = null
     } else {
       sLogger.warn("execution already disabled")
@@ -299,8 +297,6 @@ class BidManager : Subscriber {
   private fun newBidResponseQueue(): PriorityQueue<BidResponse> {
     return PriorityQueue(10, BidManagerComparator())
   }
-
-
 
   private fun resolveAdUnitId(adUnitId: String): String? {
     return if (adUnitNameMapping.containsKey(adUnitId)) adUnitNameMapping[adUnitId] else adUnitId
@@ -618,15 +614,10 @@ class BidManager : Subscriber {
   }
 
   private fun setupIntervalExecution() {
-    intervalFuture?.cancel(true)
-    intervalFuture =
-      backgroundThread.scheduleAtFixedRate(object : InternalRunnable() {
-        override fun runInternal() {
-          cleanBids()
-        }
-
-        override fun catchException(e: Exception?) {}
-      }, 10000, MILLISECONDS)
+    intervalFuture?.cancel()
+    intervalFuture = backgroundThread.scheduleAtFixedRate({
+      cleanBids()
+    }, 10000)
   }
 
   private fun renderWebViewExists(bid: BidResponse): Boolean {

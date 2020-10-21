@@ -2,7 +2,6 @@ package com.monet.bidder.adview
 
 import android.webkit.JavascriptInterface
 import com.monet.bidder.AdServerBannerListener
-import com.monet.bidder.RenderingUtils
 import com.monet.bidder.WebViewUtils
 import com.monet.bidder.auction.AuctionManagerCallback
 
@@ -79,8 +78,9 @@ internal class AdViewJsInterface(
     return adViewManagerCallback.uuid
   }
 
-  @get:JavascriptInterface val refCount: String
-    get() = adViewPoolManagerCallback.getReferenceCount(adViewManagerCallback.uuid).toString()
+  @JavascriptInterface fun getRefCount(): String {
+    return adViewPoolManagerCallback.getReferenceCount(adViewManagerCallback.uuid).toString()
+  }
 
   /**
    * Get a String representing the current attachment state of this AdView.

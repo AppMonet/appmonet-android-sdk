@@ -1,15 +1,16 @@
 package com.monet.bidder
 
 import android.content.Context
-import com.monet.bidder.AdType.NATIVE
+import com.monet.AdType.NATIVE
 import com.monet.bidder.Constants.BIDS_KEY
 import com.monet.bidder.CustomEventUtil.getAdUnitId
 import com.monet.bidder.CustomEventUtil.getServerExtraCpm
 import com.monet.bidder.MediationManager.NoBidsFoundException
 import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.bid.BidRenderer
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Mapper.from
+import com.monet.BidResponse
+import com.monet.BidResponse.Mapper.from
+import com.monet.BidResponse.Mapper.fromBidKey
 import com.mopub.nativeads.CustomEventNative
 import com.mopub.nativeads.NativeErrorCode.NETWORK_NO_FILL
 import com.mopub.nativeads.NativeErrorCode.UNSPECIFIED
@@ -45,7 +46,7 @@ open class CustomEventNative : CustomEventNative() {
     var headerBiddingBid: BidResponse? = null
     try {
       localExtras[BIDS_KEY]?.let {
-        headerBiddingBid = from(JSONObject(it as String))
+        headerBiddingBid = from(it as String)
       }
     } catch (e: JSONException) {
       // Exception

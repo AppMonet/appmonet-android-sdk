@@ -6,6 +6,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.monet.app.R.id
 import com.monet.app.R.layout
+import com.monet.app.databinding.ActivityNativeSampleBinding
 import com.monet.bidder.AppMonet
 import com.monet.bidder.AppMonetNativeAdRenderer
 import com.monet.bidder.AppMonetNativeViewBinder.Builder
@@ -14,8 +15,6 @@ import com.mopub.nativeads.MoPubNative.MoPubNativeNetworkListener
 import com.mopub.nativeads.NativeAd
 import com.mopub.nativeads.NativeErrorCode
 import com.mopub.nativeads.RequestParameters
-import kotlinx.android.synthetic.mopub.activity_native_sample.loadNativeAd
-import kotlinx.android.synthetic.mopub.activity_native_sample.nativeAdContainer
 
 class NativeSampleActivity : AppCompatActivity() {
   companion object {
@@ -24,19 +23,20 @@ class NativeSampleActivity : AppCompatActivity() {
 
   private var nativeAd: NativeAd? = null
   private var mMoPubNative: MoPubNative? = null
-
+  private lateinit var binding : ActivityNativeSampleBinding
   private val adUnit = "8fd7a8bae7c84236b465537b55fc80a7"
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContentView(layout.activity_native_sample)
+    binding = ActivityNativeSampleBinding.inflate(layoutInflater)
+    setContentView(binding.root)
     setupLoadAdListener()
     val moPubNativeListener: MoPubNativeNetworkListener = object : MoPubNativeNetworkListener {
       override fun onNativeLoad(nativeAd: NativeAd) {
         this@NativeSampleActivity.nativeAd = nativeAd
-        nativeAdContainer.removeAllViews()
-        val adViewRender = nativeAd.createAdView(this@NativeSampleActivity, nativeAdContainer)
-        nativeAdContainer.addView(adViewRender)
+        binding.nativeAdContainer.removeAllViews()
+        val adViewRender = nativeAd.createAdView(this@NativeSampleActivity, binding.nativeAdContainer)
+        binding.nativeAdContainer.addView(adViewRender)
         nativeAd.prepare(adViewRender)
         nativeAd.renderAdView(adViewRender)
       }
@@ -67,8 +67,8 @@ class NativeSampleActivity : AppCompatActivity() {
   }
 
   private fun setupLoadAdListener() {
-    loadNativeAd.setOnClickListener {
-      val childView = nativeAdContainer.getChildAt(0)
+    binding.loadNativeAd.setOnClickListener {
+      val childView = binding.nativeAdContainer.getChildAt(0)
       if (childView != null && nativeAd != null) {
         childView.visibility = View.GONE
         nativeAd!!.clear(childView)
@@ -77,7 +77,7 @@ class NativeSampleActivity : AppCompatActivity() {
         RequestParameters.Builder().keywords("key1:value1,key2:value2").build()
       AppMonet.addNativeBids(
           mMoPubNative, requestParameters, adUnit, 4000
-      ) { value -> value.moPubNative.makeRequest(value.requestParameters) }
+      ) { value -> value?.moPubNative?.makeRequest(value.requestParameters) }
     }
   }
 

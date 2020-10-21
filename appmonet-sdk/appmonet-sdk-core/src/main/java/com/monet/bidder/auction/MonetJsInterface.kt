@@ -4,7 +4,9 @@ import android.os.Handler
 import android.os.SystemClock
 import android.text.TextUtils
 import android.webkit.JavascriptInterface
-import android.webkit.ValueCallback
+import com.monet.Callback
+import com.monet.BidResponse
+import com.monet.BidResponses.Mapper
 import com.monet.bidder.BaseManager
 import com.monet.bidder.CookieManager.Companion.instance
 import com.monet.bidder.HttpUtil.makeRequest
@@ -19,17 +21,13 @@ import com.monet.bidder.WebViewUtils
 import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.bid.BidManager
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Mapper.from
-import com.monet.bidder.threading.BackgroundThread
+import com.monet.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
 import com.monet.bidder.threading.UIThread
 import org.json.JSONException
 import org.json.JSONObject
 import java.security.MessageDigest
-import java.util.ArrayList
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.experimental.and
 
 /**
  * This JSInterface class provides
@@ -48,7 +46,7 @@ class MonetJsInterface(
   private val remoteConfiguration: RemoteConfiguration
 ) {
   private val hexArray: CharArray
-  private val mCallbacks: MutableMap<String?, ValueCallback<String?>?>
+  private val mCallbacks: MutableMap<String?, Callback<String?>?>
   @get:JavascriptInterface val auctionUrl: String
   private val mPreferences: Preferences
   private val mBidManager: BidManager
@@ -104,39 +102,17 @@ class MonetJsInterface(
     forceServer: Boolean,
     cb: String?
   ) {
-    backgroundThread.submit(object : InternalRunnable() {
-      override fun runInternal() {
-        val config = remoteConfiguration.getRemoteConfiguration(forceServer)
-        auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, config))
-      }
-
-      override fun catchException(e: Exception?) {
-        auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, null))
-      }
-    })
+    backgroundThread.execute {
+      val config = remoteConfiguration.getRemoteConfiguration(forceServer)
+      auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, config))
+    }
   }
 
   @JavascriptInterface fun setBidsForAdUnit(payload: String): String {
     try {
-      val json = JSONObject(payload)
-      val bidsJson = json.getJSONArray("bids")
-
-      // turn the bids into an array
-      val bids: MutableList<BidResponse?> = ArrayList(bidsJson.length())
-      var i = 0
-      val l = bidsJson.length()
-      while (i < l) {
-        val bid = from(bidsJson.getJSONObject(i))
-        if (bid == null) {
-          i++
-          continue
-        }
-        if (bid.url == null || bid.url.isEmpty()) {
-          bid.url = auctionUrl
-        }
-        bids.add(bid)
-        i++
-      }
+//      val test = "{\"adUnitId\":\"*\",\"bids\":[{\"id\":\"v_39af60a945ae7616\",\"renderPixel\":\"https://1x1.a-mo.net/hbx/g_iimp?v=5.0.0-c1f8b25&aud=ao2d14bf63d1&mid=NN&aid=pjdfkud&C=pjdfkud&U=42&i=159&cc=US&av=1.0-mopub&lo=en&b=com.monet.app.mopub&sw=412&sh=869&m=480&M=311&ts=1603072034083&eid=gkgfvp5wj2x3f82y&a=*&ai=3891&B=16606&p=10&pp=100000&np=10&r=46&w=412&h=869&c1=LO&cn=16606&rj=none&A=appmonet&bid=v_39af60a945ae7616&c2=__event__\",\"duration\":30000,\"clickPixel\":\"https://1x1.a-mo.net/hbx/hclk?v=5.0.0-c1f8b25&aud=ao2d14bf63d1&mid=NN&aid=pjdfkud&C=pjdfkud&U=42&i=159&cc=US&av=1.0-mopub&lo=en&b=com.monet.app.mopub&sw=412&sh=869&m=480&M=311&ts=1603072034084&eid=hkgfvp5wk3voxf3g&a=*&ai=3891&B=16606&p=10&pp=100000&np=10&r=46&w=412&h=869&c1=LO&cn=16606&rj=none&A=appmonet&bid=v_39af60a945ae7616\",\"mega\":false,\"width\":412,\"height\":869,\"queueNext\":0,\"adm\":\"{\\\"data\\\":{\\\"width\\\":412,\\\"deviceID\\\":\\\"\\\",\\\"creativeURL\\\":null,\\\"lid\\\":16606,\\\"adunitId\\\":\\\"*\\\",\\\"cpm\\\":10,\\\"height\\\":869,\\\"interstitial\\\":\\\"portrait\\\",\\\"id\\\":\\\"v_39af60a945ae7616\\\",\\\"system\\\":\\\"AppMonet\\\",\\\"title\\\":\\\"AppMonet\\\",\\\"adid\\\":\\\"128a6.44d74.46b3\\\",\\\"ver\\\":\\\"2.0\\\",\\\"duration\\\":15,\\\"url\\\":\\\"https://assets.a-mo.net/vastv.xml?bundle=com.monet.app.mopub\\\",\\\"media\\\":[{\\\"url\\\":\\\"https://media.bidr.io/inmobi/2/402/43441_180919_Starbucks_video_VarietyCreative_MP4_HIGH.mp4\\\",\\\"type\\\":\\\"video/mp4\\\",\\\"bitrate\\\":800}],\\\"verification\\\":[],\\\"ctu\\\":\\\"http://appmonet.com\\\",\\\"tracking\\\":{\\\"Error\\\":[\\\"http://88.88-f.net/hbx/verr?e=\\\"],\\\"Viewable\\\":[],\\\"NotViewable\\\":[],\\\"ClickTracking\\\":[\\\"http://88.88-f.net/hbx/vclk?lid=test&aid=testapp\\\"],\\\"Impression\\\":[\\\"http://88.88-f.net/hbx/vimp?lid=test&aid=testapp\\\"],\\\"creativeView\\\":[],\\\"start\\\":[],\\\"skip\\\":[],\\\"firstQuartile\\\":[\\\"http://88.88-f.net/hbx/vfq?lid=test&aid=testapp\\\",\\\"http://88.88-f.net/hbx/vfq?lid=test&aid=testapp\\\"],\\\"midpoint\\\":[\\\"http://88.88-f.net/hbx/vmp?lid=test&aid=testapp\\\"],\\\"thirdQuartile\\\":[\\\"http://88.88-f.net/hbx/vtq?lid=test&aid=testapp\\\"],\\\"complete\\\":[\\\"http://88.88-f.net/hbx/vcmp?lid=test&aid=testapp\\\"],\\\"pause\\\":[],\\\"resume\\\":[],\\\"mute\\\":[],\\\"unmute\\\":[],\\\"progress\\\":[]}},\\\"type\\\":\\\"LOCAL_VIDEO\\\"}\",\"keywords\":\"mm_10:10.00,mm_25:10.00,mm_50:10.00,mm_1d:10.00,mm_bidder:appmonet,mm_code:default,mm_cpm:10.00,mm_cpm_md:10.00,mm_cpm_sm:10.00,mm_gte_5d:true,mm_gte_10d:true,mm_id:v_39af60a945ae7616,mm_size:412x869,mm_ckey_prefix:mm_\",\"adUnitId\":\"*\",\"flexSize\":false,\"interstitial\":{\"format\":\"portrait\",\"close\":true,\"trusted\":false},\"bidder\":\"appmonet\",\"code\":\"default\",\"ts\":1603072034083,\"cpm\":10,\"rtt\":46,\"brid\":16606,\"refresh\":0,\"extras\":{},\"u\":\"Mozilla/5.0 (Linux; Android 10; SM-G973U Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.99 Mobile Safari/537.36\",\"url\":\"http://ads.mopub.com/\",\"adType\":\"LOCAL_VIDEO\",\"host\":\"\",\"cdown\":8,\"naRender\":false,\"wvUUID\":\"\",\"expiration\":900000, \"jose\": {\"test1\": \"value1\", \"test2\": 1}}]}"
+      val mappedBids = Mapper.from(payload)
+      val bids = mappedBids.bids
       mBidManager.addBids(bids)
     } catch (e: Exception) {
       sLogger.error("bad json passed for setBids: $payload")
@@ -295,13 +271,14 @@ class MonetJsInterface(
     if (url == null || ua == null || adUnitId == null) {
       return error("null values")
     }
-    auctionManagerCallback.loadHelper(url, ua, html!!, width, height, adUnitId,
-        ValueCallback { value: AdViewManager ->
-          auctionManagerCallback.executeJs(
-              "helperReady", "'$requestID'",
-              "'" + value.uuid + "'"
-          )
-        })
+    auctionManagerCallback.loadHelper(
+        url, ua, html!!, width, height, adUnitId
+    ) { value: AdViewManager ->
+      auctionManagerCallback.executeJs(
+          "helperReady", "'$requestID'",
+          "'" + value.uuid + "'"
+      )
+    }
     return success("created")
   }
 
@@ -334,7 +311,7 @@ class MonetJsInterface(
       val callback = mCallbacks[eventName]
           ?: return error("no callback")
       try {
-        callback.onReceiveValue(response)
+        callback(response)
         mCallbacks.remove(eventName)
       } catch (e: Exception) {
         sLogger.warn("trigger error:", e.message)
@@ -345,7 +322,7 @@ class MonetJsInterface(
   }
 
   @get:JavascriptInterface val deviceData: String
-    get() = auctionManagerCallback.getDeviceData().toJSON()
+    get() = auctionManagerCallback.getDeviceData().toJsonString()
 
   @JavascriptInterface fun getSharedPreference(
     key: String?,
@@ -355,14 +332,14 @@ class MonetJsInterface(
   ): String {
     if (keyType == "string") {
       return Preferences.getStringAtKey(
-          auctionManagerCallback.getDeviceData().context, key,
+          auctionManagerCallback.getDeviceData(), key,
           subKey, "null"
       )
     }
     return if (keyType == "boolean") {
       java.lang.Boolean.toString(
           Preferences.getBoolAtKey(
-              auctionManagerCallback.getDeviceData().context, key, subKey,
+              auctionManagerCallback.getDeviceData(), key, subKey,
               defaultBool
           )
       )
@@ -393,23 +370,23 @@ class MonetJsInterface(
     eventName: String?,
     timeout: Int,
     handler: Handler,
-    callback: ValueCallback<String?>
+    callback: Callback<String?>
   ) {
     val handlerToken = Any()
-    val onEvent: ValueCallback<String?> = object : ValueCallback<String?> {
-      override fun onReceiveValue(value: String?) {
-        try {
-          handler.removeCallbacksAndMessages(handlerToken)
-          callback.onReceiveValue(value)
-        } catch (e: Exception) {
-        }
+    val onEvent: Callback<String?> = object : Callback<String?> {
+      override fun invoke(value: String?) {
         // remove the listener
         removeListener(eventName, this)
+        try {
+          handler.removeCallbacksAndMessages(handlerToken)
+          callback(value)
+        } catch (e: Exception) {
+        }
       }
     }
     val timeoutRunnable = Runnable {
       removeListener(eventName, onEvent)
-      callback.onReceiveValue(null)
+      callback(null)
     }
     handler.postAtTime(timeoutRunnable, handlerToken, SystemClock.uptimeMillis() + timeout)
     mCallbacks[eventName] = onEvent
@@ -435,7 +412,7 @@ class MonetJsInterface(
    */
   @Synchronized fun removeListener(
     eventName: String?,
-    callback: ValueCallback<String?>
+    callback: Callback<String?>
   ) {
     if (mCallbacks.containsKey(eventName) && mCallbacks[eventName] === callback) {
       mCallbacks.remove(eventName)

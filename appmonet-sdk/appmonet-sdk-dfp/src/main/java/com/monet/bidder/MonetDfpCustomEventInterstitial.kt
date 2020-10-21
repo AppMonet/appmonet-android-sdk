@@ -10,7 +10,7 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.mediation.MediationAdRequest
 import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitial
 import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitialListener
-import com.monet.bidder.AdType.INTERSTITIAL
+import com.monet.AdType.INTERSTITIAL
 import com.monet.bidder.Constants.APPMONET_BROADCAST
 import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
 import com.monet.bidder.Constants.INTERSTITIAL_ACTIVITY_BROADCAST
@@ -21,8 +21,9 @@ import com.monet.bidder.Constants.Interstitial.AD_CONTENT_INTERSTITIAL
 import com.monet.bidder.Constants.Interstitial.AD_UUID_INTERSTITIAL
 import com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL
 import com.monet.bidder.bid.BidRenderer
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Mapper.from
+import com.monet.BidResponse
+import com.monet.BidResponse.Mapper.fromBidKey
+import com.monet.bidder.callbacks.Callback
 
 open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
   private var customEventInterstitialListener: CustomEventInterstitialListener? = null

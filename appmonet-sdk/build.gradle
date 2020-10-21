@@ -1,4 +1,3 @@
 apply from: 'common-build.gradle'
 dependencies {
-    api project(':appmonet-sdk:appmonet-sdk-core')
 }

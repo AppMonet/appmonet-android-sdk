@@ -4,6 +4,6 @@ project.description = 'AppMonet Android SDK - Core'
 project.ext.projectTitle = 'AppMonet Android SDK - Core'
 project.ext.projectName = 'appmonet-core'
 dependencies {
-  api project(':appmonet-sdk-core')
+  api project(':appmonet-sdk-core-kmm')
 }
 apply from: '../publish.gradle'

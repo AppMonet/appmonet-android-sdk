@@ -3,7 +3,7 @@ package com.monet.bidder
 import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.bidder.bid.BidManager
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import com.monet.bidder.threading.BackgroundThread
 import java.util.PriorityQueue
 

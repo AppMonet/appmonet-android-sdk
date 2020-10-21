@@ -7,9 +7,10 @@ import com.monet.bidder.Constants.Dfp.ADUNIT_KEYWORD_KEY
 import com.monet.bidder.MoPubRequestUtil.getKeywords
 import com.monet.bidder.MoPubRequestUtil.mergeKeywords
 import com.monet.bidder.auction.AuctionRequest
-import com.monet.bidder.bid.BidResponse
-import com.monet.bidder.bid.BidResponse.Mapper.from
-import com.monet.bidder.bid.BidResponse.Mapper.toJson
+import com.monet.BidResponse
+import com.monet.BidResponse.Mapper.from
+import com.monet.BidResponse.Mapper.fromBidKey
+import com.monet.BidResponse.Mapper.toJsonString
 import com.mopub.mobileads.MoPubInterstitial
 import org.json.JSONException
 import org.json.JSONObject
@@ -27,9 +28,9 @@ internal class MoPubInterstitialAdRequest : AdServerAdRequest {
   constructor(moPubInterstitial: MoPubInterstitial) {
     mLocalExtras = moPubInterstitial.getLocalExtras().toMutableMap()
     this.moPubInterstitial = moPubInterstitial
-    if (mLocalExtras.containsKey(BIDS_KEY)) {
+    mLocalExtras[BIDS_KEY]?.let {
       try {
-        mBid = from(JSONObject(mLocalExtras[BIDS_KEY] as String? ?: ""))
+        mBid = from(it as String)
       } catch (e: JSONException) {
         //do nothing
       }
@@ -109,7 +110,7 @@ internal class MoPubInterstitialAdRequest : AdServerAdRequest {
   fun applyToView(adView: MoPubInterstitialAdView) {
     // apply the targeting to the view, as keywords
     val view = adView.moPubView
-    mLocalExtras[BIDS_KEY] = toJson(mBid).toString()
+    mLocalExtras[BIDS_KEY] = toJsonString(mBid)
     mLocalExtras[ADUNIT_KEYWORD_KEY] = adView.adUnitId
     view.setLocalExtras(mLocalExtras)
     var keywords = getKeywords(mLocalExtras)

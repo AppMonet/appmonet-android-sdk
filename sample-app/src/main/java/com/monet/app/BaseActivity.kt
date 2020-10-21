@@ -4,13 +4,19 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.webkit.WebView
 import android.widget.Toast
+import com.monet.app.databinding.ActivityMainBinding
+import com.monet.app.databinding.AdviewLayoutBinding
+import com.monet.app.databinding.NativeLayoutBinding
 
 abstract class BaseActivity : AppCompatActivity() {
-
+  protected lateinit var binding: ActivityMainBinding
+  protected lateinit var adLayoutBinding: AdviewLayoutBinding
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     WebView.setWebContentsDebuggingEnabled(true)
-    setContentView(R.layout.activity_main)
+    binding = ActivityMainBinding.inflate(layoutInflater)
+    adLayoutBinding = AdviewLayoutBinding.bind(binding.root)
+    setContentView(binding.root)
     setupMrect()
     setupInterstitial()
     showNativeSection()
@@ -30,6 +36,6 @@ abstract class BaseActivity : AppCompatActivity() {
   abstract fun setupMrectLoadClickListener()
   abstract fun setupInterstitialLoadClickListener()
   abstract fun setupInterstitialShowClickListener()
-  open fun setupNativeClickListener(){}
-  open fun showNativeSection(){}
+  open fun setupNativeClickListener() {}
+  open fun showNativeSection() {}
 }

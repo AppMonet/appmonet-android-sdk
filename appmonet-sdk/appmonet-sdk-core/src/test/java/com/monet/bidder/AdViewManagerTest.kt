@@ -19,7 +19,7 @@ import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.adview.AdViewManager.Companion
 import com.monet.bidder.adview.AdViewPoolManagerCallback
 import com.monet.bidder.auction.AuctionManagerCallback
-import com.monet.bidder.bid.BidResponse
+import com.monet.BidResponse
 import com.monet.bidder.bid.Pixel
 import com.monet.bidder.callbacks.ReadyCallbackManager
 import com.monet.bidder.threading.BackgroundThread

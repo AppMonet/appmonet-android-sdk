@@ -1,8 +1,22 @@
 package com.monet
 
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+
+@Serializable
+data class Extras(
+  val minSdkVersion: String?,
+  val skadnetwork: List<String>?,
+  val idfv: String?
+)
+
+@Serializable
+data class AdInfo(
+  var advertisingId: String = "",
+  var isLimitAdTrackingEnabled: Boolean = false
+)
 
 @Serializable
 data class AppInfo(
@@ -10,7 +24,7 @@ data class AppInfo(
   val version: String,
   val build: String,
   val applicationName: String,
-  val extras: MutableMap<String, String> = mutableMapOf()
+  val extras: Extras? = null
 )
 
 @Serializable
@@ -43,6 +57,7 @@ data class NetworkInfo(
   val cell_type: String = ""
 )
 
+@Serializable
 data class DeviceDataInfo(
   val device: HardwareData,
   val app: AppInfo,
@@ -53,12 +68,14 @@ data class DeviceDataInfo(
   val os: OSData
 )
 
+@Serializable
 data class OSData(
   val name: String,
   val version: String,
   val build: String
 )
 
+@Serializable
 data class MemInfo(
   val freeMemory: Long = 0L,
   val memorySize: Long = 0L,
@@ -107,6 +124,7 @@ interface CommonDeviceData {
   val orientation: String
   val osData: OSData
   val screenData: ScreenData
+  fun getAdClientInfo(callback: Callback<AdInfo>)
   fun toJsonString(): String {
     return Json.encodeToString(data)
   }
