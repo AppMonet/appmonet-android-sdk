@@ -117,7 +117,8 @@ class DFPAdViewRequest extends AdServerAdRequest {
         .addNetworkExtrasBundle(CustomEventBanner.class, request.getNetworkExtras());
 
     // add in the admob extras
-    Bundle completeExtras = request.getAdmobExtras()== null ? new Bundle() : request.getAdmobExtras();
+    Bundle completeExtras =
+        request.getAdmobExtras() == null ? new Bundle() : request.getAdmobExtras();
     completeExtras.putAll(request.getTargeting());
     try {
       builder.addNetworkExtrasBundle(AdMobAdapter.class, completeExtras);
@@ -125,8 +126,11 @@ class DFPAdViewRequest extends AdServerAdRequest {
       sLogger.error("excetion " + e);
       // do nothing
     }
-    if (request.getRequestData()!= null) {
-      builder.setContentUrl(request.getRequestData().contentURL);
+    if (request.getRequestData() != null) {
+      if (request.getRequestData().contentURL != null
+          && !request.getRequestData().contentURL.isEmpty()) {
+        builder.setContentUrl(request.getRequestData().contentURL);
+      }
       builder.setLocation(request.getRequestData().location);
     }
     AdRequest adRequest = builder.build();

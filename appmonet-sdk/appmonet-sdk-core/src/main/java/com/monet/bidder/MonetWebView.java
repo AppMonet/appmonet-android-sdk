@@ -7,8 +7,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.view.InputDevice;
-import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.ValueCallback;
@@ -86,118 +84,6 @@ public class MonetWebView extends WebView implements AppMonetWebView {
       addJavascriptInterface(mJsInterface, Constants.JS_BRIDGE_VARIABLE);
     }
   }
-
-  private int motionEventType(String type) {
-    if (type == null || type.isEmpty()) {
-      return -1;
-    }
-
-    switch (type.toLowerCase()) {
-      case "down":
-        return MotionEvent.ACTION_DOWN;
-      case "up":
-        return MotionEvent.ACTION_UP;
-      case "hover_enter":
-        return MotionEvent.ACTION_HOVER_ENTER;
-      case "hover_exit":
-        return MotionEvent.ACTION_HOVER_EXIT;
-      case "scroll":
-        return MotionEvent.ACTION_SCROLL;
-      case "move":
-        return MotionEvent.ACTION_MOVE;
-      case "outside":
-        return MotionEvent.ACTION_OUTSIDE;
-      default:
-        return -1;
-    }
-  }
-
-  String triggerEvents(String json) {
-    int metaState = 0;
-    try {
-      JSONObject source = new JSONObject(json);
-      if (source == null || !source.has("events")) {
-        return "invalid";
-      }
-
-      JSONArray events = source.getJSONArray("events");
-      if (events == null || events.length() == 0) {
-        return "error";
-      }
-
-      if (triggerJsonEvents(metaState, 0, events)) {
-        return "success";
-      }
-    } catch (JSONException e) {
-      return e.getMessage();
-    }
-
-    return "invalid";
-  }
-
-  boolean triggerJsonEvents(final int metaState, final int index, final JSONArray events) {
-    try {
-      JSONObject event = events.getJSONObject(index);
-      if (event == null) {
-        return true;
-      }
-
-      float xf = (float) event.getDouble("x");
-      float yf = (float) event.getDouble("y");
-      String type = event.getString("t");
-      triggerEvent(xf, yf, type, metaState);
-
-      if (event.has("d")) {
-        postDelayed(new Runnable() {
-          @Override
-          public void run() {
-            triggerJsonEvents(metaState, index + 1, events);
-          }
-        }, event.getInt("d"));
-      } else {
-        triggerJsonEvents(metaState, index + 1, events);
-      }
-    } catch (JSONException e) {
-      return false;
-    }
-
-    return true;
-  }
-
-  void triggerEvent(float x, float y, String type, int metaState) {
-    long downTime = System.currentTimeMillis();
-    long eventTime = System.currentTimeMillis();
-
-    int eventType = motionEventType(type);
-    if (eventType == -1) {
-      return;
-    }
-
-    MotionEvent event = MotionEvent.obtain(
-        downTime, eventTime,
-        eventType,
-        x, y, metaState);
-
-    event.setSource(InputDevice.SOURCE_TOUCH_NAVIGATION);
-    dispatchTouchEvent(event);
-  }
-
-  //  boolean loadActivityScheme(Context context, Uri uri) {
-  //    String scheme = uri.getScheme();
-  //    if (scheme == null || !(scheme.equals("market") || scheme.equals("tel") || scheme.equals("sms"))) {
-  //      return false;
-  //    }
-  //    try {
-  //      Intent intent = new Intent(Intent.ACTION_VIEW);
-  //      intent.setData(uri);
-  //      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-  //      context.startActivity(intent);
-  //    } catch (Exception e) {
-  //      sLogger.warn("failed to load uri: ", e.getLocalizedMessage());
-  //      return false;
-  //    }
-  //    return true;
-  //  }
 
   protected void loadHtml(String html, String baseUrl) {
     if (baseUrl == null || html == null) {
