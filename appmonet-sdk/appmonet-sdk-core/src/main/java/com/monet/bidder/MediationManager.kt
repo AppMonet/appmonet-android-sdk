@@ -3,6 +3,7 @@ package com.monet.bidder
 import com.monet.AdType
 import com.monet.bidder.bid.BidManager
 import com.monet.BidResponse
+import com.monet.adview.AdSize
 import com.monet.bidder.callbacks.Callback
 import com.monet.bidder.threading.InternalRunnable
 import java.util.Locale

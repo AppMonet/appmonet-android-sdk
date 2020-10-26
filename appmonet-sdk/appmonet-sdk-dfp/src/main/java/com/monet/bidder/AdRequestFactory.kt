@@ -1,7 +1,8 @@
 package com.monet.bidder
 
 import com.google.android.gms.ads.mediation.MediationAdRequest
-import com.monet.bidder.auction.AuctionRequest
+import com.monet.AdServerAdRequest
+import com.monet.auction.AuctionRequest
 
 internal object AdRequestFactory {
   fun fromAuctionRequest(

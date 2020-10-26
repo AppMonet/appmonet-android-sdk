@@ -1,7 +1,9 @@
 package com.monet.bidder
 
-import com.monet.bidder.AdServerWrapper.Type
-import com.monet.bidder.AdServerWrapper.Type.BANNER
+import com.monet.AdServerAdRequest
+import com.monet.AdServerAdView
+import com.monet.AdType
+import com.monet.AdType.BANNER
 import com.mopub.mobileads.MoPubView
 
 /**
@@ -10,8 +12,7 @@ import com.mopub.mobileads.MoPubView
 internal class MoPubAdView(private val moPubView: MoPubView?) : AdServerAdView {
   override var adUnitId: String = moPubView?.getAdUnitId() ?: ""
 
-  override val type: Type
-    get() = BANNER
+  override var type: AdType = BANNER
 
   fun getMoPubView(): MoPubView? {
     return moPubView

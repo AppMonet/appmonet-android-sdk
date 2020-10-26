@@ -4,6 +4,7 @@ import co.touchlab.stately.freeze
 import com.monet.BidResponse.Constant.BID_BUNDLE_KEY
 import com.monet.BidResponse.Interstitial
 import com.monet.BidResponse.InterstitialSerializer
+import com.monet.Constants.DEFAULT_BIDDER_KEY
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -29,13 +30,12 @@ data class BidResponses(
 ) {
   object Mapper {
     fun from(json: String): BidResponses {
-      val bidResponses: BidResponses = Json { ignoreUnknownKeys = true }.decodeFromString(json)
-      return bidResponses
+      return Json { ignoreUnknownKeys = true }.decodeFromString(json)
     }
   }
 }
 
-object InterstitialDeserializer : DeserializationStrategy<Interstitial?> {
+internal object InterstitialDeserializer : DeserializationStrategy<Interstitial?> {
   override val descriptor: SerialDescriptor =
     buildClassSerialDescriptor("Interstitial") {
       element<String>("format")
@@ -110,7 +110,9 @@ internal object BidResponseSerializer : KSerializer<BidResponse> {
     encoder.encodeStructure(descriptor) {
       encodeStringElement(descriptor, 0, value.adm)
       encodeStringElement(descriptor, 1, value.id)
-      encodeStringElement(descriptor, 2, value.code)
+      encodeStringElement(
+          descriptor, 2, if (value.code.isNotEmpty()) value.code else DEFAULT_BIDDER_KEY
+      )
       encodeIntElement(descriptor, 3, value.width)
       encodeIntElement(descriptor, 4, value.height)
       encodeLongElement(descriptor, 5, value.ts)
@@ -136,9 +138,6 @@ internal object BidResponseSerializer : KSerializer<BidResponse> {
       value.extras?.let { map.putAll(it) }
       encodeNullableSerializableElement(descriptor, 23, stringMapSerializer, map)
 
-//      encodeNullableSerializableElement(
-//          descriptor, 23, PolymorphicSerializer(Any::class), value.extras
-//      )
       encodeBooleanElement(descriptor, 24, value.nativeInvalidated)
       encodeIntElement(descriptor, 25, value.queueNext)
       encodeBooleanElement(descriptor, 26, value.flexSize)
@@ -150,7 +149,7 @@ internal object BidResponseSerializer : KSerializer<BidResponse> {
     decoder.decodeStructure(descriptor) {
       var adm = ""
       var id = ""
-      var code = "default"
+      var code = DEFAULT_BIDDER_KEY
       var width = 0
       var height = 0
       var ts = 0L
@@ -273,12 +272,9 @@ class BidResponse(
   var url: String = ""
 ) {
   val createdAt = ts
-
   val cool = if (refresh <= 0) cdown else 0
-
   val nativeRender = naRender
   val nextQueue = queueNext != 0
-
   fun freezeBid() {
     this.freeze()
   }
@@ -295,16 +291,7 @@ class BidResponse(
     val format: String,
     val close: Boolean,
     val trusted: Boolean
-  ) {
-    object Mapper {
-      fun toJson(interstitial: Interstitial?): String {
-        return interstitial?.let {
-          Json.encodeToString(it)
-        } ?: ""
-
-      }
-    }
-  }
+  )
 
   object Constant {
     const val FLOATING_AD_TYPE = "FLOATING"
@@ -345,27 +332,8 @@ class BidResponse(
   }
 
   object Mapper {
-
-    fun fromBidKey(map: Map<String, Any>?): BidResponse? {
-      if (map == null) {
-        return null
-      }
-      if (!map.containsKey(BID_BUNDLE_KEY)) {
-        return null
-      }
-      var bid: BidResponse? = null
-      try {
-        bid = map[BID_BUNDLE_KEY] as BidResponse?
-      } catch (e: Exception) {
-//        sLogger.debug("bid response is not serializable")
-      }
-      return bid
-    }
-
-    //    @JvmStatic
     fun from(jsonString: String): BidResponse? {
-      val response: BidResponse? = Json { ignoreUnknownKeys = true }.decodeFromString(jsonString)
-      return response
+      return Json { ignoreUnknownKeys = true }.decodeFromString(jsonString)
     }
 
     //      return try {

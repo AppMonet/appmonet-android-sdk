@@ -23,7 +23,7 @@ import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
-import com.monet.BidResponse.Mapper.fromBidKey
+import com.monet.adview.AdSize
 import com.monet.bidder.callbacks.Callback
 import com.mopub.common.LifecycleListener
 import com.mopub.common.logging.MoPubLog
@@ -136,13 +136,14 @@ class CustomEventInterstitial : BaseAd() {
       return
     }
     val extras: Map<String, String?> = adData.extras
-    val adSize = AdSize(INTERSTITIAL_WIDTH, INTERSTITIAL_HEIGHT)
-    adUnitId = getAdUnitId(extras, adSize)!!
-    if (adUnitId == null || adUnitId.isEmpty()) {
+    val adSize = AdSize(context.applicationContext, INTERSTITIAL_WIDTH, INTERSTITIAL_HEIGHT)
+    val adUnitFromExtras = getAdUnitId(extras, adSize)
+    if (adUnitFromExtras == null || adUnitFromExtras.isEmpty()) {
       logger.debug("no adUnit/tagId: floor line item configured incorrectly")
       onMoPubError(NETWORK_NO_FILL)
       return
     }
+    adUnitId = adUnitFromExtras
     sdkManager!!.auctionManager.trackRequest(
         adUnitId,
         WebViewUtils.generateTrackingSource(INTERSTITIAL)
@@ -150,7 +151,7 @@ class CustomEventInterstitial : BaseAd() {
     val configurations = sdkManager!!.sdkConfigurations
     var headerBiddingBid: BidResponse? = null
     if (extras.containsKey(BIDS_KEY) && extras[BIDS_KEY] != null) {
-      headerBiddingBid =extras[BIDS_KEY]?.let { from(it) }
+      headerBiddingBid = extras[BIDS_KEY]?.let { from(it) }
     }
     val floorCpm = getServerExtraCpm(extras, configurations.getDouble(DEFAULT_MEDIATION_FLOOR))
     if (headerBiddingBid == null) {

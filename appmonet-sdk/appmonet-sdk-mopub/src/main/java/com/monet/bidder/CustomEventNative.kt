@@ -10,7 +10,7 @@ import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
-import com.monet.BidResponse.Mapper.fromBidKey
+import com.monet.adview.AdSize
 import com.mopub.nativeads.CustomEventNative
 import com.mopub.nativeads.NativeErrorCode.NETWORK_NO_FILL
 import com.mopub.nativeads.NativeErrorCode.UNSPECIFIED
@@ -28,14 +28,14 @@ open class CustomEventNative : CustomEventNative() {
     serverExtras: MutableMap<String, String>
   ) {
     logger.debug("Loading Native Ad")
-    val adSize = AdSize(320, 250)
+    val adSize = AdSize(context.applicationContext, 320, 250)
     val adUnitId = getAdUnitId(serverExtras, localExtras, adSize)
     val sdkManager = SdkManager.get()
     if (sdkManager == null) {
       customEventNativeListener.onNativeAdFailed(UNSPECIFIED)
       return
     }
-    if (adUnitId == null) {
+    if (adUnitId == null || adUnitId.isEmpty()) {
       customEventNativeListener.onNativeAdFailed(NETWORK_NO_FILL)
       return
     }

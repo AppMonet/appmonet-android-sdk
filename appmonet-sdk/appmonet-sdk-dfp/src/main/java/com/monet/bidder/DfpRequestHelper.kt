@@ -1,6 +1,7 @@
 package com.monet.bidder
 
 import android.os.Bundle
+import com.monet.adview.AdSize
 import com.monet.bidder.Constants.Dfp.ADUNIT_KEYWORD_KEY
 
 internal object DfpRequestHelper {

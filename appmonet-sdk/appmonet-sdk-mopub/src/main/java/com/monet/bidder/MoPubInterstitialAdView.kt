@@ -1,7 +1,9 @@
 package com.monet.bidder
 
-import com.monet.bidder.AdServerWrapper.Type
-import com.monet.bidder.AdServerWrapper.Type.INTERSTITIAL
+import com.monet.AdServerAdRequest
+import com.monet.AdServerAdView
+import com.monet.AdType
+import com.monet.AdType.INTERSTITIAL
 import com.mopub.mobileads.MoPubInterstitial
 
 /**
@@ -12,8 +14,7 @@ internal class MoPubInterstitialAdView(
   override var adUnitId: String = ""
 ) : AdServerAdView {
 
-  override val type: Type
-    get() = INTERSTITIAL
+  override var type: AdType = INTERSTITIAL
 
   override fun loadAd(request: AdServerAdRequest?) {
   }

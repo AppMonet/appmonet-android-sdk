@@ -7,13 +7,13 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.webkit.WebSettings.RenderPriority.HIGH
-import com.monet.bidder.AdSize
+import com.monet.adview.AdSize
 import com.monet.bidder.Constants
 import com.monet.bidder.MonetWebView
 import com.monet.bidder.threading.InternalRunnable
 
 class AdView internal constructor(
-  private val adSize:AdSize,
+  private val adSize: AdSize,
   private val adViewClient: AdViewClient,
   adViewJsInterface: AdViewJsInterface,
   context: Context,

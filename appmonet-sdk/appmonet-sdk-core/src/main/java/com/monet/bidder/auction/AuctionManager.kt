@@ -35,6 +35,10 @@ import java.util.*
 import com.monet.BidResponse
 import com.monet.DeviceData
 import com.monet.Callback
+import com.monet.adview.AdSize
+import com.monet.AdServerWrapper
+import com.monet.AdServerAdRequest
+import com.monet.AdServerAdView
 
 class AuctionManager : Subscriber, AuctionManagerCallback {
   override val mediationManager: MediationManager
@@ -89,7 +93,7 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     this.addBidsManager = AddBidsManager(auctionManagerReadyCallbacks)
     this.appMonetContext = appMonetContext
     appMonetBidder = AppMonetBidder(
-        context, bidManager, adServerWrapper, this, backgroundThread, uiThread
+        bidManager, adServerWrapper, this, backgroundThread, uiThread
     )
     setPreferencesListener(preferences)
     val runnable: Runnable = object : InternalRunnable() {

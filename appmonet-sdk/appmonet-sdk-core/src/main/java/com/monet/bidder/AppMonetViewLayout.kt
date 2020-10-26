@@ -16,6 +16,7 @@ import com.monet.bidder.adview.AdViewPoolManagerCallback
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.BidResponse
 import com.monet.BidResponse.Constant.FLOATING_AD_TYPE
+import com.monet.adview.AdSize
 import java.lang.ref.WeakReference
 
 @SuppressLint("ViewConstructor")
@@ -63,7 +64,9 @@ class AppMonetViewLayout(
       val mediationManager = auctionManager.mediationManager
       try {
         val adSize =
-          if (mediationBid != null) AdSize(mediationBid.width, mediationBid.height) else null
+          if (mediationBid != null) AdSize(
+              context.applicationContext, mediationBid.width, mediationBid.height
+          ) else null
         val nextBid = mediationManager.getBidReadyForMediation(
             mediationBid, adUnit, adSize,
             BANNER, 0.0, true
@@ -94,8 +97,8 @@ class AppMonetViewLayout(
 
   private fun getLayoutParams(adSize: AdSize): LayoutParams {
     return LayoutParams(
-        adSize.getWidthInPixels(context),
-        adSize.getHeightInPixels(context),
+        adSize.getWidthInPixels(),
+        adSize.getHeightInPixels(),
         Gravity.CENTER
     )
   }

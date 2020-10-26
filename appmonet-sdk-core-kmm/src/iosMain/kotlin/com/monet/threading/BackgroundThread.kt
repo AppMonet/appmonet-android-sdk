@@ -1,27 +1,16 @@
 package com.monet.threading
 
-import kotlinx.cinterop.cValuesOf
-import platform.Foundation.NSLog
-import platform.darwin.DISPATCH_QUEUE_SERIAL
 import platform.darwin.DISPATCH_SOURCE_TYPE_TIMER
 import platform.darwin.DISPATCH_TIME_NOW
 import platform.darwin.NSEC_PER_MSEC
 import platform.darwin.NSEC_PER_SEC
-import platform.darwin.NSObject
-import platform.darwin.dispatch_async
-import platform.darwin.dispatch_queue_create
-import platform.darwin.dispatch_queue_main_t
-import platform.darwin.dispatch_queue_serial_t
-import platform.darwin.dispatch_queue_serial_tVar
 import platform.darwin.dispatch_queue_t
 import platform.darwin.dispatch_source_create
 import platform.darwin.dispatch_source_set_event_handler
 import platform.darwin.dispatch_source_set_timer
 import platform.darwin.dispatch_source_t
 import platform.darwin.dispatch_time
-import platform.posix.NULL
 import platform.posix.uint64_t
-import kotlin.native.concurrent.DetachedObjectGraph
 
 actual class BackgroundThread {
   private var backgroundQueue: dispatch_queue_t? = null

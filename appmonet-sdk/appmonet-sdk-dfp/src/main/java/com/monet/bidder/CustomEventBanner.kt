@@ -103,7 +103,7 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
     mediationAdRequest: MediationAdRequest,
     customEventExtras: Bundle?
   ) {
-    val amAdSize = AdSize(adSize.width, adSize.height)
+    val amAdSize = AdSize(context.applicationContext, adSize.width, adSize.height)
     val adUnitId = DfpRequestHelper.getAdUnitID(customEventExtras, serverParameter, amAdSize)
     if (adUnitId == null) {
       logger.warn("load failed: invalid bid data")

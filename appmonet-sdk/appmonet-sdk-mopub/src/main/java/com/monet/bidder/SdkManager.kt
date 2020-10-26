@@ -9,6 +9,7 @@ import android.os.Build.VERSION_CODES
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Process
+import com.monet.AdServerAdRequest
 import com.monet.ValueCallback
 import com.monet.bidder.AppMonetConfiguration.Builder
 import com.monet.bidder.Constants.Configurations.MEDIATION_ENABLED
@@ -25,10 +26,10 @@ import java.util.HashMap
  * Created by jose on 8/28/17.
  */
 internal class SdkManager constructor(
-  context: Context?,
+  context: Context,
   applicationId: String?
 ) : BaseManager(
-    context!!, applicationId, MoPubAdServerWrapper()
+    context, applicationId, MoPubAdServerWrapper(context.applicationContext)
 ) {
   private val mopubAdViews: MutableMap<String, WeakReference<MoPubView>> = HashMap()
   private val positions: MutableMap<String, AppMonetFloatingAdConfiguration> = HashMap()

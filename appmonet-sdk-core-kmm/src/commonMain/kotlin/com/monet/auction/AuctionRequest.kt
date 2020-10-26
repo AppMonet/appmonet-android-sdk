@@ -1,27 +1,32 @@
-package com.monet.bidder.auction
+package com.monet.auction
 
-import android.os.Bundle
-import com.monet.bidder.AdServerAdRequest
-import com.monet.bidder.AdServerAdView
-import com.monet.bidder.Constants
-import com.monet.bidder.RequestData
+import co.touchlab.stately.freeze
+import com.monet.AdServerAdRequest
+import com.monet.AdServerAdView
 import com.monet.BidResponse
+import com.monet.Constants
+import com.monet.RequestData
 
 data class AuctionRequest internal constructor(
-  val networkExtras: MutableMap<String,Any> = mutableMapOf(),
-  val targeting: Bundle = Bundle(),
-  val admobExtras: Bundle = Bundle(),
+  val networkExtras: MutableMap<String, Any> = mutableMapOf(),
+  var targeting: Map<String, Any> = mapOf(),
+  val admobExtras: Map<String, String> = mapOf(),
   var requestData: RequestData? = null,
   var bid: BidResponse? = null,
   var adUnitId: String = ""
 ) {
-  internal companion object {
+
+  fun freezeAuctionRequest() {
+    this.freeze()
+  }
+
+  companion object {
     fun from(
       adServerAdView: AdServerAdView,
       adServerAdRequest: AdServerAdRequest
     ): AuctionRequest {
       val auctionRequest = AuctionRequest().apply {
-        networkExtras[Constants.Dfp.ADUNIT_KEYWORD_KEY] = adServerAdView.adUnitId;
+        networkExtras[Constants.ADUNIT_KEYWORD_KEY] = adServerAdView.adUnitId;
         requestData = RequestData(adServerAdRequest, adServerAdView)
         adUnitId = adServerAdView.adUnitId
       }

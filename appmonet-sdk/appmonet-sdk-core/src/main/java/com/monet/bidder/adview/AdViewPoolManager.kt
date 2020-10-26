@@ -12,7 +12,7 @@ import com.monet.threading.BackgroundThread
 import com.monet.bidder.threading.UIThread
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-
+import com.monet.AdServerWrapper
 /**
  * The [AdViewPoolManager] class is responsible of managing the different [AdView]
  * instances that are loaded in memory.

@@ -23,9 +23,9 @@ import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.monet.BidResponse
+import com.monet.adview.AdSize
 import com.monet.bidder.AdServerBannerListener
-import com.monet.bidder.AdServerWrapper
-import com.monet.bidder.AdSize
+import com.monet.AdServerWrapper
 import com.monet.bidder.AppMonetContext
 import com.monet.bidder.AppMonetViewLayout
 import com.monet.bidder.Constants
@@ -879,18 +879,17 @@ class AdViewManager : AdViewManagerCallback {
   }
 
   fun resize(adSize: AdSize) {
-    val layout: FrameLayout.LayoutParams =
-      RenderingUtils.getCenterLayoutParams(adView.context, adSize)
+    val layout: FrameLayout.LayoutParams = RenderingUtils.getCenterLayoutParams(adSize)
     adView.layoutParams = layout
     adView.requestLayout()
   }
 
   private fun resizeWithBid(bid: BidResponse) {
-    resize(AdSize(bid.width, bid.height))
+    resize(AdSize(context, bid.width, bid.height))
   }
 
   private fun setVisibilityState(isVisible: Boolean) {
-    containerView.visibility = if (isVisible) View.VISIBLE else View.INVISIBLE
+    containerView.visibility = if (isVisible) VISIBLE else INVISIBLE
   }
 
   private fun startFinishLoadTimeout() {

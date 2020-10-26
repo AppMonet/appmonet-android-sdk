@@ -27,6 +27,7 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 import com.monet.DeviceData
+import com.monet.adview.AdSize
 
 object RenderingUtils {
   private val sVastTrackingPattern = Pattern.compile("monet://vast/(?:v2/)?([^/]+)/?([^/]+)?")
@@ -329,12 +330,11 @@ object RenderingUtils {
   }
 
   fun getCenterLayoutParams(
-    context: Context,
     adSize: AdSize
   ): LayoutParams {
     return LayoutParams(
-        adSize.getWidthInPixels(context),
-        adSize.getHeightInPixels(context),
+        adSize.getWidthInPixels(),
+        adSize.getHeightInPixels(),
         Gravity.CENTER
     )
   }

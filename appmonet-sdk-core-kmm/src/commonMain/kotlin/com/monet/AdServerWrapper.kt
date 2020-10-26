@@ -1,10 +1,7 @@
-package com.monet.bidder
+package com.monet
 
-import android.location.Location
-import android.os.Bundle
-import com.monet.bidder.auction.AuctionRequest
-import com.monet.BidResponse
-import java.util.Date
+import com.monet.adview.AdSize
+import com.monet.auction.AuctionRequest
 
 /**
  * The AdServerWrapper implements a kind of delegate interface, that allows adserver-specific
@@ -12,12 +9,6 @@ import java.util.Date
  *
  */
 interface AdServerWrapper {
-
-  enum class Type {
-    INTERSTITIAL,
-    BANNER,
-    NATIVE
-  }
 
   /**
    * Build an adServer-specific AdRequest from the more agnostic inner "AuctionRequest"
@@ -32,7 +23,7 @@ interface AdServerWrapper {
 
   fun newAdRequest(
     auctionRequest: AuctionRequest,
-    type: Type
+    type: AdType
   ): AdServerAdRequest {
     return AdServerAdRequestTemplate()
   }
@@ -60,15 +51,13 @@ interface AdServerWrapper {
 }
 
 private class AdServerAdRequestTemplate : AdServerAdRequest() {
-  override val customTargeting: Bundle
-    get() = Bundle()
-  override val birthday: Date?
+  override val customTargeting: Map<String, Any>
+    get() = mapOf()
+  override val birthday: Long?
     get() = null
   override val gender: String?
     get() = null
-  override val bid: BidResponse?
-    get() = null
-  override val location: Location?
+  override val location: LocationData?
     get() = null
   override val contentUrl: String?
     get() = null

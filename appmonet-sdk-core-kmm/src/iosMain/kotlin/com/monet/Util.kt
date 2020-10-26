@@ -7,5 +7,12 @@ actual class Util {
     actual fun getUUID(): String {
       return NSUUID.UUID().toString()
     }
+
+    actual fun join(
+      delimeter: String,
+      list: List<*>
+    ): String {
+      return list.joinToString(delimeter)
+    }
   }
 }

@@ -3,7 +3,6 @@ package com.monet.bidder
 import com.monet.bidder.AdRequestFactory.createEmptyRequest
 import com.monet.bidder.AdRequestFactory.fromAuctionRequest
 import com.monet.bidder.AdServerWrapper.Type
-import com.monet.bidder.auction.AuctionRequest
 
 /**
  * Created by nbjacob on 6/26/17.

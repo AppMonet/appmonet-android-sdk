@@ -4,6 +4,9 @@ import android.app.Activity
 import android.content.Context
 import android.view.View
 import com.monet.AdType.BANNER
+import com.monet.BidResponse
+import com.monet.BidResponse.Mapper.from
+import com.monet.adview.AdSize
 import com.monet.bidder.Constants.BIDS_KEY
 import com.monet.bidder.Constants.Configurations.DEFAULT_MEDIATION_FLOOR
 import com.monet.bidder.CustomEventUtil.getAdUnitId
@@ -12,9 +15,6 @@ import com.monet.bidder.MediationManager.NoBidsFoundException
 import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.bid.BidRenderer
-import com.monet.BidResponse
-import com.monet.BidResponse.Mapper.from
-import com.monet.BidResponse.Mapper.fromBidKey
 import com.mopub.common.LifecycleListener
 import com.mopub.common.logging.MoPubLog
 import com.mopub.common.logging.MoPubLog.AdapterLogEvent.LOAD_FAILED
@@ -24,7 +24,6 @@ import com.mopub.mobileads.BaseAd
 import com.mopub.mobileads.MoPubErrorCode
 import com.mopub.mobileads.MoPubErrorCode.INTERNAL_ERROR
 import com.mopub.mobileads.MoPubErrorCode.NETWORK_NO_FILL
-import org.json.JSONObject
 
 /**
  * Created by jose on 2/1/18.
@@ -69,10 +68,11 @@ open class CustomEventBanner : BaseAd(), AppMonetViewListener {
   ) {
     val extras: Map<String, String?> = adData.extras
     val adSize = AdSize(
+        context.applicationContext,
         (if (adData.adWidth != null) adData.adWidth!! else 0),
         (if (adData.adHeight != null) adData.adHeight!! else 0)
     )
-    adUnitID = getAdUnitId(extras, adSize)!!
+    val adUnitFromExtras = getAdUnitId(extras, adSize)
     val sdkManager = SdkManager.get()
     //    // check if it's null first
     if (sdkManager == null) {
@@ -80,11 +80,12 @@ open class CustomEventBanner : BaseAd(), AppMonetViewListener {
       onMoPubError(INTERNAL_ERROR)
       return
     }
-    if (adUnitID.isEmpty()) {
+    if (adUnitFromExtras == null || adUnitFromExtras.isEmpty()) {
       sLogger.debug("no adUnit/tagId: floor line item configured incorrectly")
       onMoPubError(NETWORK_NO_FILL)
       return
     }
+    adUnitID = adUnitFromExtras
     sdkManager.auctionManager.trackRequest(
         adUnitID,
         WebViewUtils.generateTrackingSource(BANNER)

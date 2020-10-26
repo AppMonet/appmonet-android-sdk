@@ -8,11 +8,8 @@ import android.os.Build.VERSION_CODES
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
-import android.view.InputDevice
-import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.CookieManager
-import com.monet.ValueCallback
 import android.webkit.WebSettings
 import android.webkit.WebSettings.PluginState.ON
 import android.webkit.WebSettings.RenderPriority.HIGH
@@ -21,9 +18,6 @@ import com.monet.Callback
 import com.monet.bidder.Constants.JSMethods
 import com.monet.bidder.auction.MonetJsInterface
 import com.monet.bidder.threading.InternalRunnable
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -72,84 +66,6 @@ open class MonetWebView protected constructor(context: Context?) : WebView(conte
     if (mJsInterface != null) {
       addJavascriptInterface(mJsInterface, Constants.JS_BRIDGE_VARIABLE)
     }
-  }
-
-  private fun motionEventType(type: String?): Int {
-    return if (type == null || type.isEmpty()) {
-      -1
-    } else when (type.toLowerCase()) {
-      "down" -> MotionEvent.ACTION_DOWN
-      "up" -> MotionEvent.ACTION_UP
-      "hover_enter" -> MotionEvent.ACTION_HOVER_ENTER
-      "hover_exit" -> MotionEvent.ACTION_HOVER_EXIT
-      "scroll" -> MotionEvent.ACTION_SCROLL
-      "move" -> MotionEvent.ACTION_MOVE
-      "outside" -> MotionEvent.ACTION_OUTSIDE
-      else -> -1
-    }
-  }
-
-  fun triggerEvents(json: String?): String? {
-    val metaState = 0
-    try {
-      val source = JSONObject(json)
-      if (source == null || !source.has("events")) {
-        return "invalid"
-      }
-      val events = source.getJSONArray("events")
-      if (events == null || events.length() == 0) {
-        return "error"
-      }
-      if (triggerJsonEvents(metaState, 0, events)) {
-        return "success"
-      }
-    } catch (e: JSONException) {
-      return e.message
-    }
-    return "invalid"
-  }
-
-  fun triggerJsonEvents(
-    metaState: Int,
-    index: Int,
-    events: JSONArray
-  ): Boolean {
-    try {
-      val event = events.getJSONObject(index) ?: return true
-      val xf = event.getDouble("x").toFloat()
-      val yf = event.getDouble("y").toFloat()
-      val type = event.getString("t")
-      triggerEvent(xf, yf, type, metaState)
-      if (event.has("d")) {
-        postDelayed({ triggerJsonEvents(metaState, index + 1, events) }, event.getInt("d").toLong())
-      } else {
-        triggerJsonEvents(metaState, index + 1, events)
-      }
-    } catch (e: JSONException) {
-      return false
-    }
-    return true
-  }
-
-  fun triggerEvent(
-    x: Float,
-    y: Float,
-    type: String?,
-    metaState: Int
-  ) {
-    val downTime = System.currentTimeMillis()
-    val eventTime = System.currentTimeMillis()
-    val eventType = motionEventType(type)
-    if (eventType == -1) {
-      return
-    }
-    val event = MotionEvent.obtain(
-        downTime, eventTime,
-        eventType,
-        x, y, metaState
-    )
-    event.source = InputDevice.SOURCE_TOUCH_NAVIGATION
-    dispatchTouchEvent(event)
   }
 
   protected fun loadHtml(

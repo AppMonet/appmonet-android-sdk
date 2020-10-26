@@ -3,8 +3,8 @@ package com.monet.bidder.bid
 import android.annotation.SuppressLint
 import androidx.annotation.VisibleForTesting
 import com.monet.BidResponse
-import com.monet.bidder.AdServerAdRequest
-import com.monet.bidder.AdServerAdView
+import com.monet.AdServerAdRequest
+import com.monet.AdServerAdView
 import com.monet.bidder.Constants.JSMethods
 import com.monet.bidder.Constants.PubSub
 import com.monet.bidder.Constants.PubSub.Topics

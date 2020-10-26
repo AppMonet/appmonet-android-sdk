@@ -1,22 +1,19 @@
 package com.monet.bidder
 
-import android.location.Location
-import android.os.Bundle
+import com.monet.AdServerAdRequest
+import com.monet.AdServerAdView
+import com.monet.BidResponse.Mapper.from
+import com.monet.BidResponse.Mapper.toJsonString
+import com.monet.LocationData
+import com.monet.auction.AuctionRequest
 import com.monet.bidder.Constants.BIDS_KEY
 import com.monet.bidder.Constants.Dfp.ADUNIT_KEYWORD_KEY
 import com.monet.bidder.MoPubRequestUtil.getKeywords
 import com.monet.bidder.MoPubRequestUtil.mergeKeywords
-import com.monet.bidder.auction.AuctionRequest
-import com.monet.BidResponse
-import com.monet.BidResponse.Mapper.from
-import com.monet.BidResponse.Mapper.fromBidKey
-import com.monet.BidResponse.Mapper.toJsonString
 import com.mopub.nativeads.MoPubNative
 import com.mopub.nativeads.RequestParameters
 import com.mopub.nativeads.RequestParameters.Builder
 import org.json.JSONException
-import org.json.JSONObject
-import java.util.Date
 import java.util.HashMap
 
 internal class MopubNativeAdRequest : AdServerAdRequest {
@@ -25,7 +22,6 @@ internal class MopubNativeAdRequest : AdServerAdRequest {
   private var moPubNative: MoPubNative? = null
   private val requestParameters: RequestParameters?
   var modifiedRequestParameters: RequestParameters? = null
-  private var mBid: BidResponse? = null
 
   constructor(
     moPubNative: MoPubNative?,
@@ -38,7 +34,7 @@ internal class MopubNativeAdRequest : AdServerAdRequest {
     this.adUnitId = adUnitId
     mLocalExtras[BIDS_KEY]?.let {
       try {
-        mBid = from(it as String)
+        bid = from(it as String)
       } catch (e: JSONException) {
         //do nothing
       }
@@ -51,17 +47,14 @@ internal class MopubNativeAdRequest : AdServerAdRequest {
     this.adUnitId = adUnitId
   }
 
-  override fun hasBid(): Boolean {
-    return mBid != null
-  }
+  override val location: LocationData?
+    get() = requestParameters?.location?.let {
+      LocationData(
+          it.latitude, it.longitude, it.accuracy.toDouble(), it.provider
+      )
+    }
 
-  override val bid: BidResponse?
-    get() = mBid
-
-  override val location: Location?
-    get() = requestParameters?.location
-
-  override val birthday: Date?
+  override val birthday: Long?
     get() = null
 
   override val contentUrl: String?
@@ -80,13 +73,13 @@ internal class MopubNativeAdRequest : AdServerAdRequest {
   override val publisherProvidedId: String?
     get() = null
 
-  override val customTargeting: Bundle
-    get() = Bundle()
+  override val customTargeting: Map<String, Any>
+    get() = mapOf()
 
   fun applyToView(mopubNativeAdView: MopubNativeAdView) {
     // apply the targeting to the view, as keywords
     val nativeAd = mopubNativeAdView.mopubNative
-    mLocalExtras[BIDS_KEY] = toJsonString(mBid)
+    mLocalExtras[BIDS_KEY] = toJsonString(bid)
     mLocalExtras[ADUNIT_KEYWORD_KEY] = adUnitId
     nativeAd.setLocalExtras(mLocalExtras)
     var keywords = getKeywords(mLocalExtras)
@@ -110,14 +103,14 @@ internal class MopubNativeAdRequest : AdServerAdRequest {
   companion object {
     fun fromAuctionRequest(request: AuctionRequest): MopubNativeAdRequest {
       val adRequest = MopubNativeAdRequest(request.adUnitId)
-      for (key in request.targeting.keySet()) {
+      for (key in request.targeting.keys) {
         val targeting = request.targeting[key]
         if (targeting != null) {
           adRequest.mLocalExtras[key] = targeting
         }
       }
       if (request.bid != null) {
-        adRequest.mBid = request.bid
+        adRequest.bid = request.bid
       }
       return adRequest
     }

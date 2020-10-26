@@ -12,6 +12,7 @@ import android.util.Log
 import com.monet.AdType
 import com.monet.Callback
 import com.monet.DeviceData
+import com.monet.adview.AdSize
 import com.monet.bidder.Constants.Configurations
 import com.monet.bidder.Constants.JSAppStates
 import com.monet.bidder.auction.AuctionManager
@@ -19,8 +20,7 @@ import com.monet.bidder.exceptions.AppMonetInitException
 import com.monet.bidder.threading.UIThread
 import com.monet.threading.BackgroundThread
 import org.json.JSONObject
-import java.lang.ref.WeakReference
-
+import com.monet.AdServerWrapper
 /**
  * The [BaseManager] abstract class provides a template for initializing all the objects
  * required by the sdk. This class should be extended by the different SSP flavors which can decide
@@ -32,15 +32,15 @@ open class BaseManager(
   applicationId: String?,
   val adServerWrapper: AdServerWrapper
 ) {
-  private val remoteConfiguration = RemoteConfiguration(context, applicationId)
+  val context: Context = context.applicationContext
+  private val remoteConfiguration = RemoteConfiguration(this.context, applicationId)
   private val backgroundThread = BackgroundThread()
   val auctionManager: AuctionManager
   val appMonetContext: AppMonetContext = AppMonetContext()
-  private val deviceData: DeviceData = DeviceData(context)
-  val preferences: Preferences = Preferences(context)
+  private val deviceData: DeviceData = DeviceData(this.context)
+  val preferences: Preferences = Preferences(this.context)
   val pubSubService: PubSubService = PubSubService()
 
-  val context: WeakReference<Context> = WeakReference(context)
   val uiThread: UIThread = UIThread()
   private var mSdkConfigurations: SdkConfigurations? = null
   private var areCallbacksRegistered = false
@@ -200,9 +200,7 @@ open class BaseManager(
   }
 
   fun testMode() {
-    if (context.get() != null && 0 != (context.get()!!.applicationInfo.flags
-            and ApplicationInfo.FLAG_DEBUGGABLE)
-    ) {
+    if (0 != (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE)) {
       isTestMode = true
       auctionManager.testMode()
     } else {

@@ -35,7 +35,7 @@ internal object MoPubRequestUtil {
     // get keywords out of the local extras
     val buffer = StringBuilder()
     for ((key, value) in kv) {
-      if (value is String) {
+      if (key !== "bids") {
         buffer.append(key)
         buffer.append(":")
         buffer.append(value)

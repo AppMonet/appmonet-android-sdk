@@ -1,33 +1,34 @@
 package com.monet.bidder
 
-import android.content.Context
-import android.os.Bundle
 import android.text.TextUtils
 import com.monet.Callback
-import com.monet.bidder.AdServerWrapper.Type
 import com.monet.bidder.Constants.Configurations
 import com.monet.bidder.Constants.JSMethods
 import com.monet.bidder.Constants.TEST_MODE_WARNING
 import com.monet.bidder.auction.AuctionManagerCallback
-import com.monet.bidder.auction.AuctionRequest
-import com.monet.bidder.auction.AuctionRequest.Companion.from
+import com.monet.auction.AuctionRequest
+import com.monet.auction.AuctionRequest.Companion.from
 import com.monet.bidder.bid.BidManager
 import com.monet.BidResponse
 import com.monet.BidResponse.Constant.BID_BUNDLE_KEY
 import com.monet.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
 import com.monet.bidder.threading.UIThread
+import com.monet.AdServerWrapper
+import com.monet.AdType
+import com.monet.AdServerAdView
+import com.monet.AdServerAdRequest
+import com.monet.RequestData
 
 /**
  * Created by jose on 8/28/17.
  */
 class AppMonetBidder(
-  context: Context,
   private val bidManager: BidManager,
   private val adServerWrapper: AdServerWrapper,
   private val auctionManagerCallback: AuctionManagerCallback,
   private val backgroundThread: BackgroundThread,
-  private  val uiThread: UIThread
+  private val uiThread: UIThread
 ) {
   private val adViews: MutableMap<String, AdServerAdView?> = mutableMapOf()
   private val extantExtras: MutableMap<String, AuctionRequest> = mutableMapOf()
@@ -243,8 +244,10 @@ class AppMonetBidder(
     kwStrings.add(bidResponse.keywords)
     attachBidToNetworkExtras(auctionRequest.networkExtras, bidResponse)
     auctionRequest.bid = bidResponse
-    val kwTargeting = keywordStringToBundle(TextUtils.join(",", kwStrings))
-    auctionRequest.targeting.putAll(kwTargeting)
+    val kwTargeting = keywordStringToMap(TextUtils.join(",", kwStrings))
+    val targeting = auctionRequest.targeting.toMutableMap()
+    targeting.putAll(kwTargeting)
+    auctionRequest.targeting = targeting
     return auctionRequest
   }
 
@@ -258,16 +261,16 @@ class AppMonetBidder(
    * @param kwString a string of keywords in the expected format
    * @return a Bundle with string keys & String values
    */
-  private fun keywordStringToBundle(kwString: String): Bundle {
-    val bundle = Bundle()
+  private fun keywordStringToMap(kwString: String): Map<String,String>{
+    val map = mutableMapOf<String,String>()
     for (kvp in TextUtils.split(kwString, ",")) {
       val pair = TextUtils.split(kvp, ":")
       if (pair.size != 2) {
         continue
       }
-      bundle.putString(pair[0], pair[1])
+      map[pair[0]] = pair[1]
     }
-    return bundle
+    return map
   }
 
   /**
@@ -375,7 +378,7 @@ class AppMonetBidder(
 
   private fun buildRequest(
     req: AuctionRequest,
-    type: Type
+    type: AdType
   ): AdServerAdRequest {
     return adServerWrapper.newAdRequest(req, type)
   }

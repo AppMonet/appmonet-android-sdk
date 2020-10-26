@@ -7,8 +7,6 @@ import com.google.android.gms.ads.doubleclick.PublisherAdRequest
 import com.google.android.gms.ads.doubleclick.PublisherAdRequest.Builder
 import com.google.android.gms.ads.mediation.MediationAdRequest
 import com.google.android.gms.ads.mediation.admob.AdMobExtras
-import com.monet.bidder.MonetDfpCustomEventInterstitial
-import com.monet.bidder.auction.AuctionRequest
 import com.monet.BidResponse
 import java.util.Date
 

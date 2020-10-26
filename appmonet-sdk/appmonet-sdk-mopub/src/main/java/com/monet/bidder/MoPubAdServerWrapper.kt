@@ -1,14 +1,18 @@
 package com.monet.bidder
 
-import com.monet.bidder.AdServerWrapper.Type
-import com.monet.bidder.AdServerWrapper.Type.INTERSTITIAL
-import com.monet.bidder.AdServerWrapper.Type.NATIVE
-import com.monet.bidder.auction.AuctionRequest
+import android.content.Context
+import com.monet.AdServerAdRequest
+import com.monet.adview.AdSize
+import com.monet.AdServerWrapper
+import com.monet.AdType
+import com.monet.AdType.INTERSTITIAL
+import com.monet.AdType.NATIVE
+import com.monet.auction.AuctionRequest
 
-internal class MoPubAdServerWrapper : AdServerWrapper {
+internal class MoPubAdServerWrapper(private val context: Context) : AdServerWrapper {
   override fun newAdRequest(
     auctionRequest: AuctionRequest,
-    type: Type
+    type: AdType
   ): AdServerAdRequest {
     return when (type) {
       INTERSTITIAL -> {
@@ -31,6 +35,6 @@ internal class MoPubAdServerWrapper : AdServerWrapper {
     width: Int,
     height: Int
   ): AdSize {
-    return AdSize(width, height)
+    return AdSize(context, width, height)
   }
 }

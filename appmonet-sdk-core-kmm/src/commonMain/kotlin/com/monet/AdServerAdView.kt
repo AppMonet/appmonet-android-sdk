@@ -1,9 +1,7 @@
-package com.monet.bidder
-
-import com.monet.bidder.AdServerWrapper.Type
+package com.monet
 
 interface AdServerAdView {
-  val type: Type
+  var type: AdType
   var adUnitId: String
   fun loadAd(request: AdServerAdRequest?)
 }

@@ -1,22 +1,17 @@
-package com.monet.bidder
+package com.monet.adview
 
-import android.content.Context
+import com.monet.AdServerWrapper
 
 /**
  * This class is basically abstract, except for the "from" helper.
  */
-class AdSize(
-  val width: Int = 0,
-  val height: Int = 0
-) {
+expect class AdSize(width: Int, height: Int) {
+  val width: Int
+  val height: Int
 
-  fun getWidthInPixels(context: Context): Int {
-    return Icons.asIntPixels(width.toFloat(), context)
-  }
+  fun getWidthInPixels(): Int
 
-  fun getHeightInPixels(context: Context): Int {
-    return Icons.asIntPixels(height.toFloat(), context)
-  }
+  fun getHeightInPixels(): Int
 
   companion object {
     /**
@@ -27,12 +22,10 @@ class AdSize(
      * @param height the height of the adSize to be created
      * @return an AdSize subclass
      */
-    @JvmStatic fun from(
+    fun from(
       width: Int,
       height: Int,
       adServerWrapper: AdServerWrapper
-    ): AdSize {
-      return adServerWrapper.newAdSize(width, height)
-    }
+    ): AdSize
   }
 }
