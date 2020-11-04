@@ -2,17 +2,13 @@ package com.monet.bidder;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.SystemClock;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-
 import com.monet.bidder.adview.AdView;
 import com.monet.bidder.threading.InternalRunnable;
 import com.mopub.nativeads.ImpressionTracker;
 import com.mopub.nativeads.NativeClickHandler;
 import com.mopub.nativeads.NativeErrorCode;
-
 import java.util.Map;
 
 class MopubNativeListener implements AdServerBannerListener {
@@ -24,7 +20,7 @@ class MopubNativeListener implements AdServerBannerListener {
   private AppMonetStaticNativeAd staticNativeAd;
 
   MopubNativeListener(Context context, CustomEventNative.CustomEventNativeListener listener,
-                      Map<String, String> serverExtras) {
+      Map<String, String> serverExtras) {
     this.context = context;
     mListener = listener;
     this.serverExtras = serverExtras;
@@ -71,6 +67,7 @@ class MopubNativeListener implements AdServerBannerListener {
       staticNativeAd.onAdClicked();
     }
   }
+
   @SuppressLint("infer")
   @Override
   public boolean onAdLoaded(final View view) {
@@ -79,35 +76,25 @@ class MopubNativeListener implements AdServerBannerListener {
         @Override
         public void runInternal() {
           AppMonetViewLayout viewLayout = (AppMonetViewLayout) view;
-          if(staticNativeAd != null && viewLayout.isAdRefreshed()){
+          if (staticNativeAd != null && viewLayout.isAdRefreshed()) {
             staticNativeAd.swapViews(viewLayout, MopubNativeListener.this);
             return;
           }
-          staticNativeAd = new AppMonetStaticNativeAd(serverExtras, view, new ImpressionTracker(context),
-              new NativeClickHandler(context), mListener, new AppMonetNativeEventCallback() {
-            @Override
-            public void destroy(View view) {
-              AdView adView = (AdView) ((ViewGroup) view).getChildAt(0);
-              if (adView != null) {
-                adView.destroy(true);
-              }
-            }
+          staticNativeAd =
+              new AppMonetStaticNativeAd(serverExtras, view, new ImpressionTracker(context),
+                  new NativeClickHandler(context), mListener, new AppMonetNativeEventCallback() {
+                @Override
+                public void destroy(View view) {
+                  AdView adView = (AdView) ((ViewGroup) view).getChildAt(0);
+                  if (adView != null) {
+                    adView.destroy(true);
+                  }
+                }
 
-            @Override
-            public void onClick(View view) {
-              // Obtain MotionEvent object
-              float x = view.getWidth() / 2F;
-              float y = view.getHeight() / 2F;
-              int metaState = 0;
-              MotionEvent actionDown = MotionEvent.obtain(SystemClock.uptimeMillis(),
-                  SystemClock.uptimeMillis() + 100, MotionEvent.ACTION_DOWN, x, y, metaState);
-              view.dispatchTouchEvent(actionDown);
-
-              MotionEvent actionUp = MotionEvent.obtain(SystemClock.uptimeMillis() + 150,
-                  SystemClock.uptimeMillis() + 250, MotionEvent.ACTION_UP, x, y, metaState);
-              view.dispatchTouchEvent(actionUp);
-            }
-          });
+                @Override
+                public void onClick(View view) {
+                }
+              });
           staticNativeAd.loadAd();
         }
 
