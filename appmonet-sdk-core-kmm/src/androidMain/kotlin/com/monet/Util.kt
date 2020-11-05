@@ -1,5 +1,6 @@
 package com.monet
 
+import android.os.Bundle
 import android.text.TextUtils
 import java.util.UUID
 
@@ -14,6 +15,18 @@ actual class Util {
       list: List<*>
     ): String {
       return TextUtils.join(delimeter, list)
+    }
+
+    actual fun isAdRequestExtra(
+      map: MutableMap<String, Any>,
+      key: String,
+      extra: Any
+    ): Boolean {
+      if (extra is Bundle) {
+        map[key] = extra
+        return true
+      }
+      return false
     }
   }
 }

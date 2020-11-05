@@ -22,7 +22,8 @@ import com.monet.bidder.Constants.Interstitial.AD_UUID_INTERSTITIAL
 import com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
-import com.monet.BidResponse.Mapper.fromBidKey
+import com.monet.BidResponse.Mapper.from
+import com.monet.adview.AdSize
 import com.monet.bidder.callbacks.Callback
 
 open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
@@ -86,7 +87,7 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
     )
     var bid: BidResponse? = null
     if (serverParameter != null && serverParameter != adUnitId) {
-      bid = from(customEventExtras)
+      bid = DfpRequestHelper.getBidFromBundle(customEventExtras)
     }
     if (bid != null && sdkManager?.auctionManager?.bidManager?.isValid(bid) == true
         && customEventInterstitialListener != null

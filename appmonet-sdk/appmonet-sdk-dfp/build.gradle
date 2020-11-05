@@ -3,6 +3,7 @@ apply from: '../common-build.gradle'
 dependencies {
     api("com.google.android.gms:play-services-ads:19.3.0")
     api project(':appmonet-sdk:appmonet-sdk-core')
+    api project(':appmonet-sdk-dfp-kmm:base')
 }
 
 project.description = 'AppMonet Android SDK - Google'

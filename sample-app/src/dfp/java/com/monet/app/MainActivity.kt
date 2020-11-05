@@ -3,6 +3,7 @@ package com.monet.app
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.doubleclick.PublisherAdRequest
 import com.google.android.gms.ads.doubleclick.PublisherInterstitialAd
+import com.monet.ValueCallback
 import com.monet.bidder.AppMonet
 import kotlinx.android.synthetic.dfp.adview_layout.publisherAdView
 import kotlinx.android.synthetic.main.activity_main.loadInterstitial
@@ -71,7 +72,9 @@ class MainActivity : BaseActivity() {
   override fun setupInterstitialLoadClickListener() {
     loadInterstitial.setOnClickListener {
       val adRequest = PublisherAdRequest.Builder().build()
-      interstitial.loadAd(adRequest)
+      AppMonet.addBids(interstitial, adRequest, 2000, ValueCallback {
+        interstitial.loadAd(it)
+      })
     }
   }
 

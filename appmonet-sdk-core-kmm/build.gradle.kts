@@ -1,11 +1,9 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
-
 plugins {
   kotlin("multiplatform")
   kotlin("plugin.serialization") version "1.4.10"
-  id("com.codingfeline.buildkonfig")
   id("com.android.library")
   id("kotlin-android-extensions")
 }
@@ -25,7 +23,7 @@ kotlin {
 //  iosArm64 { binaries.framework("AppMonet_Core") }
 //  iosX64 {
 //    binaries.framework("AppMonet_Core")
-    ios {
+  ios {
     binaries {
       framework {
         baseName = "AppMonet_Core"
@@ -36,7 +34,7 @@ kotlin {
     val commonMain by getting {
       dependencies {
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
-        implementation ("co.touchlab:stately-common:1.1.0")
+        implementation("co.touchlab:stately-common:1.1.0")
       }
     }
     val commonTest by getting {
@@ -96,14 +94,6 @@ kotlin {
 //      dependsOn("universalFrameworkDebug")
 //      dependsOn("universalFrameworkRelease")
 //    }
-  }
-}
-buildkonfig {
-  packageName = "com.monet"
-  // exposeObjectWithName = 'YourAwesomePublicConfig'
-
-  defaultConfigs {
-    buildConfigField(STRING, "STAGING_SERVER_HOST", "url")
   }
 }
 

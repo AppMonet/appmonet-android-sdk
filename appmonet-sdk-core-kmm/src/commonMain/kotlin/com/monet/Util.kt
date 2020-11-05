@@ -6,6 +6,12 @@ expect class Util {
     fun join(
       delimeter: String,
       list: List<*>
-    ):String
+    ): String
+
+    fun isAdRequestExtra(
+      map: MutableMap<String, Any>,
+      key: String,
+      extra: Any
+    ): Boolean
   }
 }

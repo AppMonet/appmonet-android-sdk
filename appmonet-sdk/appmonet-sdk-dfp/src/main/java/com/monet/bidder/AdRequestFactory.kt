@@ -2,7 +2,13 @@ package com.monet.bidder
 
 import com.google.android.gms.ads.mediation.MediationAdRequest
 import com.monet.AdServerAdRequest
+import com.monet.DFPAdRequest
+import com.monet.DFPAdViewRequest
+import com.monet.PublisherAdRequestWrapper
 import com.monet.auction.AuctionRequest
+import com.google.android.gms.ads.doubleclick.PublisherAdRequest.Builder
+import com.monet.AdRequestWrapper
+import com.monet.fromAuctionRequest
 
 internal object AdRequestFactory {
   fun fromAuctionRequest(
@@ -10,14 +16,24 @@ internal object AdRequestFactory {
     auctionRequest: AuctionRequest
   ): AdServerAdRequest {
     return if (isPublisherAdView) {
-      DFPAdRequest.fromAuctionRequest(auctionRequest)
-    } else DFPAdViewRequest.fromAuctionRequest(auctionRequest)
+      DFPAdRequest.fromAuctionRequest(
+          auctionRequest, MonetDfpCustomEventInterstitial::class.java,
+          CustomEventBanner::class.java, CustomEventBanner::class.java,
+          CustomEventInterstitial::class.java
+      )
+    } else DFPAdViewRequest.fromAuctionRequest(
+        auctionRequest, MonetDfpCustomEventInterstitial::class.java,
+        CustomEventBanner::class.java, CustomEventBanner::class.java,
+        CustomEventInterstitial::class.java
+    )
   }
 
   fun createEmptyRequest(isPublisherAdView: Boolean): AdServerAdRequest {
     return if (isPublisherAdView) {
-      DFPAdRequest()
-    } else DFPAdViewRequest()
+      DFPAdRequest(PublisherAdRequestWrapper(Builder().build()))
+    } else DFPAdViewRequest(
+        AdRequestWrapper(com.google.android.gms.ads.AdRequest.Builder().build())
+    )
   }
 
   fun fromMediationRequest(
@@ -25,7 +41,19 @@ internal object AdRequestFactory {
     adRequest: MediationAdRequest
   ): AdServerAdRequest {
     return if (isPublisherAdView) {
-      DFPAdRequest(adRequest)
-    } else DFPAdViewRequest(adRequest)
+      val dfpRequest = Builder()
+          .setBirthday(adRequest.birthday)
+          .setGender(adRequest.gender)
+          .setLocation(adRequest.location)
+          .build()
+      DFPAdRequest(PublisherAdRequestWrapper(dfpRequest))
+    } else {
+      val req = com.google.android.gms.ads.AdRequest.Builder()
+          .setBirthday(adRequest.birthday)
+          .setGender(adRequest.gender)
+          .setLocation(adRequest.location)
+          .build()
+      DFPAdViewRequest(AdRequestWrapper(req))
+    }
   }
 }

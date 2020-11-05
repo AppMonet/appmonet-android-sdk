@@ -25,9 +25,9 @@ abstract class AdServerAdRequest {
 
   private fun shouldRemoveKey(
     dynamicKeyPrefix: String?,
-    key: String?
+    key: Any?
   ): Boolean {
-    return if (key == null) {
+    return if (key == null || key !is String) {
       false
     } else key.startsWith(
         Constants.KW_KEY_PREFIX

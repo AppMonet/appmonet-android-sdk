@@ -261,8 +261,8 @@ class AppMonetBidder(
    * @param kwString a string of keywords in the expected format
    * @return a Bundle with string keys & String values
    */
-  private fun keywordStringToMap(kwString: String): Map<String,String>{
-    val map = mutableMapOf<String,String>()
+  private fun keywordStringToMap(kwString: String): Map<String, String> {
+    val map = mutableMapOf<String, String>()
     for (kvp in TextUtils.split(kwString, ",")) {
       val pair = TextUtils.split(kvp, ":")
       if (pair.size != 2) {
@@ -287,7 +287,7 @@ class AppMonetBidder(
     if (bid == null || bundle == null) {
       return
     }
-    bundle[BID_BUNDLE_KEY] = bid
+    bundle[BID_BUNDLE_KEY] = BidResponse.Mapper.toJsonString(bid)
   }
 
   private fun attachBidAsync(

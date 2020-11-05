@@ -1,7 +1,6 @@
 package com.monet
 
 import co.touchlab.stately.freeze
-import com.monet.BidResponse.Constant.BID_BUNDLE_KEY
 import com.monet.BidResponse.Interstitial
 import com.monet.BidResponse.InterstitialSerializer
 import com.monet.Constants.DEFAULT_BIDDER_KEY
@@ -99,6 +98,7 @@ internal object BidResponseSerializer : KSerializer<BidResponse> {
       element<Boolean>("queueNext")
       element<Boolean>("flexSize")
       element<String>("url")
+      element<String>("inst")
     }
 
   override fun serialize(
@@ -142,6 +142,9 @@ internal object BidResponseSerializer : KSerializer<BidResponse> {
       encodeIntElement(descriptor, 25, value.queueNext)
       encodeBooleanElement(descriptor, 26, value.flexSize)
       encodeStringElement(descriptor, 27, value.url)
+      value.inst?.let {
+        encodeStringElement(descriptor, 28, it)
+      }
     }
   }
 
@@ -170,11 +173,12 @@ internal object BidResponseSerializer : KSerializer<BidResponse> {
       var adType: String = ""
       var refresh: Int = 0
       var interstitial: Interstitial? = null
-      var extras: Map<String, String>?
+      var extras: Map<String, String> = mapOf()
       var nativeInvalidated: Boolean = false
       var queueNext: Int = 0
       var flexSize: Boolean = false
       var url: String = ""
+      var inst: String? = null
       while (true) {
         when (val index = decodeElementIndex(descriptor)) {
           0 -> adm = decodeStringElement(descriptor, 0)
@@ -214,6 +218,7 @@ internal object BidResponseSerializer : KSerializer<BidResponse> {
           25 -> queueNext = decodeIntElement(descriptor, 25)
           26 -> flexSize = decodeBooleanElement(descriptor, 26)
           27 -> url = decodeStringElement(descriptor, 27)
+          28 -> inst = decodeStringElement(descriptor, 28)
           CompositeDecoder.DECODE_DONE -> break
           else -> {
             error("Unexpected index: $index")
@@ -225,7 +230,7 @@ internal object BidResponseSerializer : KSerializer<BidResponse> {
           adm, id, code, width, height, ts, cpm, bidder, adUnitId, keyWords, renderPixel,
           clickPixel, u, uuid, cdown, naRender, wvUUID, duration, normalizeExpiration(expiration),
           mega, adType,
-          refresh, interstitial
+          refresh, interstitial, extras, nativeInvalidated, queueNext, flexSize, url, inst
       )
     }
 
@@ -269,8 +274,10 @@ class BidResponse(
   var nativeInvalidated: Boolean = false,
   var queueNext: Int = 0,
   var flexSize: Boolean = false,
-  var url: String = ""
+  var url: String = "",
+  var inst: String? = null
 ) {
+  val orientation = inst
   val createdAt = ts
   val cool = if (refresh <= 0) cdown else 0
   val nativeRender = naRender
@@ -333,7 +340,11 @@ class BidResponse(
 
   object Mapper {
     fun from(jsonString: String): BidResponse? {
-      return Json { ignoreUnknownKeys = true }.decodeFromString(jsonString)
+      return try {
+        Json { ignoreUnknownKeys = true }.decodeFromString(jsonString)
+      } catch (e: Exception) {
+        null
+      }
     }
 
     //      return try {
@@ -391,7 +402,11 @@ class BidResponse(
 //
 //    @JvmStatic
     fun toJsonString(bid: BidResponse?): String {
-      return Json { ignoreUnknownKeys = true }.encodeToString(bid)
+      return try {
+        return bid?.let { Json { ignoreUnknownKeys = true }.encodeToString(it) } ?: "{}"
+      } catch (e: Exception) {
+        "{}"
+      }
     }
 //      val json = JSONObject()
 //      bid?.let {

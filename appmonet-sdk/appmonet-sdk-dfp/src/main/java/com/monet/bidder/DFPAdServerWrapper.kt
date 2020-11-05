@@ -1,13 +1,18 @@
 package com.monet.bidder
 
+import android.content.Context
+import com.monet.AdServerAdRequest
+import com.monet.AdServerWrapper
+import com.monet.AdType
+import com.monet.adview.AdSize
+import com.monet.auction.AuctionRequest
 import com.monet.bidder.AdRequestFactory.createEmptyRequest
 import com.monet.bidder.AdRequestFactory.fromAuctionRequest
-import com.monet.bidder.AdServerWrapper.Type
 
 /**
  * Created by nbjacob on 6/26/17.
  */
-internal class DFPAdServerWrapper : AdServerWrapper {
+internal class DFPAdServerWrapper(private val context: Context) : AdServerWrapper {
   private var sdkManager: SdkManager? = null
   fun setSdkManager(sdkManager: SdkManager?) {
     this.sdkManager = sdkManager
@@ -19,7 +24,7 @@ internal class DFPAdServerWrapper : AdServerWrapper {
 
   override fun newAdRequest(
     auctionRequest: AuctionRequest,
-    type: Type
+    type: AdType
   ): AdServerAdRequest {
     return newAdRequest(auctionRequest)
   }
@@ -32,6 +37,6 @@ internal class DFPAdServerWrapper : AdServerWrapper {
     width: Int,
     height: Int
   ): AdSize {
-    return AdSize(width, height)
+    return AdSize(context, width, height)
   }
 }

@@ -1,0 +1,73 @@
+plugins {
+  id 'org.jetbrains.kotlin.plugin.serialization' version '1.4.10'
+}
+
+apply plugin: "org.jetbrains.kotlin.multiplatform"
+apply plugin: "org.jetbrains.kotlin.native.cocoapods"
+
+group = "AppMonetKMM"
+version = "1.0.0"
+
+kotlin {
+  //  targets {
+  //    def iosClosure = {
+  //      binaries {
+  //        framework("AppMonet_Core")
+  //      }
+  //    }
+  //      iosArm64("ios", iosClosure)
+  //  }
+
+  iosArm64("ios")
+
+  cocoapods {
+    summary = "AppMonet KMM"
+    homepage = "jose.codes"
+    frameworkName = "AppMonet_Core"
+    ios.deploymentTarget = "10.0"
+    pod("mopub-ios-sdk", "5.13.0", null, "MoPub")
+  }
+
+  sourceSets {
+    def fatModules = [
+        "appmonet-sdk-core-kmm",
+        "appmonet-sdk-mopub-kmm/base"
+    ]
+    commonMain {
+      dependencies {
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-common:1.4.10"
+        implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0"
+        implementation "co.touchlab:stately-common:1.1.0"
+      }
+      kotlin {
+        srcDirs += fatModules.collect {
+          "${rootDir}/${it}/src/commonMain/kotlin"
+        }
+      }
+    }
+    iosMain {
+      dependencies {}
+      kotlin {
+        srcDirs += fatModules.collect {
+          "${rootDir}/${it}/src/iosMain/kotlin"
+        }
+      }
+    }
+  }
+}
+
+
+//task packForXcode (type:Sync){
+//  group = "build"
+//
+//  final String mode = System.getenv("CONFIGURATION") ?: "RELEASE"
+//  final def framework = kotlin.targets.ios.binaries.getFramework("ios", mode)
+//  inputs.property "mode", mode
+//  dependsOn framework.linkTask
+//
+//  from { framework.outputFile.parentFile }
+//  into frameworkDir
+//}
+//
+//tasks.build.dependsOn packForXCode
+

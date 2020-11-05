@@ -15,6 +15,8 @@ import com.monet.bidder.MediationManager.NoBidsFoundException
 import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
+import com.monet.BidResponse.Mapper.from
+import com.monet.adview.AdSize
 
 class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListener {
   private var mAdView: AppMonetViewLayout? = null
@@ -114,7 +116,7 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
         adUnitId,
         WebViewUtils.generateTrackingSource(BANNER)
     )
-    var bid = from(customEventExtras)
+    var bid = DfpRequestHelper.getBidFromBundle(customEventExtras)
     val floorCpm = DfpRequestHelper.getCpm(serverParameter)
     if (bid == null || bid.id.isEmpty()) {
       bid = sdkManager!!.auctionManager.mediationManager.getBidForMediation(adUnitId, floorCpm)

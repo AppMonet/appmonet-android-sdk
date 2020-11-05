@@ -10,11 +10,23 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Process
 import com.monet.AdServerAdRequest
+import com.monet.MoPubAdRequest
+import com.monet.MoPubAdServerWrapper
+import com.monet.MoPubBannerAdView
+import com.monet.MoPubInterstitialAdRequest
+import com.monet.MoPubInterstitialAdView
+import com.monet.MoPubInterstitialViewWrapper
+import com.monet.MoPubNativeRequestParametersWrapper
+import com.monet.MoPubNativeViewWrapper
+import com.monet.MoPubViewWrapper
+import com.monet.MopubNativeAdRequest
+import com.monet.MopubNativeAdView
 import com.monet.ValueCallback
 import com.monet.bidder.AppMonetConfiguration.Builder
 import com.monet.bidder.Constants.Configurations.MEDIATION_ENABLED
 import com.monet.bidder.Constants.MISSING_INIT_ERROR_MESSAGE
 import com.monet.bidder.threading.InternalRunnable
+import com.monet.request
 import com.mopub.mobileads.MoPubInterstitial
 import com.mopub.mobileads.MoPubView
 import com.mopub.nativeads.MoPubNative
@@ -61,7 +73,7 @@ internal class SdkManager constructor(
       sLogger.debug("Mediation mode is enabled. Ignoring explicit addBids()")
       return adView
     }
-    val mpView = MoPubAdView(adView)
+    val mpView = MoPubBannerAdView(MoPubViewWrapper(adView))
     if (adUnitId != adView.getAdUnitId()) {
       mpView.adUnitId = adUnitId
     }
@@ -69,7 +81,7 @@ internal class SdkManager constructor(
     registerView(adView, adUnitId)
     val request: AdServerAdRequest
     try {
-      baseRequest = MoPubAdRequest(adView)
+      baseRequest = MoPubAdRequest(MoPubViewWrapper(adView))
       request = auctionManager.addBids(mpView, baseRequest)
     } catch (exp: NullPointerException) {
       return null
@@ -83,7 +95,7 @@ internal class SdkManager constructor(
       (request as MoPubAdRequest).applyToView(mpView)
     }
     mopubAdViews[mpView.adUnitId] = WeakReference(adView)
-    return mpView.getMoPubView()
+    return mpView.viewWrapper.view as MoPubView
   }
 
   fun addBids(
@@ -117,8 +129,10 @@ internal class SdkManager constructor(
         //          onDone.onReceiveValue(moPubInterstitial);
         //          return;
         //        }
-        val mpView = MoPubInterstitialAdView(moPubInterstitial, alternateAdUnitId!!)
-        auctionManager.addBids(mpView, MoPubInterstitialAdRequest(moPubInterstitial),
+        val viewWrapper = MoPubInterstitialViewWrapper(moPubInterstitial)
+        val mpView = MoPubInterstitialAdView(viewWrapper, alternateAdUnitId!!)
+        auctionManager.addBids(
+            mpView, MoPubInterstitialAdRequest(viewWrapper),
             remainingTime
         ) { value: AdServerAdRequest ->
           // apply the request to the ad view, and pass that back
@@ -144,7 +158,7 @@ internal class SdkManager constructor(
     auctionManager.timedCallback(timeout, object : TimedCallback {
       override fun execute(remainingTime: Int) {
         logState()
-        val mpView = MoPubAdView(adView)
+        val mpView = MoPubBannerAdView(MoPubViewWrapper(adView))
         if (adView.getAdUnitId() == null) {
           sLogger.warn("Mopub adunit id is null. Unable to fetch bids for unit")
           onDone.onReceiveValue(adView) // can't continue
@@ -155,12 +169,13 @@ internal class SdkManager constructor(
           mpView.adUnitId = adUnit!!
         }
         registerView(adView, adUnit)
-        auctionManager.addBids(mpView, MoPubAdRequest(adView), remainingTime
+        auctionManager.addBids(
+            mpView, MoPubAdRequest(MoPubViewWrapper(adView)), remainingTime
         ) { value: AdServerAdRequest ->
           // apply the request to the ad view, and pass that back
           val request = value as MoPubAdRequest
           request.applyToView(mpView)
-          mopubAdViews[mpView.adUnitId] = WeakReference(adView)
+          mopubAdViews[mpView.adUnitId] = WeakReference(mpView.viewWrapper.view as MoPubView)
           onDone.onReceiveValue(adView)
         }
       }
@@ -183,15 +198,19 @@ internal class SdkManager constructor(
     auctionManager.timedCallback(timeout, object : TimedCallback {
       override fun execute(remainingTime: Int) {
         logState()
-        val mpView = MopubNativeAdView(nativeAd!!, adUnitId!!)
-        auctionManager.addBids(mpView,
-            MopubNativeAdRequest(nativeAd, adUnitId, requestParameters), remainingTime
+        val nativeViewWrapper = MoPubNativeViewWrapper(nativeAd!!, adUnitId!!)
+        val mpView = MopubNativeAdView(nativeViewWrapper, adUnitId)
+        auctionManager.addBids(
+            mpView,
+            MopubNativeAdRequest(
+                adUnitId, MoPubNativeRequestParametersWrapper(requestParameters)
+            ), remainingTime
         ) { value: AdServerAdRequest ->
           // apply the request to the ad view, and pass that back
           val request = value as MopubNativeAdRequest
           request.applyToView(mpView)
           onDone.onReceiveValue(
-              NativeAddBidsResponse(nativeAd, request.modifiedRequestParameters)
+              NativeAddBidsResponse(nativeAd, request.modifiedRequestParameters?.request())
           )
         }
       }

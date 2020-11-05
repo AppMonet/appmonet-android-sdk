@@ -1,6 +1,8 @@
 package com.monet.bidder
 
 import android.os.Bundle
+import com.monet.BidResponse
+import com.monet.BidResponse.Constant.BID_BUNDLE_KEY
 import com.monet.adview.AdSize
 import com.monet.bidder.Constants.Dfp.ADUNIT_KEYWORD_KEY
 
@@ -59,5 +61,19 @@ internal object DfpRequestHelper {
 
   private fun parseServerParameter(serverParameter: String): Array<String> {
     return serverParameter.split("@\\$".toRegex()).toTypedArray()
+  }
+
+  fun getBidFromBundle(bundle: Bundle?): BidResponse? {
+    if (bundle == null) {
+      return null
+    }
+    if (!bundle.containsKey(BID_BUNDLE_KEY)) {
+      return null
+    }
+    var bid: BidResponse? = null
+    bundle.getString(BID_BUNDLE_KEY)?.let {
+      bid = BidResponse.Mapper.from(it)
+    }
+    return bid
   }
 }

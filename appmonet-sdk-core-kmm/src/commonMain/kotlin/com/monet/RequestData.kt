@@ -46,7 +46,7 @@ data class RequestData(
         }
       }
       is List<*> -> {
-        val items: MutableList<String?> = ArrayList()
+        val items: MutableList<String?> = mutableListOf()
         return try {
           for (listItem in value) {
             val serialized = serializeBundleObject(listItem)
@@ -67,15 +67,27 @@ data class RequestData(
     val output: MutableMap<String, JsonElement> = mutableMapOf()
     adRequest?.customTargeting?.let { bundle ->
       for (key in bundle.keys) {
-        val value = bundle[key]
-        value?.let {
-          serializeBundleObject(it)?.let { value ->
-            output[key] = JsonPrimitive(value)
+        if (key is String) {
+          val value = bundle[key]
+          value?.let {
+            serializeBundleObject(it)?.let { value ->
+              output[key] = JsonPrimitive(value)
+            }
           }
         }
       }
     }
     return output
+  }
+
+  fun getStringMapFromKvp(): Map<String, String> {
+    val map = mutableMapOf<String, String>()
+    kvp.map {
+      if (it.value is JsonPrimitive) {
+        map[it.key] = (it.value as JsonPrimitive).content
+      }
+    }
+    return map
   }
 
   fun toMap(): Map<String, Any?> {

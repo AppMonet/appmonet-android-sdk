@@ -14,5 +14,13 @@ actual class Util {
     ): String {
       return list.joinToString(delimeter)
     }
+
+    actual fun isAdRequestExtra(
+      map: MutableMap<String, Any>,
+      key: String,
+      extra: Any
+    ): Boolean {
+      return false
+    }
   }
 }

@@ -10,7 +10,7 @@ import com.monet.RequestData
 data class AuctionRequest internal constructor(
   val networkExtras: MutableMap<String, Any> = mutableMapOf(),
   var targeting: Map<String, Any> = mapOf(),
-  val admobExtras: Map<String, String> = mapOf(),
+  var admobExtras: Map<String, Any> = mapOf(),
   var requestData: RequestData? = null,
   var bid: BidResponse? = null,
   var adUnitId: String = ""

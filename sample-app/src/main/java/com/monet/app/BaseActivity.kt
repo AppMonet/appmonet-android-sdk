@@ -6,7 +6,6 @@ import android.webkit.WebView
 import android.widget.Toast
 import com.monet.app.databinding.ActivityMainBinding
 import com.monet.app.databinding.AdviewLayoutBinding
-import com.monet.app.databinding.NativeLayoutBinding
 
 abstract class BaseActivity : AppCompatActivity() {
   protected lateinit var binding: ActivityMainBinding

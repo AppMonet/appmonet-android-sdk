@@ -2,7 +2,6 @@ package com.monet.bidder
 
 import android.content.ActivityNotFoundException
 import android.content.Context
-import com.monet.ValueCallback
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdRequest.Builder
 import com.google.android.gms.ads.AdView
@@ -10,7 +9,13 @@ import com.google.android.gms.ads.InterstitialAd
 import com.google.android.gms.ads.doubleclick.PublisherAdRequest
 import com.google.android.gms.ads.doubleclick.PublisherAdView
 import com.google.android.gms.ads.doubleclick.PublisherInterstitialAd
-import com.monet.Callback
+import com.monet.AdRequestWrapper
+import com.monet.AdServerAdRequest
+import com.monet.AdServerAdView
+import com.monet.DFPAdRequest
+import com.monet.DFPAdViewRequest
+import com.monet.PublisherAdRequestWrapper
+import com.monet.ValueCallback
 import com.monet.bidder.Constants.MISSING_INIT_ERROR_MESSAGE
 
 /**
@@ -20,7 +25,7 @@ internal class SdkManager constructor(
   context: Context,
   applicationId: String?
 ) : BaseManager(
-    context, applicationId, DFPAdServerWrapper()
+    context, applicationId, DFPAdServerWrapper(context.applicationContext)
 ) {
   var isPublisherAdView = true
   fun addBids(
@@ -28,7 +33,7 @@ internal class SdkManager constructor(
     adRequest: AdRequest?,
     appMonetAdUnitId: String?,
     timeout: Int,
-    onDone: ValueCallback<AdRequest?>
+    onDone: ValueCallback<AdRequest>
   ) {
     auctionManager.timedCallback(timeout, object : TimedCallback {
       override fun execute(remainingTime: Int) {
@@ -36,13 +41,14 @@ internal class SdkManager constructor(
         isPublisherAdView = false
         val dfpAdView = DFPAdView(adView)
         dfpAdView.adUnitId = appMonetAdUnitId!!
-        auctionManager.addBids(dfpAdView, DFPAdViewRequest(adRequest!!), remainingTime
+        auctionManager.addBids(
+            dfpAdView, DFPAdViewRequest(AdRequestWrapper(adRequest!!)), remainingTime
         ) { value ->
           if (value == null) {
             onDone.onReceiveValue(adRequest)
             return@addBids
           }
-          onDone.onReceiveValue((value as DFPAdViewRequest).dfpRequest)
+          onDone.onReceiveValue((value as DFPAdViewRequest).adRequest.request as AdRequest)
         }
       }
 
@@ -56,9 +62,9 @@ internal class SdkManager constructor(
   }
 
   fun addBids(
-    adView: PublisherAdView?,
+    adView: PublisherAdView,
     adRequest: PublisherAdRequest,
-    appMonetAdUnitId: String?,
+    appMonetAdUnitId: String,
     timeout: Int,
     onDone: ValueCallback<PublisherAdRequest>
   ) {
@@ -89,13 +95,12 @@ internal class SdkManager constructor(
   ) {
     auctionManager.timedCallback(timeout, object : TimedCallback {
       override fun execute(remainingTime: Int) {
-        val ctx = context.get()
-        if (ctx == null) {
+        if (context == null) {
           sLogger.warn("failed to bind context. Returning")
           onDone.onReceiveValue(adRequest)
           return
         }
-        if (!isInterstitialActivityRegistered(ctx, MonetDfpActivity::class.java.name)) {
+        if (!isInterstitialActivityRegistered(context, MonetDfpActivity::class.java.name)) {
           val error = """
                     Unable to create activity. Not defined in AndroidManifest.xml. Please refer to https://docs.appmonet.com/ for integration infomration.
 
@@ -128,7 +133,7 @@ internal class SdkManager constructor(
     adRequest: AdRequest?,
     appMonetAdUnitId: String?,
     timeout: Int,
-    onDone: ValueCallback<AdRequest?>
+    onDone: ValueCallback<AdRequest>
   ) {
     auctionManager.timedCallback(timeout, object : TimedCallback {
       override fun execute(remainingTime: Int) {
@@ -136,7 +141,8 @@ internal class SdkManager constructor(
         isPublisherAdView = false
         val dfpInterstitialAdView = DFPInterstitialAdView(interstitialAd)
         dfpInterstitialAdView.adUnitId = appMonetAdUnitId!!
-        auctionManager.addBids(dfpInterstitialAdView, DFPAdViewRequest(adRequest!!),
+        auctionManager.addBids(
+            dfpInterstitialAdView, DFPAdViewRequest(AdRequestWrapper(adRequest!!)),
             remainingTime
         ) { value ->
           if (value == null) {
@@ -145,7 +151,7 @@ internal class SdkManager constructor(
             return@addBids
           }
           sLogger.debug("value is valid")
-          onDone.onReceiveValue((value as DFPAdViewRequest).dfpRequest)
+          onDone.onReceiveValue((value as DFPAdViewRequest).adRequest.request as AdRequest)
         }
       }
 
@@ -166,8 +172,7 @@ internal class SdkManager constructor(
   ) {
     auctionManager.timedCallback(timeout, object : TimedCallback {
       override fun execute(remainingTime: Int) {
-        val ctx = context.get()
-        if (ctx == null) {
+        if (context == null) {
           sLogger.warn("failed to bind context. Returning")
           onDone.onReceiveValue(adRequest)
           return
@@ -196,11 +201,11 @@ internal class SdkManager constructor(
     dfpPublisherAdView.adUnitId = appMonetAdUnitId
     val localAdRequest = adRequest ?: PublisherAdRequest.Builder().build()
     val request = auctionManager.addBids(
-        dfpPublisherAdView, DFPAdRequest(localAdRequest)
+        dfpPublisherAdView, DFPAdRequest(PublisherAdRequestWrapper(localAdRequest))
     ) as DFPAdRequest
 
     // if the request is null, just pass through the original
-    return request.dfpRequest
+    return request.dfpRequest.request as PublisherAdRequest
   }
 
   fun addBids(
@@ -210,9 +215,9 @@ internal class SdkManager constructor(
     val localAdRequest = adRequest ?: PublisherAdRequest.Builder().build()
     val dfpPublisherAdView = DFPPublisherAdView(appMonetAdUnitId)
     val request = auctionManager.addBids(
-        dfpPublisherAdView, DFPAdRequest(localAdRequest)
+        dfpPublisherAdView, DFPAdRequest(PublisherAdRequestWrapper(localAdRequest))
     ) as DFPAdRequest
-    return request.dfpRequest
+    return request.dfpRequest.request as PublisherAdRequest
   }
 
   private fun generateAddBidsParams(
@@ -221,8 +226,9 @@ internal class SdkManager constructor(
     timeout: Int,
     onDone: ValueCallback<PublisherAdRequest>
   ): AddBidsParams {
-    return AddBidsParams(adServerAdView,
-        DFPAdRequest(getPublisherAdRequest(adRequest)),
+    return AddBidsParams(
+        adServerAdView,
+        DFPAdRequest(PublisherAdRequestWrapper(getPublisherAdRequest(adRequest))),
         timeout
     ) { adServerAdRequest: AdServerAdRequest? ->
       if (adServerAdRequest == null) {
@@ -231,7 +237,9 @@ internal class SdkManager constructor(
         return@AddBidsParams
       }
       sLogger.debug("value is valid")
-      onDone.onReceiveValue((adServerAdRequest as DFPAdRequest).dfpRequest)
+      onDone.onReceiveValue(
+          (adServerAdRequest as DFPAdRequest).dfpRequest.request as PublisherAdRequest
+      )
     }
   }
 

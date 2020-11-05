@@ -195,12 +195,12 @@ class DeviceData : CommonDeviceData {
     if (infoDict == nil) {
       return skAdNetworkItems;
     }
-    val adNetworkItems = infoDict?.get("SKAdNetworkItems") as List<*>
+    val adNetworkItems = infoDict?.get("SKAdNetworkItems") as List<*>?
     if (adNetworkItems == nil) {
       return skAdNetworkItems;
     }
 
-    adNetworkItems.forEach { item ->
+    adNetworkItems?.forEach { item ->
       if (item is Map<*, *>) {
         val skAdNetworkIdentifier = item["SKAdNetworkIdentifier"]
         skAdNetworkIdentifier?.let {
