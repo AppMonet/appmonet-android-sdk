@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Message
 import android.view.MotionEvent
-import android.view.View
 import android.view.View.GONE
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
@@ -45,8 +44,9 @@ import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.bidder.bid.Pixel
 import com.monet.bidder.callbacks.ReadyCallbackManager
 import com.monet.bidder.threading.InternalRunnable
-import com.monet.bidder.threading.UIThread
 import com.monet.threading.BackgroundThread
+import com.monet.threading.ThreadRunnable
+import com.monet.threading.UIThread
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.HashMap
@@ -75,7 +75,7 @@ class AdViewManager : AdViewManagerCallback {
   private var hasAdVieTouchStarted = false
   private var hasSeenV2VastEvent = false
 
-  private var finishLoadChecker: Runnable? = null
+  private var finishLoadChecker: ThreadRunnable? = null
   private var interceptor: WebView? = null
   override var urlOpeningMethod: String = "browser"
   override var wasAdViewClicked = false
@@ -231,15 +231,9 @@ class AdViewManager : AdViewManagerCallback {
   }
 
   override fun setBackgroundColor(color: String) {
-    uiThread.run(object : InternalRunnable() {
-      override fun runInternal() {
-        adView.setBackgroundColor(Color.parseColor(color))
-      }
-
-      override fun catchException(e: java.lang.Exception?) {
-        sLogger.warn("SBC: ", e!!.message)
-      }
-    })
+    uiThread.run {
+      adView.setBackgroundColor(Color.parseColor(color))
+    }
   }
 
   override fun setBooleanValue(
@@ -265,17 +259,11 @@ class AdViewManager : AdViewManagerCallback {
   }
 
   override fun enableThirdPartyCookies(enabled: Boolean) {
-    uiThread.run(object : InternalRunnable() {
-      override fun runInternal() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-          CookieManager.getInstance().setAcceptThirdPartyCookies(adView, enabled)
-        }
+    uiThread.run {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        CookieManager.getInstance().setAcceptThirdPartyCookies(adView, enabled)
       }
-
-      override fun catchException(e: Exception?) {
-        sLogger.warn("sTPC err: ", e!!.message)
-      }
-    })
+    }
   }
 
   override fun checkOverride(
@@ -463,17 +451,10 @@ class AdViewManager : AdViewManagerCallback {
       sLogger.warn("impression available while in unavailable state. Stopping")
       return
     }
-    uiThread.run(object : InternalRunnable() {
-      override fun runInternal() {
-        containerView.activateRefresh(bidToBeTracked, adServerListener)
-        adServerListener?.onAdLoaded(containerView)
-      }
-
-      override fun catchException(e: java.lang.Exception?) {
-        sLogger.error("Failed to call onAdLoaded: " + e!!.localizedMessage)
-        adServerListener?.onAdError(AdServerBannerListener.ErrorCode.INTERNAL_ERROR)
-      }
-    })
+    uiThread.run {
+      containerView.activateRefresh(bidToBeTracked, adServerListener)
+      adServerListener?.onAdLoaded(containerView)
+    }
   }
 
   override fun openUrl(url: String) {
@@ -597,15 +578,10 @@ class AdViewManager : AdViewManagerCallback {
   fun destroyRaw() {
     // we need to get onto the UI thread
     // in order to destroy the webview
-    uiThread.run(object : InternalRunnable() {
-      override fun runInternal() {
-        destroyInterceptor()
-        destroy()
-      }
-
-      override fun catchException(e: Exception?) {}
-    })
-
+    uiThread.run {
+      destroyInterceptor()
+      destroy()
+    }
   }
 
   fun destroySafely(bid: BidResponse) {
@@ -614,14 +590,8 @@ class AdViewManager : AdViewManagerCallback {
       return
     }
 
-    uiThread.runDelayed(object : InternalRunnable() {
-      override fun runInternal() {
-        this@AdViewManager.destroy()
-      }
-
-      override fun catchException(e: java.lang.Exception?) {
-        //do nothing
-      }
+    uiThread.runDelayed({
+      this@AdViewManager.destroy()
     }, bid.cool.toLong())
   }
 
@@ -787,8 +757,8 @@ class AdViewManager : AdViewManagerCallback {
   }
 
   private fun clearFinishLoadTimeout() {
-    if (finishLoadChecker != null) {
-      uiThread.removeCallbacks(finishLoadChecker!!)
+    finishLoadChecker?.let {
+      uiThread.removeCallbacks(it)
     }
   }
 
@@ -801,14 +771,10 @@ class AdViewManager : AdViewManagerCallback {
   }
 
   fun detachHidden() {
-    uiThread.run(object : InternalRunnable() {
-      override fun runInternal() {
-        setVisibilityState(true)
-        removeFromParent()
-      }
-
-      override fun catchException(e: java.lang.Exception?) {}
-    })
+    uiThread.run {
+      setVisibilityState(true)
+      removeFromParent()
+    }
   }
 
   @SuppressLint("SetJavaScriptEnabled")
@@ -896,34 +862,28 @@ class AdViewManager : AdViewManagerCallback {
     // we might not be attached to a view, so
     // run the handler on the main UI thread
     clearFinishLoadTimeout()
-    finishLoadChecker = object : InternalRunnable() {
-      override fun runInternal() {
-        if (adView.isDestroyed) {
-          return
-        }
-        if (state !== AdViewState.AD_RENDERED) {
-          return
-        }
-
-        // check to see if we are rendered
-        // or if we're still attached to the incorrect
-        // context :/
-        val parent: ViewParent = containerView.parent
-        if (parent != null) {
-          return
-        }
-        sLogger.warn("adView failed to attach to the ad container. Triggering failload")
-        if (parent == null) {
-          sLogger.warn("adView parent is null.")
-        }
-
-        // ad error will move us to loading anyway
-        adServerListener?.onAdError(AdServerBannerListener.ErrorCode.INTERNAL_ERROR)
+    finishLoadChecker = top@{
+      if (adView.isDestroyed) {
+        return@top
+      }
+      if (state !== AdViewState.AD_RENDERED) {
+        return@top
       }
 
-      override fun catchException(e: java.lang.Exception?) {
-        sLogger.error("failed to check finish load after timeout", e!!.message)
+      // check to see if we are rendered
+      // or if we're still attached to the incorrect
+      // context :/
+      val parent: ViewParent = containerView.parent
+      if (parent != null) {
+        return@top
       }
+      sLogger.warn("adView failed to attach to the ad container. Triggering failload")
+      if (parent == null) {
+        sLogger.warn("adView parent is null.")
+      }
+
+      // ad error will move us to loading anyway
+      adServerListener?.onAdError(AdServerBannerListener.ErrorCode.INTERNAL_ERROR)
     }
   }
 
@@ -931,13 +891,8 @@ class AdViewManager : AdViewManagerCallback {
     if (adServerListener == null) return
     sLogger.debug("Native click detected")
     wasAdViewClicked = true
-    uiThread.runDelayed(object : InternalRunnable() {
-      override fun runInternal() {
-        wasAdViewClicked = false
-      }
-
-      override fun catchException(e: Exception?) {//do nothing
-      }
+    uiThread.runDelayed({
+      wasAdViewClicked = false
     }, 3000) // 3s.. very long!
   }
 

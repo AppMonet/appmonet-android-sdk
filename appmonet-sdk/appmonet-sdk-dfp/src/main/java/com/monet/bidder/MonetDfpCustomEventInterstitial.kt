@@ -23,6 +23,7 @@ import com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
+import com.monet.MediationCallback
 import com.monet.adview.AdSize
 import com.monet.bidder.callbacks.Callback
 
@@ -102,17 +103,22 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
           .mediationManager
           .getBidForMediation(adUnitId, floorCpm)
     }
+    val configurationTimeOut =
+      sdkManager!!.auctionManager.getSdkConfigurations().getAdUnitTimeout(adUnitId)
     val mediationManager = sdkManager!!.auctionManager.mediationManager
-    mediationManager.getBidReadyForMediationAsync(bid, adUnitId, adSize, INTERSTITIAL,
-        floorCpm, object : Callback<BidResponse> {
-      override fun onSuccess(response: BidResponse) {
-        setupBid(context, response, customEventInterstitialListener!!)
-      }
-
-      override fun onError() {
-        customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
-      }
-    })
+    mediationManager.getBidReadyForMediationAsync(
+        bid, adUnitId, adSize, INTERSTITIAL,
+        floorCpm,
+        top@{ response, error ->
+          if (error != null) {
+            customEventInterstitialListener!!.onAdFailedToLoad(AdRequest.ERROR_CODE_NO_FILL)
+            return@top
+          }
+          if (response != null) {
+            setupBid(context, response, customEventInterstitialListener!!)
+          }
+        }, configurationTimeOut, 4000
+    )
   }
 
   private fun setupBid(

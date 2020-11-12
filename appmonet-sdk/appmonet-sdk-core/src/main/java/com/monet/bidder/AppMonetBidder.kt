@@ -13,12 +13,12 @@ import com.monet.BidResponse
 import com.monet.BidResponse.Constant.BID_BUNDLE_KEY
 import com.monet.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
-import com.monet.bidder.threading.UIThread
 import com.monet.AdServerWrapper
 import com.monet.AdType
 import com.monet.AdServerAdView
 import com.monet.AdServerAdRequest
 import com.monet.RequestData
+import com.monet.threading.UIThread
 
 /**
  * Created by jose on 8/28/17.
@@ -128,25 +128,23 @@ class AppMonetBidder(
       attachBidAsync(
           adView, otherRequest, timeout
       ) { value: AuctionRequest? ->
-        uiThread.run(object : InternalRunnable() {
-          override fun runInternal() {
+        uiThread.run top@{
+          try {
             auctionManagerCallback.trackRequest(adView.adUnitId, "addBidsAsync")
             if (value == null) {
               sLogger.info("no bid returned from js")
               addBidsNoFill(adView.adUnitId)
               onDone(otherRequest)
-              return
+              return@top
             }
             val newRequest = buildRequest(value, adView.type)
             sLogger.debug("passing bid to main thread")
             addBidsNoFill(adView.adUnitId)
             onDone(newRequest)
-          }
-
-          override fun catchException(e: Exception?) {
+          } catch (e: Exception) {
             onDone(otherRequest)
           }
-        })
+        }
       }
     }
   }

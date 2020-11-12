@@ -1,6 +1,5 @@
 package com.monet.bidder
 
-import android.webkit.ValueCallback
 import com.monet.Callback
 import com.monet.bidder.adview.AdViewContext
 import com.monet.bidder.adview.AdViewManager
@@ -11,7 +10,6 @@ import com.monet.BidResponse
 import com.monet.bidder.callbacks.ReadyCallbackManager
 import com.monet.bidder.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
-import com.monet.bidder.threading.UIThread
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk

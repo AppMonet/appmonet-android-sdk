@@ -5,7 +5,6 @@ import android.os.SystemClock
 import android.text.TextUtils
 import android.webkit.JavascriptInterface
 import com.monet.Callback
-import com.monet.BidResponse
 import com.monet.BidResponses.Mapper
 import com.monet.bidder.BaseManager
 import com.monet.bidder.CookieManager.Companion.instance
@@ -23,7 +22,7 @@ import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.bid.BidManager
 import com.monet.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
-import com.monet.bidder.threading.UIThread
+import com.monet.threading.UIThread
 import org.json.JSONException
 import org.json.JSONObject
 import java.security.MessageDigest
@@ -216,16 +215,10 @@ class MonetJsInterface(
     cb: String?
   ) {
     // must be async since getUrl accesses the webView
-    uiThread.run(object : InternalRunnable() {
-      override fun runInternal() {
-        val url = adViewPoolManager.getUrl(wvUUID!!)
-        auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, WebViewUtils.quote(url)))
-      }
-
-      override fun catchException(e: Exception?) {
-        sLogger.warn("Unable to get url", e!!.message)
-      }
-    })
+    uiThread.run {
+      val url = adViewPoolManager.getUrl(wvUUID!!)
+      auctionManagerCallback.executeCode(String.format(JS_CALLBACK, cb, WebViewUtils.quote(url)))
+    }
   }
 
   @JavascriptInterface fun getNetworkCount(wvUUID: String?): String {

@@ -9,7 +9,6 @@ import com.monet.bidder.adview.AdViewPoolManagerCallback
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.bidder.callbacks.ReadyCallbackManager
 import com.monet.bidder.threading.BackgroundThread
-import com.monet.bidder.threading.UIThread
 
 internal data class AdViewManagerTestComponent(val adSize: AdSize,
                                                val adServerWrapper: AdServerWrapper,

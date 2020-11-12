@@ -5,11 +5,12 @@ import com.monet.AdType.NATIVE
 import com.monet.bidder.Constants.BIDS_KEY
 import com.monet.bidder.CustomEventUtil.getAdUnitId
 import com.monet.bidder.CustomEventUtil.getServerExtraCpm
-import com.monet.bidder.MediationManager.NoBidsFoundException
-import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
+import com.monet.MediationManager
+import com.monet.MediationManager.NoBidsFoundException
+import com.monet.MediationManager.NullBidException
 import com.monet.adview.AdSize
 import com.mopub.nativeads.CustomEventNative
 import com.mopub.nativeads.NativeErrorCode.NETWORK_NO_FILL
@@ -51,12 +52,12 @@ open class CustomEventNative : CustomEventNative() {
     } catch (e: JSONException) {
       // Exception
     }
+    val mediationManager = sdkManager.auctionManager.mediationManager
     val serverExtraCpm = getServerExtraCpm(serverExtras, 0.0)
     if (headerBiddingBid == null) {
-      headerBiddingBid = sdkManager.auctionManager.mediationManager
+      headerBiddingBid = mediationManager
           .getBidForMediation(adUnitId, serverExtraCpm)
     }
-    val mediationManager = MediationManager(sdkManager, sdkManager.auctionManager.bidManager)
     try {
       val bid = mediationManager.getBidReadyForMediation(
           headerBiddingBid, adUnitId, adSize,

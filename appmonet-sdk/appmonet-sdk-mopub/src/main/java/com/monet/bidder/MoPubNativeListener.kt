@@ -53,12 +53,12 @@ internal class MoPubNativeListener(
 
   @SuppressLint("infer") override fun onAdLoaded(view: View?): Boolean {
     try {
-      SdkManager.get()?.uiThread?.run(object : InternalRunnable() {
-        override fun runInternal() {
+      SdkManager.get()?.uiThread?.run top@{
+        try {
           val viewLayout = view as AppMonetViewLayout
           if (staticNativeAd != null && viewLayout.isAdRefreshed) {
             staticNativeAd!!.swapViews(viewLayout, this@MoPubNativeListener)
-            return
+            return@top
           }
           staticNativeAd = AppMonetStaticNativeAd(
               serverExtras, view, ImpressionTracker(context),
@@ -69,30 +69,14 @@ internal class MoPubNativeListener(
             }
 
             override fun onClick(view: View?) {
-              // Obtain MotionEvent object
-              val x = view!!.width / 2f
-              val y = view.height / 2f
-              val metaState = 0
-              val actionDown = MotionEvent.obtain(
-                  SystemClock.uptimeMillis(),
-                  SystemClock.uptimeMillis() + 100, MotionEvent.ACTION_DOWN, x, y, metaState
-              )
-              view.dispatchTouchEvent(actionDown)
-              val actionUp = MotionEvent.obtain(
-                  SystemClock.uptimeMillis() + 150,
-                  SystemClock.uptimeMillis() + 250, MotionEvent.ACTION_UP, x, y, metaState
-              )
-              view.dispatchTouchEvent(actionUp)
             }
           })
           staticNativeAd!!.loadAd()
-        }
-
-        override fun catchException(e: Exception?) {
-          sLogger.warn("failed to finish on view: ", e!!.message)
+        } catch (e: Exception) {
+          sLogger.warn("failed to finish on view: ", e.message)
           mListener.onNativeAdFailed(UNEXPECTED_RESPONSE_CODE)
         }
-      })
+      }
     } catch (e: Exception) {
       sLogger.error("error while loading into MoPub", e.message)
       onAdError(INTERNAL_ERROR)

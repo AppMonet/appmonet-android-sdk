@@ -9,14 +9,12 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
-import androidx.core.content.ContextCompat
 import com.monet.bidder.WebViewUtils.quote
 import com.monet.bidder.adview.AdView
 import com.monet.bidder.adview.AdViewClient
 import com.monet.bidder.adview.AdViewContext
 import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
-import com.monet.bidder.adview.AdViewManager.Companion
 import com.monet.bidder.adview.AdViewPoolManagerCallback
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.BidResponse
@@ -24,10 +22,8 @@ import com.monet.bidder.bid.Pixel
 import com.monet.bidder.callbacks.ReadyCallbackManager
 import com.monet.bidder.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
-import com.monet.bidder.threading.UIThread
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
 import junit.framework.Assert.assertEquals

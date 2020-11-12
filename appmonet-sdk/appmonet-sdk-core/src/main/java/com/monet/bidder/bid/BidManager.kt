@@ -5,6 +5,7 @@ import androidx.annotation.VisibleForTesting
 import com.monet.BidResponse
 import com.monet.AdServerAdRequest
 import com.monet.AdServerAdView
+import com.monet.IBidManager
 import com.monet.bidder.Constants.JSMethods
 import com.monet.bidder.Constants.PubSub
 import com.monet.bidder.Constants.PubSub.Topics
@@ -26,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Created by jose on 8/28/17.
  */
-class BidManager : Subscriber {
+class BidManager : Subscriber, IBidManager {
   private val store: MutableMap<String?, PriorityQueue<BidResponse>?>
   private val adUnitNameMapping: MutableMap<String, String?>
   private val bidIdsByAdView: MutableMap<String, MutableList<String?>?>
@@ -443,7 +444,7 @@ class BidManager : Subscriber {
     return bid
   }
 
-  fun peekNextBid(adUnitId: String?): BidResponse? {
+  override fun peekNextBid(adUnitId: String?): BidResponse? {
     return peekBidForAdUnit(adUnitId)
   }
 
@@ -608,7 +609,7 @@ class BidManager : Subscriber {
     return ttl(bid) < getExpiration(bid)
   }
 
-  fun isValid(bid: BidResponse?): Boolean {
+  override fun isValid(bid: BidResponse?): Boolean {
     return bid != null && !isUsed(bid) && hasNotExpired(bid)
         && bid.adm.isNotEmpty() && renderWebViewExists(bid)
   }

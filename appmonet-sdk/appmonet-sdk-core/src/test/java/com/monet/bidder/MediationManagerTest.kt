@@ -6,7 +6,6 @@ import com.monet.bidder.bid.BidManager
 import com.monet.BidResponse
 import com.monet.bidder.callbacks.Callback
 import com.monet.bidder.threading.InternalRunnable
-import com.monet.bidder.threading.UIThread
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk

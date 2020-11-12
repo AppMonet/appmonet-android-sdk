@@ -159,32 +159,33 @@ class CustomEventInterstitial : BaseAd() {
         sdkManager!!.auctionManager.mediationManager.getBidForMediation(adUnitId, floorCpm)
     }
     val mediationManager = sdkManager!!.auctionManager.mediationManager
-    mediationManager.getBidReadyForMediationAsync(headerBiddingBid, adUnitId, adSize,
-        INTERSTITIAL, floorCpm, object : Callback<BidResponse> {
-      override fun onSuccess(response: BidResponse) {
-        mContext = context
-        bidResponse = response
-        val listener: AdServerBannerListener = MonetInterstitialListener(
-            mLoadListener, mInteractionListener, adUnitId,
-            context, sdkManager!!
-        )
-        if (bidResponse!!.interstitial != null && bidResponse!!.interstitial!!
-                .trusted
-        ) {
-          listener.onAdLoaded(null)
-          return
-        }
-        mAdView = BidRenderer.renderBid(context, sdkManager!!, bidResponse!!, null, listener)
-        if (mAdView == null) {
-          logger.error("unexpected: could not generate the adView")
-          onMoPubError(INTERNAL_ERROR)
-        }
-      }
-
-      override fun onError() {
+    val configurationTimeOut =
+      sdkManager!!.auctionManager.getSdkConfigurations().getAdUnitTimeout(adUnitId)
+    mediationManager.getBidReadyForMediationAsync(
+        headerBiddingBid, adUnitId, adSize,
+        INTERSTITIAL, floorCpm, top@{ response, error ->
+      if (error != null) {
         onMoPubError(NETWORK_NO_FILL)
       }
-    })
+      mContext = context
+      bidResponse = response
+      val listener: AdServerBannerListener = MonetInterstitialListener(
+          mLoadListener, mInteractionListener, adUnitId,
+          context, sdkManager!!
+      )
+      if (bidResponse!!.interstitial != null && bidResponse!!.interstitial!!
+              .trusted
+      ) {
+        listener.onAdLoaded(null)
+        return@top
+      }
+      mAdView = BidRenderer.renderBid(context, sdkManager!!, bidResponse!!, null, listener)
+      if (mAdView == null) {
+        logger.error("unexpected: could not generate the adView")
+        onMoPubError(INTERNAL_ERROR)
+      }
+    }, configurationTimeOut, 4000
+    )
   }
 
   private fun onMoPubError(error: MoPubErrorCode) {

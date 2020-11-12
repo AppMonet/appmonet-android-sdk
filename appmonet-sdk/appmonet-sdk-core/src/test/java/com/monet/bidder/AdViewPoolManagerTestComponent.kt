@@ -6,8 +6,6 @@ import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.bidder.threading.BackgroundThread
-import com.monet.bidder.threading.UIThread
-import io.mockk.mockk
 
 internal data class AdViewPoolManagerTestComponent(
   val adViewPoolManager: AdViewPoolManager,

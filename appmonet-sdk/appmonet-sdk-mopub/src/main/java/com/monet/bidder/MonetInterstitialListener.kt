@@ -54,17 +54,15 @@ internal class MonetInterstitialListener(
 
   override fun onAdLoaded(view: View?): Boolean {
     try {
-      sdkManager.uiThread.run(object : InternalRunnable() {
-        override fun runInternal() {
+      sdkManager.uiThread.run {
+        try {
           MoPubLog.log(adUnitId, LOAD_SUCCESS, CustomEventInterstitial.ADAPTER_NAME)
           mLoadListener?.onAdLoaded()
-        }
-
-        override fun catchException(e: Exception?) {
-          sLogger.warn("failed to finish on view: ", e!!.message)
+        } catch (e: Exception) {
+          sLogger.warn("failed to finish on view: ", e.message)
           onAdError(INTERNAL_ERROR)
         }
-      })
+      }
     } catch (e: Exception) {
       sLogger.error("error while loading into MoPub", e.message)
       onAdError(INTERNAL_ERROR)

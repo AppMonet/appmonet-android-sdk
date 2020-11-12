@@ -4,7 +4,6 @@ import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.auction.AuctionManager
 import com.monet.bidder.bid.BidManager
 import com.monet.bidder.callbacks.ReadyCallbackManager
-import com.monet.bidder.threading.UIThread
 
 internal data class AuctionManagerTestComponent(
   val addBidsManager: AddBidsManager,

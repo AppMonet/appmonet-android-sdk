@@ -62,17 +62,17 @@ internal class MoPubBannerListener(
 
     view?.let {
       try {
-        sdkManager.uiThread.run(object : InternalRunnable() {
-          override fun runInternal() {
+        sdkManager.uiThread.run top@{
+          try {
             val viewLayout = view as AppMonetViewLayout?
             val currentView = viewListener.currentView
             if (viewLayout?.isAdRefreshed == true) {
               currentView?.swapViews(viewLayout, this@MoPubBannerListener)
-              return
+              return@top
             }
             if (sdkManager.currentActivity == null && FLOATING_AD_TYPE == mBid.adType) {
               onAdError(NO_FILL)
-              return
+              return@top
             }
             val factory = AdViewLoadedFactory()
             moPubAdViewContainer = factory.getAdView(
@@ -80,13 +80,11 @@ internal class MoPubBannerListener(
             )
             mListener?.onAdLoaded()
             MoPubLog.log(adUnitId, LOAD_SUCCESS, CustomEventBanner.ADAPTER_NAME)
-          }
-
-          override fun catchException(e: Exception?) {
+          } catch (e: Exception) {
             sLogger.warn("failed to finish on view: ", e!!.message)
             onAdError(INTERNAL_ERROR)
           }
-        })
+        }
       } catch (e: Exception) {
         sLogger.error("error while loading into MoPub", e.message)
         onAdError(INTERNAL_ERROR)

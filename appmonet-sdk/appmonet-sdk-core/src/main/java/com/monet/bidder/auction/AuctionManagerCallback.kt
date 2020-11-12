@@ -1,11 +1,14 @@
 package com.monet.bidder.auction
 
+import com.monet.AdServerAdRequest
+import com.monet.BidResponse
 import com.monet.Callback
 import com.monet.DeviceData
-import com.monet.bidder.*
+import com.monet.MediationManager
+import com.monet.bidder.AppMonetWebView
+import com.monet.bidder.SdkConfigurations
 import com.monet.bidder.adview.AdViewManager
-import com.monet.BidResponse
-import com.monet.AdServerAdRequest
+
 /**
  * Interface to be implemented for controlling and retrieving aspects of an auction.
  */

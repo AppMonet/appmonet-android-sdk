@@ -28,7 +28,6 @@ import com.monet.bidder.bid.BidManager
 import com.monet.bidder.callbacks.ReadyCallbackManager
 import com.monet.threading.BackgroundThread
 import com.monet.bidder.threading.InternalRunnable
-import com.monet.bidder.threading.UIThread
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.*
@@ -39,6 +38,8 @@ import com.monet.adview.AdSize
 import com.monet.AdServerWrapper
 import com.monet.AdServerAdRequest
 import com.monet.AdServerAdView
+import com.monet.MediationManager
+import com.monet.threading.UIThread
 
 class AuctionManager : Subscriber, AuctionManagerCallback {
   override val mediationManager: MediationManager
@@ -89,38 +90,34 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
         this
     )
 
-    mediationManager = MediationManager(baseManager, bidManager)
+
+    mediationManager = MediationManager(bidManager, baseManager, uiThread)
     this.addBidsManager = AddBidsManager(auctionManagerReadyCallbacks)
     this.appMonetContext = appMonetContext
     appMonetBidder = AppMonetBidder(
         bidManager, adServerWrapper, this, backgroundThread, uiThread
     )
     setPreferencesListener(preferences)
-    val runnable: Runnable = object : InternalRunnable() {
-      override fun runInternal() {
-        Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
-        val webViewParams = AuctionWebViewParams(
-            RenderingUtils.getDefaultAuctionURL(deviceData),
-            preferences,
-            appMonetContext
-        )
-        val auctionJsInterface = MonetJsInterface(
-            baseManager, uiThread, backgroundThread,
-            webViewParams, this@AuctionManager, preferences,
-            remoteConfiguration
-        )
-        setup(
-            AuctionWebView(
-                context, auctionJsInterface, webViewParams,
-                sdkConfiguration
-            )
-        )
-        start(context)
-      }
-
-      override fun catchException(e: Exception?) {}
+    uiThread.run {
+      Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
+      val webViewParams = AuctionWebViewParams(
+          RenderingUtils.getDefaultAuctionURL(deviceData),
+          preferences,
+          appMonetContext
+      )
+      val auctionJsInterface = MonetJsInterface(
+          baseManager, uiThread, backgroundThread,
+          webViewParams, this@AuctionManager, preferences,
+          remoteConfiguration
+      )
+      setup(
+          AuctionWebView(
+              context, auctionJsInterface, webViewParams,
+              sdkConfiguration
+          )
+      )
+      start(context)
     }
-    uiThread.run(runnable)
     pubSubService.addSubscriber(Constants.PubSub.Topics.BIDS_INVALIDATED_REASON_TOPIC, this)
   }
 
@@ -267,19 +264,13 @@ class AuctionManager : Subscriber, AuctionManagerCallback {
     onLoad: Callback<AdViewManager>
   ) {
     val context = AdViewContext(url, ua, width, height, adUnitId)
-    uiThread.run(object : InternalRunnable() {
-      override fun runInternal() {
-        val adViewManager: AdViewManager = adViewPoolManager.request(context)
-        if (!adViewManager.isLoaded) {
-          adViewManager.load()
-        }
-        onLoad(adViewManager)
+    uiThread.run {
+      val adViewManager: AdViewManager = adViewPoolManager.request(context)
+      if (!adViewManager.isLoaded) {
+        adViewManager.load()
       }
-
-      override fun catchException(e: Exception?) {
-        sLogger.error("LoadHelper exception: " + e!!.message)
-      }
-    })
+      onLoad(adViewManager)
+    }
   }
 
   override fun markBidAsUsed(bid: BidResponse) {

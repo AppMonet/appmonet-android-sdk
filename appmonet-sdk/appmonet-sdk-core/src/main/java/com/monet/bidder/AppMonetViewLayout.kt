@@ -8,14 +8,14 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.monet.AdType.BANNER
-import com.monet.bidder.MediationManager.NoBidsFoundException
-import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.adview.AdViewPoolManagerCallback
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.BidResponse
 import com.monet.BidResponse.Constant.FLOATING_AD_TYPE
+import com.monet.MediationManager.NoBidsFoundException
+import com.monet.MediationManager.NullBidException
 import com.monet.adview.AdSize
 import java.lang.ref.WeakReference
 

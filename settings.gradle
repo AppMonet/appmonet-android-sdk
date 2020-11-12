@@ -1,8 +1,8 @@
 include ':appmonet-sdk-mopub-kmm:base'
-include ':appmonet-sdk-mopub-kmm:fat'
+include ':appmonet-sdk-mopub-kmm:mopub-kmm'
 
 include ':appmonet-sdk-dfp-kmm:base'
-include ':appmonet-sdk-dfp-kmm:fat'
+include ':appmonet-sdk-dfp-kmm:dfp-kmm'
 
 include ':appmonet-sdk-core-kmm'
 

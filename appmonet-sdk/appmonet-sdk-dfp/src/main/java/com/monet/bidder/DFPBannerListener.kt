@@ -10,7 +10,7 @@ import com.monet.bidder.AdServerBannerListener.ErrorCode.NO_FILL
 import com.monet.bidder.AdServerBannerListener.ErrorCode.TIMEOUT
 import com.monet.bidder.AdServerBannerListener.ErrorCode.UNKNOWN
 import com.monet.bidder.threading.InternalRunnable
-import com.monet.bidder.threading.UIThread
+import com.monet.threading.UIThread
 
 /**
  * This wraps the DFP [CustomEventBannerListener]. It's instantiated
@@ -73,22 +73,16 @@ internal class DFPBannerListener(
    * @return boolean indicating if the load was successful, or if another error was encountered.
    */
   override fun onAdLoaded(view: View?): Boolean {
-    uiThread.run(object : InternalRunnable() {
-      override fun runInternal() {
-        val viewLayout = view as AppMonetViewLayout?
-        val currentView = viewListener.currentView
-        if (viewLayout?.isAdRefreshed == true) {
-          currentView?.swapViews(viewLayout, this@DFPBannerListener)
-          return
-        }
-        sLogger.debug("DFP: Ad Loaded - Indicating to DFP")
-        mListener.onAdLoaded(view)
+    uiThread.run top@{
+      val viewLayout = view as AppMonetViewLayout?
+      val currentView = viewListener.currentView
+      if (viewLayout?.isAdRefreshed == true) {
+        currentView?.swapViews(viewLayout, this@DFPBannerListener)
+        return@top
       }
-
-      override fun catchException(e: Exception?) {
-        sLogger.error("Exception caught: $e")
-      }
-    })
+      sLogger.debug("DFP: Ad Loaded - Indicating to DFP")
+      mListener.onAdLoaded(view)
+    }
     return true
   }
 

@@ -1,6 +1,7 @@
 package com.monet.bidder
 
 import com.monet.bidder.threading.InternalRunnable
+import com.monet.threading.ThreadRunnable
 import com.mopub.mobileads.DefaultBannerAdListener
 import com.mopub.mobileads.MoPubErrorCode
 import com.mopub.mobileads.MoPubView
@@ -15,18 +16,14 @@ internal class MopubBannerAdListener(
   private val manager: SdkManager
 ) : BannerAdListener {
   private val mOriginalListener: BannerAdListener = originalListener ?: DefaultBannerAdListener()
-  private var mRefreshTimer: Runnable? = null
+  private var mRefreshTimer: ThreadRunnable? = null
   fun setBannerRefreshTimer(banner: MoPubView?) {
     if (mRefreshTimer != null) {
       manager.uiThread.run(mRefreshTimer!!)
     }
-    mRefreshTimer = object : InternalRunnable() {
-      override fun runInternal() {
-        sLogger.debug("Attaching next bid (after load)")
-        manager.addBids(banner, mAdUnitId)
-      }
-
-      override fun catchException(e: Exception?) {}
+    mRefreshTimer = {
+      sLogger.debug("Attaching next bid (after load)")
+      manager.addBids(banner, mAdUnitId)
     }
 
     manager.uiThread.runDelayed(mRefreshTimer!!, REFRESH_TRY_DELAY.toLong())

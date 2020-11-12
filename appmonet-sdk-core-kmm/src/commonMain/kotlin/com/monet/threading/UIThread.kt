@@ -7,4 +7,6 @@ expect class UIThread() {
     runnable: ThreadRunnable,
     delay: Long
   )
+
+  fun removeCallbacks(runnable: ThreadRunnable)
 }

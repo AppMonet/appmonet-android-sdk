@@ -1,5 +1,6 @@
 package com.monet.bidder
 
+import com.monet.IBaseManager
 import android.app.Application
 import android.content.ComponentCallbacks
 import android.content.ComponentName
@@ -17,10 +18,11 @@ import com.monet.bidder.Constants.Configurations
 import com.monet.bidder.Constants.JSAppStates
 import com.monet.bidder.auction.AuctionManager
 import com.monet.bidder.exceptions.AppMonetInitException
-import com.monet.bidder.threading.UIThread
 import com.monet.threading.BackgroundThread
 import org.json.JSONObject
 import com.monet.AdServerWrapper
+import com.monet.threading.UIThread
+
 /**
  * The [BaseManager] abstract class provides a template for initializing all the objects
  * required by the sdk. This class should be extended by the different SSP flavors which can decide
@@ -31,7 +33,7 @@ open class BaseManager(
   context: Context,
   applicationId: String?,
   val adServerWrapper: AdServerWrapper
-) {
+) : IBaseManager {
   val context: Context = context.applicationContext
   private val remoteConfiguration = RemoteConfiguration(this.context, applicationId)
   private val backgroundThread = BackgroundThread()
@@ -174,25 +176,25 @@ open class BaseManager(
     }
   }
 
-  fun indicateRequestAsync(
-    adUnitId: String?,
+  override fun indicateRequestAsync(
+    adUnitId: String,
     timeout: Int,
     adSize: AdSize?,
-    adType: AdType?,
+    adType: AdType,
     floorCpm: Double,
     callback: Callback<String?>
   ) {
-    auctionManager.indicateRequestAsync(adUnitId!!, timeout, adSize, adType!!, floorCpm, callback)
+    auctionManager.indicateRequestAsync(adUnitId, timeout, adSize, adType, floorCpm, callback)
   }
 
-  fun indicateRequest(
-    adUnitId: String?,
+  override fun indicateRequest(
+    adUnitId: String,
     adSize: AdSize?,
-    adType: AdType?,
+    adType: AdType,
     floorCpm: Double
   ) {
     logState()
-    auctionManager.indicateRequest(adUnitId!!, adSize, adType!!, floorCpm)
+    auctionManager.indicateRequest(adUnitId, adSize, adType, floorCpm)
   }
 
   fun logState() {

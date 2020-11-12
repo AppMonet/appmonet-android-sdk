@@ -11,11 +11,12 @@ import com.google.android.gms.ads.mediation.customevent.CustomEventBanner
 import com.google.android.gms.ads.mediation.customevent.CustomEventBannerListener
 import com.monet.bidder.AdRequestFactory.fromMediationRequest
 import com.monet.AdType.BANNER
-import com.monet.bidder.MediationManager.NoBidsFoundException
-import com.monet.bidder.MediationManager.NullBidException
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
+import com.monet.MediationManager
+import com.monet.MediationManager.NoBidsFoundException
+import com.monet.MediationManager.NullBidException
 import com.monet.adview.AdSize
 
 class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListener {
@@ -121,7 +122,7 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
     if (bid == null || bid.id.isEmpty()) {
       bid = sdkManager!!.auctionManager.mediationManager.getBidForMediation(adUnitId, floorCpm)
     }
-    val mediationManager = MediationManager(sdkManager!!, sdkManager!!.auctionManager.bidManager)
+    val mediationManager = sdkManager!!.auctionManager.mediationManager
     try {
       bid = mediationManager.getBidReadyForMediation(
           bid, adUnitId, amAdSize, BANNER, floorCpm,

@@ -1,6 +1,7 @@
 package com.monet.bidder
 
 import android.os.Bundle
+import com.monet.adview.AdSize
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith

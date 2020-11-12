@@ -1,19 +1,16 @@
-package com.monet.bidder
+package com.monet
 
-import android.os.Bundle
-import com.monet.BidResponse
-import com.monet.BidResponse.Constant.BID_BUNDLE_KEY
+import com.monet.Constants.ADUNIT_KEYWORD_KEY
 import com.monet.adview.AdSize
-import com.monet.bidder.Constants.Dfp.ADUNIT_KEYWORD_KEY
 
-internal object DfpRequestHelper {
+object DFPAdRequestHelper {
   fun getAdUnitID(
-    customEventExtras: Bundle?,
+    customEventExtras: Map<String, Any>?,
     serverParameter: String?,
     adSize: AdSize?
   ): String? {
     if (customEventExtras != null && customEventExtras.containsKey(ADUNIT_KEYWORD_KEY)) {
-      return customEventExtras.getString(ADUNIT_KEYWORD_KEY)
+      return customEventExtras[ADUNIT_KEYWORD_KEY] as String?
     }
     var adUnit: String? = null
     if (serverParameter != null && serverParameter != "default" && serverParameter != "AMAdSize") {
@@ -25,14 +22,6 @@ internal object DfpRequestHelper {
     }
     if (adUnit == null || adUnit.isEmpty()) {
       adUnit = getWidthHeightAdUnit(adSize)
-    }
-    return adUnit
-  }
-
-  private fun getWidthHeightAdUnit(adSize: AdSize?): String? {
-    var adUnit: String? = null
-    if (adSize != null && adSize.height != 0 && adSize.width != 0) {
-      adUnit = "${adSize.width}x${adSize.height}"
     }
     return adUnit
   }
@@ -59,21 +48,16 @@ internal object DfpRequestHelper {
     return 0.0
   }
 
-  private fun parseServerParameter(serverParameter: String): Array<String> {
-    return serverParameter.split("@\\$".toRegex()).toTypedArray()
+
+  private fun getWidthHeightAdUnit(adSize: AdSize?): String? {
+    var adUnit: String? = null
+    if (adSize != null && adSize.height != 0 && adSize.width != 0) {
+      adUnit = "${adSize.width}x${adSize.height}"
+    }
+    return adUnit
   }
 
-  fun getBidFromBundle(bundle: Bundle?): BidResponse? {
-    if (bundle == null) {
-      return null
-    }
-    if (!bundle.containsKey(BID_BUNDLE_KEY)) {
-      return null
-    }
-    var bid: BidResponse? = null
-    bundle.getString(BID_BUNDLE_KEY)?.let {
-      bid = BidResponse.Mapper.from(it)
-    }
-    return bid
+  private fun parseServerParameter(serverParameter: String): Array<String> {
+    return serverParameter.split("@\\$".toRegex()).toTypedArray()
   }
 }

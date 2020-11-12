@@ -26,4 +26,8 @@ actual class UIThread {
   ) {
     this.handler.postDelayed(runnable, delay)
   }
+
+  actual fun removeCallbacks(runnable: ThreadRunnable) {
+    this.handler.removeCallbacks(runnable)
+  }
 }
