@@ -10,5 +10,7 @@ expect class DFPAdRequestUtil {
       adView: AdServerAdView,
       adServerAdRequest: AdServerAdRequest
     ): AuctionRequest
+
+    fun isValidServerParams(serverParameter:String?):Boolean
   }
 }

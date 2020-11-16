@@ -1,11 +1,12 @@
 package com.monet
 
+import com.monet.BidResponse.Constant
 import com.monet.Constants.ADUNIT_KEYWORD_KEY
 import com.monet.adview.AdSize
 
 object DFPAdRequestHelper {
   fun getAdUnitID(
-    customEventExtras: Map<String, Any>?,
+    customEventExtras: Map<String, Any?>?,
     serverParameter: String?,
     adSize: AdSize?
   ): String? {
@@ -13,8 +14,8 @@ object DFPAdRequestHelper {
       return customEventExtras[ADUNIT_KEYWORD_KEY] as String?
     }
     var adUnit: String? = null
-    if (serverParameter != null && serverParameter != "default" && serverParameter != "AMAdSize") {
-      adUnit = if (serverParameter.startsWith("$")) {
+    if (DFPAdRequestUtil.isValidServerParams(serverParameter)) {
+      adUnit = if (serverParameter!!.startsWith("$")) {
         getWidthHeightAdUnit(adSize)
       } else {
         parseServerParameter(serverParameter)[0]
@@ -48,6 +49,25 @@ object DFPAdRequestHelper {
     return 0.0
   }
 
+  fun getBidFromRequest(map: Map<String, Any?>?): BidResponse? {
+    if (map == null) {
+      return null
+    }
+    if (!map.containsKey(Constant.BID_BUNDLE_KEY)) {
+      return null
+    }
+    var bid: BidResponse? = null
+    val bidString = map[Constant.BID_BUNDLE_KEY]
+    if (bidString != null && bidString is String) {
+      bid = BidResponse.Mapper.from(bidString)
+    }
+//    map[Constant.BID_BUNDLE_KEY]?.let {
+//      if (it is String) {
+//        bid = BidResponse.Mapper.from(it)
+//      }
+//    }
+    return bid
+  }
 
   private fun getWidthHeightAdUnit(adSize: AdSize?): String? {
     var adUnit: String? = null

@@ -1,12 +1,13 @@
 package com.monet.bidder.adview
 
+import android.view.View
 import android.webkit.JavascriptInterface
-import com.monet.bidder.AdServerBannerListener
+import com.monet.AdServerBannerListener
 import com.monet.bidder.WebViewUtils
 import com.monet.bidder.auction.AuctionManagerCallback
 
 internal class AdViewJsInterface(
-  private val adServerListener: AdServerBannerListener?,
+  private val adServerListener: AdServerBannerListener<View?>?,
   private val adViewManagerCallback: AdViewManagerCallback,
   private val adViewPoolManagerCallback: AdViewPoolManagerCallback,
   private val auctionManagerCallback: AuctionManagerCallback

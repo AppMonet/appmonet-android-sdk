@@ -5,11 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.view.View
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.mediation.MediationAdRequest
 import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitial
 import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitialListener
+import com.monet.AdServerBannerListener
 import com.monet.AdType.INTERSTITIAL
 import com.monet.bidder.Constants.APPMONET_BROADCAST
 import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
@@ -26,6 +28,7 @@ import com.monet.BidResponse.Mapper.from
 import com.monet.MediationCallback
 import com.monet.adview.AdSize
 import com.monet.bidder.callbacks.Callback
+import com.monet.toMap
 
 open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
   private var customEventInterstitialListener: CustomEventInterstitialListener? = null
@@ -33,7 +36,7 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
   private var mContext: Context? = null
   private var bidResponse: BidResponse? = null
   private var sdkManager: SdkManager? = null
-  private var mAdServerListener: MonetDfpInterstitialListener? = null
+  private var mAdServerListener: AdServerBannerListener<View?>? = null
   private fun onActivityClosed(context: Context) {
     val i = Intent(INTERSTITIAL_ACTIVITY_BROADCAST)
     i.putExtra("message", INTERSTITIAL_ACTIVITY_CLOSE)
@@ -88,7 +91,7 @@ open class MonetDfpCustomEventInterstitial : CustomEventInterstitial {
     )
     var bid: BidResponse? = null
     if (serverParameter != null && serverParameter != adUnitId) {
-      bid = DfpRequestHelper.getBidFromBundle(customEventExtras)
+      bid = DfpRequestHelper.getBidFromRequest(customEventExtras?.toMap())
     }
     if (bid != null && sdkManager?.auctionManager?.bidManager?.isValid(bid) == true
         && customEventInterstitialListener != null

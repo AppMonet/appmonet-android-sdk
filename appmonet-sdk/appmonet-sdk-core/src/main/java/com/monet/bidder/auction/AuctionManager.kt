@@ -27,7 +27,6 @@ import com.monet.bidder.adview.AdViewPoolManager
 import com.monet.bidder.bid.BidManager
 import com.monet.bidder.callbacks.ReadyCallbackManager
 import com.monet.threading.BackgroundThread
-import com.monet.bidder.threading.InternalRunnable
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.*
@@ -39,6 +38,7 @@ import com.monet.AdServerWrapper
 import com.monet.AdServerAdRequest
 import com.monet.AdServerAdView
 import com.monet.MediationManager
+import com.monet.auction.AuctionManagerKMM
 import com.monet.threading.UIThread
 
 class AuctionManager : Subscriber, AuctionManagerCallback {

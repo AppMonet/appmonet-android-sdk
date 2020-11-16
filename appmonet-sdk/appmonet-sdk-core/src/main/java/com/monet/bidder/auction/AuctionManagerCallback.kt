@@ -5,6 +5,7 @@ import com.monet.BidResponse
 import com.monet.Callback
 import com.monet.DeviceData
 import com.monet.MediationManager
+import com.monet.auction.AuctionManagerKMM
 import com.monet.bidder.AppMonetWebView
 import com.monet.bidder.SdkConfigurations
 import com.monet.bidder.adview.AdViewManager
@@ -12,7 +13,7 @@ import com.monet.bidder.adview.AdViewManager
 /**
  * Interface to be implemented for controlling and retrieving aspects of an auction.
  */
-interface AuctionManagerCallback {
+interface AuctionManagerCallback : AuctionManagerKMM{
 
   /**
    * Retrieves an instance of [MediationManager].
@@ -23,19 +24,6 @@ interface AuctionManagerCallback {
    * Device's advertising id.
    */
   var advertisingId: String
-
-  /**
-   * The implementation of this will cancel a particular request.
-   *
-   * @param adUnitId The ad unit of a particular request.
-   * @param adRequest The adRequest to cancel.
-   * @param bid The bid associated to the request to be canceled.
-   */
-  fun cancelRequest(
-    adUnitId: String?,
-    adRequest: AdServerAdRequest,
-    bid: BidResponse?
-  )
 
   /**
    * Executes dynamic JS code.
@@ -190,10 +178,7 @@ interface AuctionManagerCallback {
     currentTime: Long
   )
 
-  fun trackRequest(
-    adUnitId: String,
-    source: String
-  )
+
 
   fun removeBid(bidId: String): BidResponse?
 }

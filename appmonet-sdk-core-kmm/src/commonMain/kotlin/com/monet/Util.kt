@@ -13,5 +13,7 @@ expect class Util {
       key: String,
       extra: Any
     ): Boolean
+
+    fun generateTrackingSource(adType: AdType): String
   }
 }

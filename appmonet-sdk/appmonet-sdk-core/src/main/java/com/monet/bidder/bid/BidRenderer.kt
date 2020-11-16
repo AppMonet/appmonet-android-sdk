@@ -1,7 +1,8 @@
 package com.monet.bidder.bid
 
 import android.content.Context
-import com.monet.bidder.AdServerBannerListener
+import android.view.View
+import com.monet.AdServerBannerListener
 import com.monet.bidder.AppMonetViewLayout
 import com.monet.bidder.BaseManager
 import com.monet.bidder.Constants.TEST_MODE_WARNING
@@ -17,7 +18,7 @@ object BidRenderer {
     sdkManager: BaseManager,
     bidResponse: BidResponse,
     adSize: AdSize?,
-    listener: AdServerBannerListener
+    listener: AdServerBannerListener<View?>
   ): AppMonetViewLayout? {
     sLogger.info("Rendering bid:", bidResponse.toString())
     if (!sdkManager.auctionManager.bidManager.isValid(bidResponse)) {

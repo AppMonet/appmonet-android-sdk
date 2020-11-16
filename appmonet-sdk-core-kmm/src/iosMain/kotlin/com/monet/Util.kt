@@ -22,5 +22,9 @@ actual class Util {
     ): Boolean {
       return false
     }
+
+    actual fun generateTrackingSource(adType: AdType): String {
+      return "custom_event_$adType"
+    }
   }
 }

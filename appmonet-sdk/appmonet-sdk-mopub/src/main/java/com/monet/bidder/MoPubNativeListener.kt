@@ -2,17 +2,15 @@ package com.monet.bidder
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.SystemClock
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import com.monet.bidder.AdServerBannerListener.ErrorCode
-import com.monet.bidder.AdServerBannerListener.ErrorCode.BAD_REQUEST
-import com.monet.bidder.AdServerBannerListener.ErrorCode.INTERNAL_ERROR
-import com.monet.bidder.AdServerBannerListener.ErrorCode.NO_FILL
-import com.monet.bidder.AdServerBannerListener.ErrorCode.TIMEOUT
+import com.monet.AdServerBannerListener
+import com.monet.AdServerBannerListener.ErrorCode
+import com.monet.AdServerBannerListener.ErrorCode.BAD_REQUEST
+import com.monet.AdServerBannerListener.ErrorCode.INTERNAL_ERROR
+import com.monet.AdServerBannerListener.ErrorCode.NO_FILL
+import com.monet.AdServerBannerListener.ErrorCode.TIMEOUT
 import com.monet.bidder.adview.AdView
-import com.monet.bidder.threading.InternalRunnable
 import com.mopub.nativeads.CustomEventNative.CustomEventNativeListener
 import com.mopub.nativeads.ImpressionTracker
 import com.mopub.nativeads.NativeClickHandler

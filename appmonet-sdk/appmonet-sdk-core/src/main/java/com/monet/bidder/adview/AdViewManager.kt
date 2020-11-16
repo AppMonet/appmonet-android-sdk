@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Message
 import android.view.MotionEvent
+import android.view.View
 import android.view.View.GONE
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
@@ -23,7 +24,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.monet.BidResponse
 import com.monet.adview.AdSize
-import com.monet.bidder.AdServerBannerListener
+import com.monet.AdServerBannerListener
 import com.monet.AdServerWrapper
 import com.monet.bidder.AppMonetContext
 import com.monet.bidder.AppMonetViewLayout
@@ -43,7 +44,6 @@ import com.monet.bidder.WebViewUtils.quote
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.bidder.bid.Pixel
 import com.monet.bidder.callbacks.ReadyCallbackManager
-import com.monet.bidder.threading.InternalRunnable
 import com.monet.threading.BackgroundThread
 import com.monet.threading.ThreadRunnable
 import com.monet.threading.UIThread
@@ -70,7 +70,7 @@ class AdViewManager : AdViewManagerCallback {
   override var isBrowserOpening: Boolean = false
   private val uiThread: UIThread
 
-  private var adServerListener: AdServerBannerListener? = null
+  private var adServerListener: AdServerBannerListener<View?>? = null
   private var mHasCalledFinishLoad = false
   private var hasAdVieTouchStarted = false
   private var hasSeenV2VastEvent = false
@@ -686,7 +686,7 @@ class AdViewManager : AdViewManagerCallback {
    */
   fun setState(
     newState: AdViewState,
-    listener: AdServerBannerListener?,
+    listener: AdServerBannerListener<View?>?,
     context: Context?
   ) {
     adViewReadyCallback.onReady { webView ->
@@ -822,7 +822,7 @@ class AdViewManager : AdViewManagerCallback {
    *
    * @param listener the AdServerBannerListener responsible for propagating events about creative rendering
    */
-  private fun initForCreative(listener: AdServerBannerListener?) {
+  private fun initForCreative(listener: AdServerBannerListener<View?>?) {
     adServerListener = listener
     adViewClient.setListener(listener)
     adView.setOnLongClickListener {

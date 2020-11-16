@@ -36,24 +36,5 @@ internal object AdRequestFactory {
     )
   }
 
-  fun fromMediationRequest(
-    isPublisherAdView: Boolean,
-    adRequest: MediationAdRequest
-  ): AdServerAdRequest {
-    return if (isPublisherAdView) {
-      val dfpRequest = Builder()
-          .setBirthday(adRequest.birthday)
-          .setGender(adRequest.gender)
-          .setLocation(adRequest.location)
-          .build()
-      DFPAdRequest(PublisherAdRequestWrapper(dfpRequest))
-    } else {
-      val req = com.google.android.gms.ads.AdRequest.Builder()
-          .setBirthday(adRequest.birthday)
-          .setGender(adRequest.gender)
-          .setLocation(adRequest.location)
-          .build()
-      DFPAdViewRequest(AdRequestWrapper(req))
-    }
-  }
+
 }

@@ -1,6 +1,7 @@
 package com.monet.bidder
 
 import android.view.View
+import com.monet.AdServerBannerListener
 import com.monet.bidder.AppMonetStaticNativeAd.Parameter.CALL_TO_ACTION
 import com.monet.bidder.AppMonetStaticNativeAd.Parameter.ICON
 import com.monet.bidder.AppMonetStaticNativeAd.Parameter.TEXT

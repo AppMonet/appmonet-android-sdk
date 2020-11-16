@@ -7,6 +7,13 @@ import com.google.android.gms.ads.mediation.customevent.CustomEvent
 import com.monet.auction.AuctionRequest
 
 fun Map<String, Any?>.toBundle(): Bundle = bundleOf(*this.toList().toTypedArray())
+fun Bundle.toMap(): Map<String, Any?> {
+  val map = mutableMapOf<String, Any?>()
+  for (key: String in this.keySet()) {
+    map[key] = this.get(key)
+  }
+  return map
+}
 
 fun DFPAdRequest.Companion.fromAuctionRequest(
   request: AuctionRequest,

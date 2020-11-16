@@ -110,6 +110,10 @@ actual class DFPAdRequestUtil {
       val mediationRequest = builder.build()
       return DFPAdRequest(PublisherAdRequestWrapper(mediationRequest))
     }
+
+    actual fun isValidServerParams(serverParameter: String?): Boolean {
+      return serverParameter != null && serverParameter != "default" && serverParameter != "AMAdSize"
+    }
   }
 
 }

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.monet.AdServerBannerListener
 import com.monet.AdType.INTERSTITIAL
 import com.monet.bidder.Constants.APPMONET_BROADCAST
 import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
@@ -24,7 +25,6 @@ import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
 import com.monet.adview.AdSize
-import com.monet.bidder.callbacks.Callback
 import com.mopub.common.LifecycleListener
 import com.mopub.common.logging.MoPubLog
 import com.mopub.common.logging.MoPubLog.AdLogEvent.SHOW_SUCCESS
@@ -35,7 +35,6 @@ import com.mopub.mobileads.BaseAd
 import com.mopub.mobileads.MoPubErrorCode
 import com.mopub.mobileads.MoPubErrorCode.INTERNAL_ERROR
 import com.mopub.mobileads.MoPubErrorCode.NETWORK_NO_FILL
-import org.json.JSONObject
 
 class CustomEventInterstitial : BaseAd() {
   private var mAdView: AppMonetViewLayout? = null

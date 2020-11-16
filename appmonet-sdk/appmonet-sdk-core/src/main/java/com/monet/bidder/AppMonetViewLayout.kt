@@ -5,8 +5,10 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import com.monet.AdServerBannerListener
 import com.monet.AdType.BANNER
 import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
@@ -14,6 +16,7 @@ import com.monet.bidder.adview.AdViewPoolManagerCallback
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.BidResponse
 import com.monet.BidResponse.Constant.FLOATING_AD_TYPE
+import com.monet.IAppMonetViewLayout
 import com.monet.MediationManager.NoBidsFoundException
 import com.monet.MediationManager.NullBidException
 import com.monet.adview.AdSize
@@ -26,7 +29,7 @@ class AppMonetViewLayout(
   auctionManagerCallback: AuctionManagerCallback,
   adViewManager: AdViewManager,
   adSize: AdSize
-) : FrameLayout(context) {
+) : FrameLayout(context), IAppMonetViewLayout {
   private val adViewPoolManagerCallback: AdViewPoolManagerCallback
   private val auctionManager: AuctionManagerCallback
   private val adViewManager: WeakReference<AdViewManager> = WeakReference(adViewManager)
@@ -40,7 +43,7 @@ class AppMonetViewLayout(
     parent = getParent() as ViewGroup
   }
 
-  fun destroyAdView(invalidate: Boolean) {
+  override fun destroyAdView(invalidate: Boolean) {
     adViewManager.get()!!.destroy(invalidate)
     cleanup()
   }
@@ -52,7 +55,7 @@ class AppMonetViewLayout(
 
   fun activateRefresh(
     bid: BidResponse,
-    listener: AdServerBannerListener?
+    listener: AdServerBannerListener<View?>?
   ) {
     innerHandler = Handler(Looper.getMainLooper())
     if (FLOATING_AD_TYPE == bid.adType || bid.refresh <= 1000) {
@@ -117,7 +120,7 @@ class AppMonetViewLayout(
 
   fun swapViews(
     view: AppMonetViewLayout,
-    listener: AdServerBannerListener
+    listener: AdServerBannerListener<View?>
   ) {
     if (view !== this) {
       innerHandler?.removeCallbacksAndMessages(null)

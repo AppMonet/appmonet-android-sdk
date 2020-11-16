@@ -3,13 +3,14 @@ package com.monet.bidder
 import android.view.View
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.mediation.customevent.CustomEventBannerListener
-import com.monet.bidder.AdServerBannerListener.ErrorCode
-import com.monet.bidder.AdServerBannerListener.ErrorCode.BAD_REQUEST
-import com.monet.bidder.AdServerBannerListener.ErrorCode.INTERNAL_ERROR
-import com.monet.bidder.AdServerBannerListener.ErrorCode.NO_FILL
-import com.monet.bidder.AdServerBannerListener.ErrorCode.TIMEOUT
-import com.monet.bidder.AdServerBannerListener.ErrorCode.UNKNOWN
-import com.monet.bidder.threading.InternalRunnable
+import com.monet.AdServerBannerListener
+import com.monet.AppMonetViewListener
+import com.monet.AdServerBannerListener.ErrorCode
+import com.monet.AdServerBannerListener.ErrorCode.BAD_REQUEST
+import com.monet.AdServerBannerListener.ErrorCode.INTERNAL_ERROR
+import com.monet.AdServerBannerListener.ErrorCode.NO_FILL
+import com.monet.AdServerBannerListener.ErrorCode.TIMEOUT
+import com.monet.AdServerBannerListener.ErrorCode.UNKNOWN
 import com.monet.threading.UIThread
 
 /**
@@ -20,9 +21,9 @@ import com.monet.threading.UIThread
  */
 internal class DFPBannerListener(
   private val mListener: CustomEventBannerListener,
-  private val viewListener: AppMonetViewListener,
+  private val viewListener: AppMonetViewListener<View>,
   private val uiThread: UIThread
-) : AdServerBannerListener {
+) : AdServerBannerListener<View?> {
 
   override fun onAdClicked() {
     mListener.onAdClicked()
@@ -75,7 +76,7 @@ internal class DFPBannerListener(
   override fun onAdLoaded(view: View?): Boolean {
     uiThread.run top@{
       val viewLayout = view as AppMonetViewLayout?
-      val currentView = viewListener.currentView
+      val currentView = viewListener.currentView as AppMonetViewLayout?
       if (viewLayout?.isAdRefreshed == true) {
         currentView?.swapViews(viewLayout, this@DFPBannerListener)
         return@top
@@ -95,5 +96,9 @@ internal class DFPBannerListener(
 
   companion object {
     private val sLogger = Logger("DFPBannerListener")
+  }
+
+  override fun onLeftApplication() {
+    mListener.onAdLeftApplication()
   }
 }

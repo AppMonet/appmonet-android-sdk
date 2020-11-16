@@ -103,6 +103,10 @@ actual class DFPAdRequestUtil {
       }
       return DFPAdRequest(DFPAdRequestWrapper(dfpRequest))
     }
+
+    actual fun isValidServerParams(serverParameter: String?): Boolean {
+      return true
+    }
   }
 
 }

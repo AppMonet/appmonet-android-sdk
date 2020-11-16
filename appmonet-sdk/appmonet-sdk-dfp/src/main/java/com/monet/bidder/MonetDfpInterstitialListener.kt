@@ -5,7 +5,8 @@ import android.content.Intent
 import android.view.View
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.ads.mediation.customevent.CustomEventInterstitialListener
-import com.monet.bidder.AdServerBannerListener.ErrorCode
+import com.monet.AdServerBannerListener
+import com.monet.AdServerBannerListener.ErrorCode
 import com.monet.bidder.Constants.APPMONET_BROADCAST
 import com.monet.bidder.Constants.APPMONET_BROADCAST_MESSAGE
 import java.lang.ref.WeakReference
@@ -13,7 +14,7 @@ import java.lang.ref.WeakReference
 internal class MonetDfpInterstitialListener(
   private val mListener: CustomEventInterstitialListener,
   context: Context?
-) : AdServerBannerListener {
+) : AdServerBannerListener<View?> {
   private val context: WeakReference<Context?> = WeakReference(context)
   override fun onAdClosed() {
     if (context.get() != null) {
@@ -39,5 +40,8 @@ internal class MonetDfpInterstitialListener(
 
   override fun onAdError(errorCode: ErrorCode) {}
   override fun onAdRefreshed(view: View?) {}
+  override fun onLeftApplication() {
+    mListener.onAdLeftApplication()
+  }
 
 }

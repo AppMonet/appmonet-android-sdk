@@ -1,6 +1,7 @@
 package com.monet.bidder
 
 import android.content.Context
+import com.monet.AdServerBannerListener
 import com.monet.AdType.NATIVE
 import com.monet.bidder.Constants.BIDS_KEY
 import com.monet.bidder.CustomEventUtil.getAdUnitId
@@ -8,7 +9,6 @@ import com.monet.bidder.CustomEventUtil.getServerExtraCpm
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
-import com.monet.MediationManager
 import com.monet.MediationManager.NoBidsFoundException
 import com.monet.MediationManager.NullBidException
 import com.monet.adview.AdSize
@@ -16,7 +16,6 @@ import com.mopub.nativeads.CustomEventNative
 import com.mopub.nativeads.NativeErrorCode.NETWORK_NO_FILL
 import com.mopub.nativeads.NativeErrorCode.UNSPECIFIED
 import org.json.JSONException
-import org.json.JSONObject
 
 /**
  * Class called by Mopub which triggers our logic for serving ads.

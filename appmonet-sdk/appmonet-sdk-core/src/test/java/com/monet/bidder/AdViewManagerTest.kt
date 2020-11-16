@@ -9,6 +9,7 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
+import com.monet.AdServerBannerListener
 import com.monet.bidder.WebViewUtils.quote
 import com.monet.bidder.adview.AdView
 import com.monet.bidder.adview.AdViewClient

@@ -55,7 +55,7 @@ object WebViewUtils {
     return quoteChar + str + quoteChar
   }
 
-  @JvmStatic fun generateTrackingSource(adType: AdType): String {
+  fun generateTrackingSource(adType: AdType): String {
     return "custom_event_$adType"
   }
 

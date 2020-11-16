@@ -156,7 +156,7 @@ class BidManager : Subscriber, IBidManager {
   /**
    * Clean any invalid bids in the store
    */
-  fun cleanBids() {
+  override fun cleanBids() {
     for (key in store.keys) {
       try {
         cleanBidsForAdUnit(key)
@@ -395,7 +395,7 @@ class BidManager : Subscriber, IBidManager {
     return peekedBid
   }
 
-  fun invalidate(wvUUID: String) {
+  override fun invalidate(wvUUID: String) {
     val bidIds: MutableList<String?>? = bidIdsByAdView[wvUUID]
     if (bidIds != null) {
       sLogger.debug("invalidting all for: $wvUUID")
@@ -474,7 +474,7 @@ class BidManager : Subscriber, IBidManager {
     return bid
   }
 
-  fun markUsed(bid: BidResponse) {
+  override fun markUsed(bid: BidResponse) {
     usedBids[bid.uuid] = bid.id
   }
 
@@ -496,7 +496,7 @@ class BidManager : Subscriber, IBidManager {
     return removeBid(bidId, true)
   }
 
-  @SuppressLint("DefaultLocale") fun logState() {
+  @SuppressLint("DefaultLocale") override fun logState() {
     sLogger.debug("[Bid State Dump]")
     for ((key) in store) {
       sLogger.debug(

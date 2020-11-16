@@ -63,16 +63,18 @@ internal object DfpRequestHelper {
     return serverParameter.split("@\\$".toRegex()).toTypedArray()
   }
 
-  fun getBidFromBundle(bundle: Bundle?): BidResponse? {
-    if (bundle == null) {
+  fun getBidFromRequest(map: Map<String, Any?>?): BidResponse? {
+    if (map == null) {
       return null
     }
-    if (!bundle.containsKey(BID_BUNDLE_KEY)) {
+    if (!map.containsKey(BID_BUNDLE_KEY)) {
       return null
     }
     var bid: BidResponse? = null
-    bundle.getString(BID_BUNDLE_KEY)?.let {
-      bid = BidResponse.Mapper.from(it)
+    map[BID_BUNDLE_KEY]?.let {
+      if (it is String) {
+        bid = BidResponse.Mapper.from(it)
+      }
     }
     return bid
   }

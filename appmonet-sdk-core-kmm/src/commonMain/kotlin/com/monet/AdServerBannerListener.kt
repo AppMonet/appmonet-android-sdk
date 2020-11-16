@@ -1,14 +1,13 @@
-package com.monet.bidder
+package com.monet
 
-import android.view.View
-
-interface AdServerBannerListener {
+interface AdServerBannerListener<T> {
   fun onAdClosed()
   fun onAdOpened()
-  fun onAdLoaded(view: View?): Boolean
+  fun onLeftApplication()
+  fun onAdLoaded(view: T?): Boolean
   fun onAdClicked()
   fun onAdError(errorCode: ErrorCode)
-  fun onAdRefreshed(view: View?)
+  fun onAdRefreshed(view: T?)
   enum class ErrorCode {
     NO_FILL,
     INTERNAL_ERROR,

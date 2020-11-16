@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.view.View
 import com.monet.AdType.BANNER
+import com.monet.AppMonetViewListener
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
 import com.monet.MediationManager.NoBidsFoundException

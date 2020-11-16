@@ -18,4 +18,8 @@ actual class UIThread {
       runnable()
     }
   }
+
+  actual fun removeCallbacks(runnable: ThreadRunnable){
+
+  }
 }

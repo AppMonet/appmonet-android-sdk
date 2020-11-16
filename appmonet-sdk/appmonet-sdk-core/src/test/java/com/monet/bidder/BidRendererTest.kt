@@ -1,5 +1,6 @@
 package com.monet.bidder
 
+import com.monet.AdServerBannerListener
 import com.monet.bidder.adview.AdView
 import com.monet.bidder.adview.AdViewManager
 import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED

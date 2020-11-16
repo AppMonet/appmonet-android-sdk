@@ -3,16 +3,18 @@ package com.monet.bidder.adview
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.view.View
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import com.monet.AdServerBannerListener
 import com.monet.bidder.*
 
 class AdViewClient internal constructor(private val adViewManagerCallback: AdViewManagerCallback) :
     BaseWebViewClient() {
-  private var mListener: AdServerBannerListener? = null
+  private var mListener: AdServerBannerListener<View?>? = null
 
-  fun setListener(listener: AdServerBannerListener?) {
+  fun setListener(listener: AdServerBannerListener<View?>?) {
     mListener = listener
   }
 
