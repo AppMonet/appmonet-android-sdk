@@ -36,7 +36,7 @@ class AppMonetViewLayout(
   private var innerHandler: Handler? = null
   private var runnable: Runnable? = null
   private var parent: ViewGroup? = null
-  val uuid = adViewManager.uuid
+  override val uuid = adViewManager.uuid
   val state = adViewManager.state
   override fun onAttachedToWindow() {
     super.onAttachedToWindow()

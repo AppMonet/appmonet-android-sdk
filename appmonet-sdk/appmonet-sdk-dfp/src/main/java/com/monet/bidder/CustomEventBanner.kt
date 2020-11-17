@@ -54,13 +54,6 @@ class CustomEventBanner : CustomEventBanner, MediationAdapter, AppMonetViewListe
    */
   override fun onDestroy() {
     customEventBannerAdapter?.destroy()
-//    if (mAdView != null) {
-//      try {
-//        mAdView!!.destroyAdView(true)
-//      } catch (e: Exception) {
-//        logger.warn("error destroying ceb - ", e.message)
-//      }
-//    }
   }
 
   override fun onPause() {}

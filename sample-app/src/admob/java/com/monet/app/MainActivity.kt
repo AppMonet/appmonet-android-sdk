@@ -70,6 +70,7 @@ class MainActivity : BaseActivity() {
 
   override fun setupInterstitialLoadClickListener() {
     loadInterstitial.setOnClickListener {
+      setupInterstitial()
       val adRequest = AdRequest.Builder().build()
       interstitial.loadAd(adRequest)
     }
