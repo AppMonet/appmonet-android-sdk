@@ -11,7 +11,6 @@ import android.widget.FrameLayout
 import com.monet.AdServerBannerListener
 import com.monet.AdType.BANNER
 import com.monet.bidder.adview.AdViewManager
-import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.adview.AdViewPoolManagerCallback
 import com.monet.bidder.auction.AuctionManagerCallback
 import com.monet.BidResponse
@@ -20,6 +19,7 @@ import com.monet.IAppMonetViewLayout
 import com.monet.MediationManager.NoBidsFoundException
 import com.monet.MediationManager.NullBidException
 import com.monet.adview.AdSize
+import com.monet.adview.AdViewState.AD_RENDERED
 import java.lang.ref.WeakReference
 
 @SuppressLint("ViewConstructor")
@@ -37,7 +37,7 @@ class AppMonetViewLayout(
   private var runnable: Runnable? = null
   private var parent: ViewGroup? = null
   override val uuid = adViewManager.uuid
-  val state = adViewManager.state
+  override val state = adViewManager.state
   override fun onAttachedToWindow() {
     super.onAttachedToWindow()
     parent = getParent() as ViewGroup

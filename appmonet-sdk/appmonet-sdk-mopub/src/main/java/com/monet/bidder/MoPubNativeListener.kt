@@ -25,7 +25,7 @@ internal class MoPubNativeListener(
   private val context: Context,
   private val mListener: CustomEventNativeListener,
   private val serverExtras: Map<String, String>
-) : AdServerBannerListener {
+) : AdServerBannerListener<View?> {
   private var staticNativeAd: AppMonetStaticNativeAd? = null
   override fun onAdError(errorCode: ErrorCode) {
     mListener.onNativeAdFailed(moPubErrorCode(errorCode))
@@ -94,5 +94,9 @@ internal class MoPubNativeListener(
         else -> UNSPECIFIED
       }
     }
+  }
+
+  override fun onLeftApplication() {
+    //do nothing
   }
 }

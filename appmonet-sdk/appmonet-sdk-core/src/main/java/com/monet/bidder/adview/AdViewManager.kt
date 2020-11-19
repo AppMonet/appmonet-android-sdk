@@ -26,6 +26,7 @@ import com.monet.BidResponse
 import com.monet.adview.AdSize
 import com.monet.AdServerBannerListener
 import com.monet.AdServerWrapper
+import com.monet.adview.AdViewState
 import com.monet.bidder.AppMonetContext
 import com.monet.bidder.AppMonetViewLayout
 import com.monet.bidder.Constants
@@ -1020,17 +1021,7 @@ class AdViewManager : AdViewManagerCallback {
     return url
   }
 
-  enum class AdViewState(private val mReadableName: String) {
-    AD_LOADING("LOADING"),
-    AD_RENDERED("RENDERED"),
-    AD_MIXED_USE("MIXED_USE"),
-    AD_OPEN("OPEN"),
-    NOT_FOUND("NOT_FOUND");
 
-    override fun toString(): String {
-      return mReadableName
-    }
-  }
 
   companion object {
     private const val MONET_SCHEME = "monet"

@@ -7,16 +7,16 @@ import com.monet.bidder.AppMonetViewLayout
 import com.monet.bidder.BaseManager
 import com.monet.bidder.Constants.TEST_MODE_WARNING
 import com.monet.bidder.Logger
-import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.BidResponse
 import com.monet.adview.AdSize
+import com.monet.adview.AdViewState.AD_RENDERED
 
 object BidRenderer {
   private val sLogger = Logger("Renderer")
   @JvmStatic fun renderBid(
     context: Context,
     sdkManager: BaseManager,
-    bidResponse: BidResponse,
+    bidResponse: BidResponse?,
     adSize: AdSize?,
     listener: AdServerBannerListener<View?>
   ): AppMonetViewLayout? {
@@ -24,11 +24,11 @@ object BidRenderer {
     if (!sdkManager.auctionManager.bidManager.isValid(bidResponse)) {
       sdkManager.auctionManager.trackEvent(
           "bidRenderer",
-          "invalid_bid", bidResponse.id, 0f, System.currentTimeMillis()
+          "invalid_bid", bidResponse?.id ?: "null", 0f, System.currentTimeMillis()
       )
       return null
     }
-    val adViewManager = sdkManager.auctionManager.adViewPoolManager.request(bidResponse)
+    val adViewManager = sdkManager.auctionManager.adViewPoolManager.request(bidResponse!!)
     if (adViewManager == null) {
       sLogger.warn("fail to attach adView. Unable to serve")
       sdkManager.auctionManager.trackEvent(

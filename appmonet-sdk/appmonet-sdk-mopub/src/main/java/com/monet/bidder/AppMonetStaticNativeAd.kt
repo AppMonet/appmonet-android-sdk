@@ -183,7 +183,7 @@ class AppMonetStaticNativeAd(
 
   fun swapViews(
     view: AppMonetViewLayout,
-    listener: AdServerBannerListener
+    listener: AdServerBannerListener<View?>
   ) {
     (media as AppMonetViewLayout?)!!.swapViews(view, listener)
   }

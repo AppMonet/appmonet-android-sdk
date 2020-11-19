@@ -6,15 +6,11 @@ import android.view.View
 import com.monet.AdType.BANNER
 import com.monet.AppMonetViewListener
 import com.monet.BidResponse
-import com.monet.BidResponse.Mapper.from
-import com.monet.MediationManager.NoBidsFoundException
-import com.monet.MediationManager.NullBidException
+import com.monet.CustomEventBannerAdapter
+import com.monet.CustomEventBaseAdapter
 import com.monet.adview.AdSize
-import com.monet.bidder.Constants.BIDS_KEY
+import com.monet.adview.AdViewState.AD_RENDERED
 import com.monet.bidder.Constants.Configurations.DEFAULT_MEDIATION_FLOOR
-import com.monet.bidder.CustomEventUtil.getAdUnitId
-import com.monet.bidder.CustomEventUtil.getServerExtraCpm
-import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
 import com.monet.bidder.bid.BidRenderer
 import com.mopub.common.LifecycleListener
 import com.mopub.common.logging.MoPubLog
@@ -23,22 +19,20 @@ import com.mopub.common.logging.MoPubLog.ConsentLogEvent.CUSTOM
 import com.mopub.mobileads.AdData
 import com.mopub.mobileads.BaseAd
 import com.mopub.mobileads.MoPubErrorCode
-import com.mopub.mobileads.MoPubErrorCode.INTERNAL_ERROR
-import com.mopub.mobileads.MoPubErrorCode.NETWORK_NO_FILL
 
 /**
  * Created by jose on 2/1/18.
  */
-open class CustomEventBanner : BaseAd(), AppMonetViewListener {
-  private var mAdView: AppMonetViewLayout? = null
+open class CustomEventBanner : BaseAd(), AppMonetViewListener<View?> {
   private var listener: MoPubBannerListener? = null
+  private var customEventBannerAdapter: CustomEventBannerAdapter? = null
   private var adUnitID = "ZONE_ID"
   override fun onInvalidate() {
-    if (mAdView != null) {
-      if (mAdView!!.state !== AD_RENDERED) {
+    if (customEventBannerAdapter?.adView != null) {
+      if (customEventBannerAdapter?.adView!!.state !== AD_RENDERED) {
         sLogger.warn("attempt to remove loading adview..")
       }
-      mAdView!!.destroyAdView(true)
+      customEventBannerAdapter?.adView!!.destroyAdView(true)
       MoPubLog.log(adNetworkId, CUSTOM, ADAPTER_NAME, "Banner destroyed")
     }
     if (listener != null && listener!!.moPubAdViewContainer != null && listener!!.moPubAdViewContainer is FloatingAdView) {
@@ -73,73 +67,86 @@ open class CustomEventBanner : BaseAd(), AppMonetViewListener {
         (if (adData.adWidth != null) adData.adWidth!! else 0),
         (if (adData.adHeight != null) adData.adHeight!! else 0)
     )
-    val adUnitFromExtras = getAdUnitId(extras, adSize)
     val sdkManager = SdkManager.get()
-    //    // check if it's null first
-    if (sdkManager == null) {
-      sLogger.warn("AppMonet SDK Has not been initialized. Unable to serve ads.")
-      onMoPubError(INTERNAL_ERROR)
-      return
-    }
-    if (adUnitFromExtras == null || adUnitFromExtras.isEmpty()) {
-      sLogger.debug("no adUnit/tagId: floor line item configured incorrectly")
-      onMoPubError(NETWORK_NO_FILL)
-      return
-    }
-    adUnitID = adUnitFromExtras
-    sdkManager.auctionManager.trackRequest(
-        adUnitID,
-        WebViewUtils.generateTrackingSource(BANNER)
+    val listener = MoPubBannerListener(sdkManager, mLoadListener, mInteractionListener, this)
+    customEventBannerAdapter = CustomEventBannerAdapter(
+        adSize, sdkManager, sdkManager?.auctionManager,
+        sdkManager?.auctionManager?.mediationManager, listener, extras,
+        sdkManager?.sdkConfigurations?.getDouble(DEFAULT_MEDIATION_FLOOR) ?: 0.00,
+        BANNER
     )
-    val configurations = sdkManager.sdkConfigurations
 
-    //    // try to get the bid from the localExtras
-    //    // thanks to localExtras we don't need to serialize/deserialize
-    var headerBiddingBid: BidResponse? = null
-    if (extras.containsKey(BIDS_KEY) && extras[BIDS_KEY] != null) {
-      headerBiddingBid = extras[BIDS_KEY]?.let { from(it) }
-    }
-    val floorCpm = getServerExtraCpm(
-        extras, configurations.getDouble(DEFAULT_MEDIATION_FLOOR)
-    )
-    if (headerBiddingBid == null) {
-      sLogger.debug("checking store for precached bids")
-      headerBiddingBid =
-        sdkManager.auctionManager.mediationManager.getBidForMediation(adUnitID, floorCpm)
-    }
-    val mediationManager = sdkManager.auctionManager.mediationManager
-    try {
-      val bid = mediationManager.getBidReadyForMediation(
-          headerBiddingBid, adUnitID, adSize,
-          BANNER, floorCpm, true
-      )
-      listener = MoPubBannerListener(
-          sdkManager, mLoadListener, mInteractionListener, bid, adUnitID,
-          this
-      )
-      // this will set adview
-      mAdView = BidRenderer.renderBid(context, sdkManager, bid, adSize, listener!!)
-      if (mAdView == null) {
-        sLogger.error("unexpected: could not generate the adView")
-        onMoPubError(INTERNAL_ERROR)
-      }
-    } catch (e: NoBidsFoundException) {
-      onMoPubError(NETWORK_NO_FILL)
-    } catch (e: NullBidException) {
-      onMoPubError(INTERNAL_ERROR)
-    }
+    customEventBannerAdapter?.requestAd ({ bid: BidResponse?, adSize: AdSize, customEventAdapter: CustomEventBaseAdapter ->
+      val modifiedListener = customEventAdapter.adServerBannerListener as MoPubBannerListener
+      modifiedListener.adUnitId = customEventAdapter.adUnitId
+      modifiedListener.mBid = bid
+      BidRenderer.renderBid(context, sdkManager!!, bid, adSize, modifiedListener)
+    })
+
+//    val adUnitFromExtras = getAdUnitId(extras, adSize)
+//    val sdkManager = SdkManager.get()
+//    //    // check if it's null first
+//    if (sdkManager == null) {
+//      sLogger.warn("AppMonet SDK Has not been initialized. Unable to serve ads.")
+//      onMoPubError(INTERNAL_ERROR)
+//      return
+//    }
+//    if (adUnitFromExtras == null || adUnitFromExtras.isEmpty()) {
+//      sLogger.debug("no adUnit/tagId: floor line item configured incorrectly")
+//      onMoPubError(NETWORK_NO_FILL)
+//      return
+//    }
+//    adUnitID = adUnitFromExtras
+//    sdkManager.auctionManager.trackRequest(
+//        adUnitID,
+//        WebViewUtils.generateTrackingSource(BANNER)
+//    )
+//    val configurations = sdkManager.sdkConfigurations
+//
+//    //    // try to get the bid from the localExtras
+//    //    // thanks to localExtras we don't need to serialize/deserialize
+//    var headerBiddingBid: BidResponse? = getBid(extras)
+//
+//    val floorCpm = getServerExtraCpm(
+//        extras, configurations.getDouble(DEFAULT_MEDIATION_FLOOR)
+//    )
+//    if (headerBiddingBid == null) {
+//      sLogger.debug("checking store for precached bids")
+//      headerBiddingBid =
+//        sdkManager.auctionManager.mediationManager.getBidForMediation(adUnitID, floorCpm)
+//    }
+//    val mediationManager = sdkManager.auctionManager.mediationManager
+//    try {
+//      val bid = mediationManager.getBidReadyForMediation(
+//          headerBiddingBid, adUnitID, adSize,
+//          BANNER, floorCpm, true
+//      )
+//      listener = MoPubBannerListener(
+//          sdkManager, mLoadListener, mInteractionListener, this, bid, adUnitID,
+//      )
+//      // this will set adview
+//      mAdView = BidRenderer.renderBid(context, sdkManager, bid, adSize, listener!!)
+//      if (mAdView == null) {
+//        sLogger.error("unexpected: could not generate the adView")
+//        onMoPubError(INTERNAL_ERROR)
+//      }
+//    } catch (e: NoBidsFoundException) {
+//      onMoPubError(NETWORK_NO_FILL)
+//    } catch (e: NullBidException) {
+//      onMoPubError(INTERNAL_ERROR)
+//    }
   }
 
   override fun getAdView(): View? {
-    return mAdView
+    return customEventBannerAdapter?.adView as View?
   }
 
   override fun onAdRefreshed(view: View?) {
-    mAdView = view as AppMonetViewLayout?
+    customEventBannerAdapter?.adView = view as AppMonetViewLayout?
   }
 
   override val currentView: AppMonetViewLayout?
-    get() = mAdView
+    get() = customEventBannerAdapter?.adView as AppMonetViewLayout?
 
   private fun onMoPubError(error: MoPubErrorCode) {
     MoPubLog.log(LOAD_FAILED, ADAPTER_NAME, error.intCode, error)

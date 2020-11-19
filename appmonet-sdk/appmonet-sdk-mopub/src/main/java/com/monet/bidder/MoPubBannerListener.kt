@@ -24,13 +24,13 @@ import com.mopub.mobileads.MoPubErrorCode.NETWORK_TIMEOUT
 import com.mopub.mobileads.MoPubErrorCode.UNSPECIFIED
 
 internal class MoPubBannerListener(
-  private val sdkManager: SdkManager,
+  private val sdkManager: SdkManager?,
   private val mListener: LoadListener?,
   private val mInteractionListener: InteractionListener?,
-  private val mBid: BidResponse,
-  private val adUnitId: String,
-  private val viewListener: AppMonetViewListener
-) : AdServerBannerListener {
+  private val viewListener: AppMonetViewListener<View?>,
+  var mBid: BidResponse? = null,
+  var adUnitId: String? = null
+) : AdServerBannerListener<View?> {
   var moPubAdViewContainer: View? = null
   override fun onAdError(errorCode: ErrorCode) {
     MoPubLog.log(
@@ -60,29 +60,32 @@ internal class MoPubBannerListener(
   }
 
   override fun onAdLoaded(view: View?): Boolean {
-
     view?.let {
       try {
-        sdkManager.uiThread.run top@{
+        sdkManager?.uiThread.run top@{
           try {
             val viewLayout = view as AppMonetViewLayout?
-            val currentView = viewListener.currentView
+            val currentView = viewListener.currentView as AppMonetViewLayout?
             if (viewLayout?.isAdRefreshed == true) {
               currentView?.swapViews(viewLayout, this@MoPubBannerListener)
               return@top
             }
-            if (sdkManager.currentActivity == null && FLOATING_AD_TYPE == mBid.adType) {
+            if (sdkManager?.currentActivity == null && FLOATING_AD_TYPE == mBid?.adType) {
               onAdError(NO_FILL)
+              return@top
+            }
+            if (mBid == null || adUnitId == null || sdkManager == null) {
+              onAdError(INTERNAL_ERROR)
               return@top
             }
             val factory = AdViewLoadedFactory()
             moPubAdViewContainer = factory.getAdView(
-                sdkManager.currentActivity?.get(), sdkManager, view, mBid, adUnitId
+                sdkManager?.currentActivity?.get(), sdkManager, view, mBid!!, adUnitId!!
             )
             mListener?.onAdLoaded()
             MoPubLog.log(adUnitId, LOAD_SUCCESS, CustomEventBanner.ADAPTER_NAME)
           } catch (e: Exception) {
-            sLogger.warn("failed to finish on view: ", e!!.message)
+            sLogger.warn("failed to finish on view: ", e.message)
             onAdError(INTERNAL_ERROR)
           }
         }
@@ -108,5 +111,9 @@ internal class MoPubBannerListener(
         else -> UNSPECIFIED
       }
     }
+  }
+
+  override fun onLeftApplication() {
+    //do nothing
   }
 }

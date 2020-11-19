@@ -1,5 +1,7 @@
 package com.monet
 
-expect class Platform() {
+const val ANDROID = "Android"
+const val IOS = "iOS"
+expect object Platform {
   val platform: String
 }

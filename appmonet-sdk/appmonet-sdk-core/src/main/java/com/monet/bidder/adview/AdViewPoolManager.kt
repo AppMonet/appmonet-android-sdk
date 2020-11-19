@@ -12,6 +12,7 @@ import com.monet.threading.BackgroundThread
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import com.monet.AdServerWrapper
+import com.monet.adview.AdViewState
 import com.monet.threading.UIThread
 
 /**
@@ -174,7 +175,7 @@ class AdViewPoolManager : Subscriber, AdViewPoolManagerCallback {
       sLogger.debug("requested helper not present: $wvUUID")
       return false
     }
-    if (adview.state == AdViewManager.AdViewState.AD_LOADING) {
+    if (adview.state == AdViewState.AD_LOADING) {
       sLogger.debug("adView is in loading state. Can be removed now")
       return remove(adview.uuid, true)
     }
@@ -270,7 +271,7 @@ class AdViewPoolManager : Subscriber, AdViewPoolManagerCallback {
     adViewManagerCollection[wvUUID]?.let {
       return it.state.toString()
     }
-    return AdViewManager.AdViewState.NOT_FOUND.toString()
+    return AdViewState.NOT_FOUND.toString()
   }
 
   /**
@@ -427,7 +428,7 @@ class AdViewPoolManager : Subscriber, AdViewPoolManagerCallback {
     if (adViewManager == null) {
       return false
     }
-    if (adViewManager.state == AdViewManager.AdViewState.AD_RENDERED && !forceDestroy) {
+    if (adViewManager.state == AdViewState.AD_RENDERED && !forceDestroy) {
       sLogger.warn("attempt to remove webView in rendered state")
       return false
     }
@@ -501,7 +502,7 @@ class AdViewPoolManager : Subscriber, AdViewPoolManagerCallback {
 
     // find the first one that isn't already rendering
     for (adView in adViews) {
-      if (adView.state != AdViewManager.AdViewState.AD_RENDERED) {
+      if (adView.state != AdViewState.AD_RENDERED) {
         return adView
       }
     }

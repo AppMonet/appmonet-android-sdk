@@ -1,5 +1,6 @@
 package com.monet.bidder
 
+import com.monet.CustomEventUtil
 import com.monet.adview.AdSize
 import com.monet.bidder.Constants.Dfp.ADUNIT_KEYWORD_KEY
 import junit.framework.Assert.assertEquals

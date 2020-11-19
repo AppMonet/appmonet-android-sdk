@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.view.View
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.monet.AdServerBannerListener
 import com.monet.AdType.INTERSTITIAL
@@ -19,12 +20,14 @@ import com.monet.bidder.Constants.INTERSTITIAL_WIDTH
 import com.monet.bidder.Constants.Interstitial.AD_CONTENT_INTERSTITIAL
 import com.monet.bidder.Constants.Interstitial.AD_UUID_INTERSTITIAL
 import com.monet.bidder.Constants.Interstitial.BID_ID_INTERSTITIAL
-import com.monet.bidder.CustomEventUtil.getAdUnitId
-import com.monet.bidder.adview.AdViewManager.AdViewState.AD_RENDERED
+import com.monet.CustomEventUtil.getAdUnitId
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
+import com.monet.CustomEventBaseAdapter
+import com.monet.CustomEventInterstitialAdapter
 import com.monet.adview.AdSize
+import com.monet.adview.AdViewState.AD_RENDERED
 import com.mopub.common.LifecycleListener
 import com.mopub.common.logging.MoPubLog
 import com.mopub.common.logging.MoPubLog.AdLogEvent.SHOW_SUCCESS
@@ -37,14 +40,13 @@ import com.mopub.mobileads.MoPubErrorCode.INTERNAL_ERROR
 import com.mopub.mobileads.MoPubErrorCode.NETWORK_NO_FILL
 
 class CustomEventInterstitial : BaseAd() {
-  private var mAdView: AppMonetViewLayout? = null
-  private var bidResponse: BidResponse? = null
   private val interstitialContent: String? = null
   private var mContext: Context? = null
   private var sdkManager: SdkManager? = null
+  private var customEventInterstitialAdapter: CustomEventInterstitialAdapter? = null
   private val mMessageReceiver: BroadcastReceiver = object : BroadcastReceiver() {
     private fun onActivityClosed(context: Context) {
-      val i: Intent = Intent(INTERSTITIAL_ACTIVITY_BROADCAST)
+      val i = Intent(INTERSTITIAL_ACTIVITY_BROADCAST)
       i.putExtra("message", INTERSTITIAL_ACTIVITY_CLOSE)
       LocalBroadcastManager.getInstance(context).sendBroadcast(i)
     }
@@ -83,17 +85,20 @@ class CustomEventInterstitial : BaseAd() {
       logger.debug("receiver", "Got message: $message")
     }
   }
-  private var adUnitId = "ZONE_ID"
+
   override fun show() {
-    sdkManager!!.preferences.setPreference(AD_CONTENT_INTERSTITIAL, bidResponse!!.adm)
-    sdkManager!!.preferences.setPreference(BID_ID_INTERSTITIAL, bidResponse!!.id)
-    val uuid = if (mAdView != null) mAdView!!.uuid else null
-    sdkManager!!.preferences.setPreference(AD_UUID_INTERSTITIAL, uuid)
-    MonetActivity.start(mContext!!, sdkManager!!, uuid, bidResponse!!.adm)
+    customEventInterstitialAdapter?.let {
+      sdkManager!!.preferences.setPreference(AD_CONTENT_INTERSTITIAL, it.bidResponse!!.adm)
+      sdkManager!!.preferences.setPreference(BID_ID_INTERSTITIAL, it.bidResponse!!.id)
+      val uuid = if (it.adView != null) it.adView!!.uuid else null
+      sdkManager!!.preferences.setPreference(AD_UUID_INTERSTITIAL, uuid)
+      MonetActivity.start(mContext!!, sdkManager!!, uuid, it.bidResponse!!.adm)
+    }
+
   }
 
   override fun onInvalidate() {
-    mAdView?.let {
+    customEventInterstitialAdapter?.adView?.let {
       if (it.state !== AD_RENDERED) {
         logger.warn("attempt to remove loading adview..")
       }
@@ -108,7 +113,7 @@ class CustomEventInterstitial : BaseAd() {
   }
 
   override fun getAdNetworkId(): String {
-    return adUnitId
+    return customEventInterstitialAdapter?.adUnitId ?: "ZONE_ID"
   }
 
   @Throws(
@@ -136,55 +141,78 @@ class CustomEventInterstitial : BaseAd() {
     }
     val extras: Map<String, String?> = adData.extras
     val adSize = AdSize(context.applicationContext, INTERSTITIAL_WIDTH, INTERSTITIAL_HEIGHT)
-    val adUnitFromExtras = getAdUnitId(extras, adSize)
-    if (adUnitFromExtras == null || adUnitFromExtras.isEmpty()) {
-      logger.debug("no adUnit/tagId: floor line item configured incorrectly")
-      onMoPubError(NETWORK_NO_FILL)
-      return
-    }
-    adUnitId = adUnitFromExtras
-    sdkManager!!.auctionManager.trackRequest(
-        adUnitId,
-        WebViewUtils.generateTrackingSource(INTERSTITIAL)
+    val listener: AdServerBannerListener<View?> = MonetInterstitialListener(
+        mLoadListener, mInteractionListener,
+        context, sdkManager!!
     )
     val configurations = sdkManager!!.sdkConfigurations
-    var headerBiddingBid: BidResponse? = null
-    if (extras.containsKey(BIDS_KEY) && extras[BIDS_KEY] != null) {
-      headerBiddingBid = extras[BIDS_KEY]?.let { from(it) }
-    }
     val floorCpm = getServerExtraCpm(extras, configurations.getDouble(DEFAULT_MEDIATION_FLOOR))
-    if (headerBiddingBid == null) {
-      headerBiddingBid =
-        sdkManager!!.auctionManager.mediationManager.getBidForMediation(adUnitId, floorCpm)
-    }
-    val mediationManager = sdkManager!!.auctionManager.mediationManager
-    val configurationTimeOut =
-      sdkManager!!.auctionManager.getSdkConfigurations().getAdUnitTimeout(adUnitId)
-    mediationManager.getBidReadyForMediationAsync(
-        headerBiddingBid, adUnitId, adSize,
-        INTERSTITIAL, floorCpm, top@{ response, error ->
-      if (error != null) {
-        onMoPubError(NETWORK_NO_FILL)
-      }
-      mContext = context
-      bidResponse = response
-      val listener: AdServerBannerListener = MonetInterstitialListener(
-          mLoadListener, mInteractionListener, adUnitId,
-          context, sdkManager!!
-      )
-      if (bidResponse!!.interstitial != null && bidResponse!!.interstitial!!
-              .trusted
-      ) {
-        listener.onAdLoaded(null)
-        return@top
-      }
-      mAdView = BidRenderer.renderBid(context, sdkManager!!, bidResponse!!, null, listener)
-      if (mAdView == null) {
-        logger.error("unexpected: could not generate the adView")
-        onMoPubError(INTERNAL_ERROR)
-      }
-    }, configurationTimeOut, 4000
+
+    customEventInterstitialAdapter = CustomEventInterstitialAdapter(
+        adSize, sdkManager, sdkManager?.auctionManager,
+        sdkManager?.auctionManager?.mediationManager, listener,
+        extras, floorCpm, INTERSTITIAL
     )
+    val configurationTimeOut =
+      sdkManager!!.auctionManager.getSdkConfigurations()
+          .getAdUnitTimeout(customEventInterstitialAdapter?.adUnitId)
+
+    customEventInterstitialAdapter?.requestAd(
+        { bid: BidResponse?, adSize: AdSize, customEventAdapter: CustomEventBaseAdapter ->
+          mContext = context
+          BidRenderer.renderBid(context, sdkManager!!, bid!!, null, listener)
+        }, configurationTimeOut
+    )
+
+//    val adUnitFromExtras = getAdUnitId(extras, adSize)
+//    if (adUnitFromExtras == null || adUnitFromExtras.isEmpty()) {
+//      logger.debug("no adUnit/tagId: floor line item configured incorrectly")
+//      onMoPubError(NETWORK_NO_FILL)
+//      return
+//    }
+//    adUnitId = adUnitFromExtras
+//    sdkManager!!.auctionManager.trackRequest(
+//        adUnitId,
+//        WebViewUtils.generateTrackingSource(INTERSTITIAL)
+//    )
+//    val configurations = sdkManager!!.sdkConfigurations
+//    var headerBiddingBid: BidResponse? = null
+//    if (extras.containsKey(BIDS_KEY) && extras[BIDS_KEY] != null) {
+//      headerBiddingBid = extras[BIDS_KEY]?.let { from(it) }
+//    }
+//    val floorCpm = getServerExtraCpm(extras, configurations.getDouble(DEFAULT_MEDIATION_FLOOR))
+//    if (headerBiddingBid == null) {
+//      headerBiddingBid =
+//        sdkManager!!.auctionManager.mediationManager.getBidForMediation(adUnitId, floorCpm)
+//    }
+//    val mediationManager = sdkManager!!.auctionManager.mediationManager
+//    val configurationTimeOut =
+//      sdkManager!!.auctionManager.getSdkConfigurations().getAdUnitTimeout(adUnitId)
+//    mediationManager.getBidReadyForMediationAsync(
+//        headerBiddingBid, adUnitId, adSize,
+//        INTERSTITIAL, floorCpm, top@{ response, error ->
+//      if (error != null) {
+//        onMoPubError(NETWORK_NO_FILL)
+//      }
+//      mContext = context
+//      bidResponse = response
+//      val listener: AdServerBannerListener<View?> = MonetInterstitialListener(
+//          mLoadListener, mInteractionListener, adUnitId,
+//          context, sdkManager!!
+//      )
+//      if (bidResponse!!.interstitial != null && bidResponse!!.interstitial!!
+//              .trusted
+//      ) {
+//        listener.onAdLoaded(null)
+//        return@top
+//      }
+//      mAdView = BidRenderer.renderBid(context, sdkManager!!, bidResponse!!, null, listener)
+//      if (mAdView == null) {
+//        logger.error("unexpected: could not generate the adView")
+//        onMoPubError(INTERNAL_ERROR)
+//      }
+//    }, configurationTimeOut, 4000
+//    )
   }
 
   private fun onMoPubError(error: MoPubErrorCode) {
@@ -202,8 +230,7 @@ class CustomEventInterstitial : BaseAd() {
       return defaultValue
     }
     try {
-      return serverExtras[SERVER_EXTRA_CPM_KEY]!!
-          .toDouble()
+      return serverExtras[SERVER_EXTRA_CPM_KEY]?.toDouble() ?: defaultValue
     } catch (e: NumberFormatException) {
       // do nothing
     }

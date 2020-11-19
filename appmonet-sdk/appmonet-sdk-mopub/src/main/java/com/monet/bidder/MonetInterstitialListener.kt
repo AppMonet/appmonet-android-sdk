@@ -31,11 +31,11 @@ import java.lang.ref.WeakReference
 internal class MonetInterstitialListener(
   private val mLoadListener: LoadListener?,
   private val mInteractionListener: InteractionListener?,
-  private val adUnitId: String,
   context: Context,
   private val sdkManager: SdkManager
-) : AdServerBannerListener {
+) : AdServerBannerListener<View?> {
   private val context: WeakReference<Context?> = WeakReference(context)
+  var adUnitId: String? = null
   override fun onAdClosed() {
     if (context.get() != null) {
       LocalBroadcastManager.getInstance(context.get()!!).sendBroadcast(
@@ -99,6 +99,10 @@ internal class MonetInterstitialListener(
         else -> UNSPECIFIED
       }
     }
+  }
+
+  override fun onLeftApplication() {
+    TODO("Not yet implemented")
   }
 
 }

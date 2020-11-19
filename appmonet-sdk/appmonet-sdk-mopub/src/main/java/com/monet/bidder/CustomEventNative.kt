@@ -1,11 +1,12 @@
 package com.monet.bidder
 
 import android.content.Context
+import android.view.View
 import com.monet.AdServerBannerListener
 import com.monet.AdType.NATIVE
 import com.monet.bidder.Constants.BIDS_KEY
-import com.monet.bidder.CustomEventUtil.getAdUnitId
-import com.monet.bidder.CustomEventUtil.getServerExtraCpm
+import com.monet.CustomEventUtil.getAdUnitId
+import com.monet.CustomEventUtil.getServerExtraCpm
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
@@ -29,6 +30,7 @@ open class CustomEventNative : CustomEventNative() {
   ) {
     logger.debug("Loading Native Ad")
     val adSize = AdSize(context.applicationContext, 320, 250)
+
     val adUnitId = getAdUnitId(serverExtras, localExtras, adSize)
     val sdkManager = SdkManager.get()
     if (sdkManager == null) {
@@ -70,7 +72,7 @@ open class CustomEventNative : CustomEventNative() {
           serverExtras[key] = value.toString()
         }
       }
-      val mListener: AdServerBannerListener =
+      val mListener: AdServerBannerListener<View?> =
         MoPubNativeListener(context, customEventNativeListener, serverExtras)
       val mAdView = BidRenderer.renderBid(context, sdkManager, bid, null, mListener)
       if (mAdView == null) {
