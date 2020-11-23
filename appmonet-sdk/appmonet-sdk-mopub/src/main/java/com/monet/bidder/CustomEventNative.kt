@@ -10,9 +10,12 @@ import com.monet.CustomEventUtil.getServerExtraCpm
 import com.monet.bidder.bid.BidRenderer
 import com.monet.BidResponse
 import com.monet.BidResponse.Mapper.from
+import com.monet.CustomEventBaseAdapter
+import com.monet.CustomEventNativeAdapter
 import com.monet.MediationManager.NoBidsFoundException
 import com.monet.MediationManager.NullBidException
 import com.monet.adview.AdSize
+import com.monet.toStringString
 import com.mopub.nativeads.CustomEventNative
 import com.mopub.nativeads.NativeErrorCode.NETWORK_NO_FILL
 import com.mopub.nativeads.NativeErrorCode.UNSPECIFIED
@@ -37,6 +40,30 @@ open class CustomEventNative : CustomEventNative() {
       customEventNativeListener.onNativeAdFailed(UNSPECIFIED)
       return
     }
+    val serverExtraCpm = getServerExtraCpm(serverExtras, 0.0)
+    val mListener: AdServerBannerListener<View?> =
+      MoPubNativeListener(context, customEventNativeListener, serverExtras)
+
+    val customEventNativeAdapter = CustomEventNativeAdapter(
+        adSize, sdkManager, sdkManager.auctionManager, sdkManager.auctionManager.mediationManager,
+        mListener, localExtras.toStringString(),
+        serverExtraCpm, NATIVE
+    )
+
+    customEventNativeAdapter.requestAd(
+        { bid: BidResponse?, adSize: AdSize, customEventAdapter: CustomEventBaseAdapter ->
+          if (bid?.extras?.isNotEmpty() == true) {
+            for ((key, value1) in bid.extras) {
+              val value = value1 ?: continue
+
+              // add all the data into server extras
+              serverExtras[key] = value
+            }
+          }
+          customEventAdapter.extras = serverExtras
+          BidRenderer.renderBid(context, sdkManager, bid, null, mListener)
+        })
+
     if (adUnitId == null || adUnitId.isEmpty()) {
       customEventNativeListener.onNativeAdFailed(NETWORK_NO_FILL)
       return
@@ -54,7 +81,7 @@ open class CustomEventNative : CustomEventNative() {
       // Exception
     }
     val mediationManager = sdkManager.auctionManager.mediationManager
-    val serverExtraCpm = getServerExtraCpm(serverExtras, 0.0)
+//    val serverExtraCpm = getServerExtraCpm(serverExtras, 0.0)
     if (headerBiddingBid == null) {
       headerBiddingBid = mediationManager
           .getBidForMediation(adUnitId, serverExtraCpm)

@@ -8,6 +8,18 @@ import com.monet.adview.AdSize
 /**
  * Utility class used for performing miscellaneous methods needed by CustomEvents.
  */
+fun Map<String, Any?>.toStringString(): Map<String, String> {
+  val map = mutableMapOf<String, String>()
+  this.map {
+    it.value?.let { value ->
+      if (value is String) {
+        map[it.key] = value
+      }
+    }
+  }
+  return map
+}
+
 object CustomEventUtil {
   private const val SERVER_EXTRA_TAG_ID_KEY = "tagId"
   private const val SERVER_EXTRA_LOWER_TAG_ID_KEY = "tagid"

@@ -19,8 +19,8 @@ class AppMonetApp : Application() {
     }
 
     //AppMonet initialization.
-//    val appMonetConfiguration = AppMonetConfiguration.Builder().applicationId("pjdfkud").build()
-    val appMonetConfiguration = AppMonetConfiguration.Builder().applicationId("3zeuyua").build()
+    val appMonetConfiguration = AppMonetConfiguration.Builder().applicationId("qw9tp1sy").build()
+//    val appMonetConfiguration = AppMonetConfiguration.Builder().applicationId("3zeuyua").build()
 
     AppMonet.init(this, appMonetConfiguration)
 

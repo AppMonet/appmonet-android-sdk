@@ -15,7 +15,7 @@ abstract class CustomEventBaseAdapter(
   val auctionManager: AuctionManagerKMM?,
   val mediationManager: MediationManager?,
   val adServerBannerListener: AdServerBannerListener<*>,
-  val extras: Map<String, String?>,
+  var extras: Map<String, String?>,
   val mediationDefaultFloor: Double,
   val adType: AdType
 ) {
