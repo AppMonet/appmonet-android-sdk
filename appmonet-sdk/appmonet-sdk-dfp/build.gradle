@@ -8,5 +8,7 @@ dependencies {
 project.description = 'AppMonet Android SDK - Google'
 project.ext.projectTitle = 'AppMonet Android SDK - Google'
 project.ext.projectName = 'appmonet-dfp'
+project.ext.build = 'dfp'
+project.ext.aarName = 'appmonet-sdk-dfp'
 
 apply from: '../publish.gradle'
