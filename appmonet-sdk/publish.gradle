@@ -12,7 +12,7 @@ publishing {
     repositories {
         maven {
             name = "GithubPackages"
-            url = uri("https://maven.pkg.github.com/jose96043/AndroidLibForArtifactory")
+            url = uri("https://maven.pkg.github.com/AppMonet/appmonet-android-sdk")
             credentials {
                 username = System.getenv('GITHUB_USER') ?: properties['GITHUB_USER']
                 password = System.getenv('GITHUB_PERSONAL_ACCESS_TOKEN') ?: properties['GITHUB_PERSONAL_ACCESS_TOKEN']
