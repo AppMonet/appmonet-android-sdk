@@ -11,5 +11,7 @@ dependencies {
 project.description = 'AppMonet Android SDK - MoPub'
 project.ext.projectTitle = 'AppMonet Android SDK - MoPub'
 project.ext.projectName = 'appmonet-mopub'
+project.ext.build = 'mopub'
+project.ext.aarName = 'appmonet-sdk-mopub'
 
 apply from: '../publish.gradle'
